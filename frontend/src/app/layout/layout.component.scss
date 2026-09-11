@@ -1,0 +1,61 @@
+.shell {
+  height: 100vh;
+}
+
+.shell-sidenav {
+  width: 232px;
+  border-right: 1px solid rgba(0, 0, 0, 0.08);
+}
+
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 18px 16px;
+  font-size: 1.15rem;
+  font-weight: 600;
+  letter-spacing: 0.3px;
+
+  mat-icon {
+    color: #3f51b5;
+  }
+}
+
+.sidebar-footer {
+  margin-top: auto;
+  padding: 12px 16px;
+  font-size: 0.75rem;
+  color: rgba(0, 0, 0, 0.45);
+}
+
+mat-nav-list {
+  display: block;
+  margin-top: 4px;
+}
+
+.active-link {
+  font-weight: 600;
+}
+
+.shell-toolbar {
+  gap: 12px;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.08);
+  position: sticky;
+  top: 0;
+  z-index: 10;
+}
+
+.spacer {
+  flex: 1;
+}
+
+.phase-note {
+  font-size: 0.75rem;
+  color: rgba(0, 0, 0, 0.5);
+}
+
+.content {
+  padding: 24px;
+  max-width: 1280px;
+  margin: 0 auto;
+}

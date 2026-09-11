@@ -1,0 +1,75 @@
+<section class="page-heading">
+  <h1>Dashboard</h1>
+  <p class="subtitle">Foundation status — real HR metrics arrive with Phase 2.</p>
+</section>
+
+<mat-card class="status-card" data-testid="system-status">
+  <mat-card-header>
+    <mat-icon
+      mat-card-avatar
+      [class.ok]="health()?.status === 'UP'"
+      [class.down]="health() === null || health()?.status === 'DOWN'"
+    >
+      {{ health()?.status === 'UP' ? 'cloud_done' : 'cloud_off' }}
+    </mat-icon>
+    <mat-card-title>System Status</mat-card-title>
+    <mat-card-subtitle>GET /api/v1/health — live backend + database probe</mat-card-subtitle>
+  </mat-card-header>
+
+  <mat-card-content>
+    @if (checking()) {
+      <p class="muted">Checking backend…</p>
+    } @else if (health(); as h) {
+      <div class="status-grid">
+        <div class="status-item">
+          <span class="label">Application</span>
+          <span class="value">{{ h.application }}</span>
+        </div>
+        <div class="status-item">
+          <span class="label">API Status</span>
+          <span class="value">
+            <mat-chip [class.chip-ok]="h.status === 'UP'" [class.chip-down]="h.status !== 'UP'">
+              {{ h.status }}
+            </mat-chip>
+          </span>
+        </div>
+        <div class="status-item">
+          <span class="label">Database</span>
+          <span class="value small">{{ h.database }}</span>
+        </div>
+        <div class="status-item">
+          <span class="label">Server Time</span>
+          <span class="value small">{{ h.timestamp | date: 'medium' }}</span>
+        </div>
+      </div>
+    } @else if (loadError()) {
+      <p class="muted error-text">
+        <mat-icon inline>error_outline</mat-icon>
+        The backend did not respond. Start it on :8080 and re-check.
+      </p>
+    } @else {
+      <p class="muted">No response from the backend yet.</p>
+    }
+  </mat-card-content>
+
+  <mat-card-actions>
+    <button mat-stroked-button (click)="refresh()" [disabled]="checking()">
+      <mat-icon>refresh</mat-icon>
+      Re-check
+    </button>
+  </mat-card-actions>
+</mat-card>
+
+<h2 class="section-title">Coming in the next phases</h2>
+<div class="upcoming-grid">
+  @for (card of upcoming; track card.title) {
+    <mat-card class="upcoming-card">
+      <mat-icon class="upcoming-icon">{{ card.icon }}</mat-icon>
+      <div>
+        <div class="upcoming-title">{{ card.title }}</div>
+        <div class="upcoming-desc">{{ card.description }}</div>
+        <div class="upcoming-phase">Phase {{ card.phase }}</div>
+      </div>
+    </mat-card>
+  }
+</div>

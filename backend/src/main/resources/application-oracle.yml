@@ -1,0 +1,18 @@
+# Production/real-Oracle profile.
+# Activate with SPRING_PROFILES_ACTIVE=oracle and provide:
+#   DB_URL      e.g. jdbc:oracle:thin:@localhost:1521/XEPDB1
+#   DB_USERNAME hrgenius
+#   DB_PASSWORD <secret>
+spring:
+  datasource:
+    url: ${DB_URL:jdbc:oracle:thin:@localhost:1521/XEPDB1}
+    username: ${DB_USERNAME:please_set_DB_USERNAME}
+    password: ${DB_PASSWORD:please_set_DB_PASSWORD}
+    driver-class-name: oracle.jdbc.OracleDriver
+  jpa:
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.OracleDialect
+  h2:
+    console:
+      enabled: false

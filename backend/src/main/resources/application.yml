@@ -1,0 +1,41 @@
+spring:
+  application:
+    name: hrgenius-api
+  profiles:
+    default: dev
+  jpa:
+    open-in-view: false
+    hibernate:
+      ddl-auto: none   # Flyway owns the schema; Hibernate never auto-creates tables
+  flyway:
+    locations: classpath:db/migration
+  jackson:
+    default-property-inclusion: non_null
+
+server:
+  port: 8080
+  error:
+    include-stacktrace: never
+    include-message: always
+
+app:
+  cors:
+    allowed-origins: http://localhost:4200
+  jwt:
+    # HMAC secret for signing tokens. Provide via JWT_SECRET env var in any
+    # shared/production environment; this default is for local development only.
+    secret: ${JWT_SECRET:change-me-local-dev-secret-key-at-least-32-bytes-long!!}
+    expiration-minutes: 60
+
+hrgenius:
+  security:
+    public-paths: /api/v1/auth/login, /api/v1/health, /swagger-ui/**, /swagger-ui.html, /api-docs/**, /h2-console/**, /error
+
+springdoc:
+  swagger-ui:
+    path: /swagger-ui.html
+
+logging:
+  level:
+    com.hrgenius: INFO
+    org.springframework.security: WARN

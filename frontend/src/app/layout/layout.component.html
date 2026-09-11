@@ -1,0 +1,33 @@
+<mat-sidenav-container class="shell">
+  <mat-sidenav mode="side" opened class="shell-sidenav">
+    <div class="brand">
+      <mat-icon>workspace_premium</mat-icon>
+      <span>HRGenius</span>
+    </div>
+    <mat-nav-list>
+      @for (item of visibleNavItems; track item.route) {
+        <a mat-list-item [routerLink]="item.route" routerLinkActive="active-link">
+          <mat-icon matListItemIcon>{{ item.icon }}</mat-icon>
+          <span matListItemTitle>{{ item.label }}</span>
+        </a>
+      }
+    </mat-nav-list>
+    <div class="sidebar-footer">v0.1 · Phase 0</div>
+  </mat-sidenav>
+
+  <mat-sidenav-content>
+    <mat-toolbar class="shell-toolbar">
+      <span>Human Resource Management System</span>
+      <span class="spacer"></span>
+      <button mat-icon-button aria-label="Account" disabled>
+        <mat-icon>account_circle</mat-icon>
+      </button>
+      <span class="phase-note">Phase 0 · Foundation</span>
+    </mat-toolbar>
+
+    <main class="content">
+      <router-outlet></router-outlet>
+      <div class="route-anim-wrapper"></div>
+    </main>
+  </mat-sidenav-content>
+</mat-sidenav-container>

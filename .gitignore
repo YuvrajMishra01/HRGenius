@@ -1,0 +1,36 @@
+# --- Java / Maven ---
+backend/target/
+*.class
+*.jar
+!.mvn/wrapper/maven-wrapper.jar
+*.log
+hs_err_pid*
+
+# --- Node / Angular ---
+node_modules/
+dist/
+coverage/
+.angular/
+npm-debug.log*
+
+# --- IDE ---
+.idea/
+*.iml
+.vscode/
+.classpath
+.project
+.settings/
+
+# --- Secrets & local env ---
+.env
+.env.*
+backend/src/main/resources/application-local.yml
+*.pem
+*.key
+
+# --- OS ---
+.DS_Store
+Thumbs.db
+
+# --- tool bootstrap temp dir ---
+.tmp/
