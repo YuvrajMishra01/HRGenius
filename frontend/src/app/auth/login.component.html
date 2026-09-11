@@ -1,0 +1,82 @@
+<div class="login-backdrop">
+  <mat-card class="login-card">
+    <mat-card-header>
+      <div class="brand-badge" aria-hidden="true">
+        <mat-icon>workspace_premium</mat-icon>
+      </div>
+      <mat-card-title>Sign in to HRGenius</mat-card-title>
+      <mat-card-subtitle>Human Resource Management System</mat-card-subtitle>
+    </mat-card-header>
+
+    <mat-card-content>
+      @if (serverError(); as error) {
+        <div class="alert alert-error" role="alert">
+          <mat-icon inline>error_outline</mat-icon>
+          <span>{{ error }}</span>
+        </div>
+      }
+
+      <form [formGroup]="form" (ngSubmit)="submit()" novalidate>
+        <mat-form-field appearance="outline" class="full-width">
+          <mat-label>Email</mat-label>
+          <input
+            matInput
+            type="email"
+            formControlName="email"
+            autocomplete="username"
+            placeholder="you@company.com"
+          />
+          <mat-icon matPrefix>mail_outline</mat-icon>
+          @if (form.controls.email.hasError('required')) {
+            <mat-error>Email is required</mat-error>
+          } @else if (form.controls.email.hasError('email')) {
+            <mat-error>Enter a valid email address</mat-error>
+          }
+        </mat-form-field>
+
+        <mat-form-field appearance="outline" class="full-width">
+          <mat-label>Password</mat-label>
+          <input
+            matInput
+            [type]="hidePassword() ? 'password' : 'text'"
+            formControlName="password"
+            autocomplete="current-password"
+          />
+          <mat-icon matPrefix>lock_outline</mat-icon>
+          <button
+            type="button"
+            mat-icon-button
+            matSuffix
+            (click)="hidePassword.set(!hidePassword())"
+            [attr.aria-label]="hidePassword() ? 'Show password' : 'Hide password'"
+          >
+            <mat-icon>{{ hidePassword() ? 'visibility_off' : 'visibility' }}</mat-icon>
+          </button>
+          @if (form.controls.password.hasError('required')) {
+            <mat-error>Password is required</mat-error>
+          }
+        </mat-form-field>
+
+        <button
+          mat-flat-button
+          color="primary"
+          type="submit"
+          class="submit-btn"
+          [disabled]="loading()"
+        >
+          @if (loading()) {
+          <span class="btn-loading"><mat-icon class="spin">progress_activity</mat-icon> Signing in…</span>
+          } @else {
+            Sign in
+          }
+        </button>
+      </form>
+    </mat-card-content>
+
+    <mat-card-footer class="dev-hint">
+      <strong>Dev accounts</strong> — admin@hrgenius.local / Admin@123 ·
+      hr@hrgenius.local / Hr@12345 · manager@hrgenius.local / Manager@123 ·
+      employee@hrgenius.local / Employee@123
+    </mat-card-footer>
+  </mat-card>
+</div>

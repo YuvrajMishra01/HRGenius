@@ -34,10 +34,11 @@ class HealthApiTest {
     }
 
     @Test
-    void unknownApiPathReturnsConsistentErrorEnvelope() {
+    void unknownApiPathRequiresAuthentication() {
+        // Security answers 401 before route resolution, so unknown paths do
+        // not leak whether a resource exists (auth happens first).
         ResponseEntity<String> response = rest.getForEntity(url() + "/api/v1/does-not-exist", String.class);
-        assertThat(response.getStatusCode().value()).isIn(404, 500);
-        assertThat(response.getBody()).contains("\"timestamp\"");
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.UNAUTHORIZED);
         assertThat(response.getBody()).contains("\"path\"");
     }
 

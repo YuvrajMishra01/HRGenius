@@ -1,0 +1,92 @@
+.login-backdrop {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  background:
+    radial-gradient(1000px 500px at 15% -10%, rgba(63, 81, 181, 0.14), transparent 60%),
+    radial-gradient(900px 480px at 110% 110%, rgba(0, 150, 136, 0.12), transparent 55%),
+    var(--mat-sys-surface-container-lowest, #fafafa);
+}
+
+.login-card {
+  width: 420px;
+  max-width: 100%;
+  padding: 8px 8px 20px;
+}
+
+.brand-badge {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 56px;
+  height: 56px;
+  border-radius: 16px;
+  background: linear-gradient(135deg, #3f51b5, #5c6bc0);
+  color: #fff;
+  margin-bottom: 16px;
+
+  mat-icon {
+    width: 32px;
+    height: 32px;
+    font-size: 32px;
+  }
+}
+
+mat-card-header {
+  padding: 24px 24px 0;
+}
+
+mat-card-title {
+  font-size: 22px;
+}
+
+.full-width {
+  width: 100%;
+}
+
+mat-form-field {
+  margin-bottom: 4px;
+}
+
+.alert {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  border-radius: 8px;
+  padding: 10px 14px;
+  font-size: 14px;
+  margin-bottom: 16px;
+
+  &.alert-error {
+    background: #fdecea;
+    color: #b71c1c;
+    border: 1px solid #f5c6cb;
+  }
+}
+
+.submit-btn {
+  height: 44px;
+  margin-top: 8px;
+  font-size: 15px;
+}
+
+.spin {
+  animation: spin 1s linear infinite;
+  margin-right: 8px;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.dev-hint {
+  display: block;
+  padding: 12px 24px;
+  font-size: 12px;
+  line-height: 1.6;
+  color: var(--mat-sys-on-surface-variant, #5f6368);
+}

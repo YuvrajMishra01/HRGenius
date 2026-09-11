@@ -4,8 +4,8 @@ Status legend: ✅ done · 🔄 in progress · ⬜ pending
 
 | Phase | Scope | Status |
 |---|---|---|
-| 0 | Foundation: Spring Boot + Angular scaffolds, DB profiles, common API envelope, exception handling, health API, docs | 🔄 |
-| 1 | Auth: User entity, BCrypt, JWT, Spring Security, Angular login/guards/interceptor | ⬜ |
+| 0 | Foundation: Spring Boot + Angular scaffolds, DB profiles, common API envelope, exception handling, health API, docs | ✅ |
+| 1 | Auth: User entity, BCrypt, JWT, Spring Security, Angular login/guards/interceptor | ✅ |
 | 2 | Admin dashboard with aggregated stats APIs + charts | ⬜ |
 | 3 | Employee CRUD, search/filter/pagination | ⬜ |
 | 4 | Department & designation management | ⬜ |

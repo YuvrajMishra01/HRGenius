@@ -12,17 +12,34 @@
         </a>
       }
     </mat-nav-list>
-    <div class="sidebar-footer">v0.1 · Phase 0</div>
+    <div class="sidebar-footer">v0.2 · Phase 1 — Auth</div>
   </mat-sidenav>
 
   <mat-sidenav-content>
     <mat-toolbar class="shell-toolbar">
       <span>Human Resource Management System</span>
       <span class="spacer"></span>
-      <button mat-icon-button aria-label="Account" disabled>
-        <mat-icon>account_circle</mat-icon>
-      </button>
-      <span class="phase-note">Phase 0 · Foundation</span>
+
+      @if (auth.user(); as user) {
+        <button
+          mat-button
+          class="user-chip"
+          [matMenuTriggerFor]="accountMenu"
+          [matTooltip]="user.email"
+        >
+          <mat-icon>account_circle</mat-icon>
+          <span class="user-name">{{ user.fullName }}</span>
+          <span class="user-role">{{ user.role }}</span>
+          <mat-icon iconPositionEnd>arrow_drop_down</mat-icon>
+        </button>
+
+        <mat-menu #accountMenu="matMenu">
+          <button mat-menu-item (click)="auth.logout()">
+            <mat-icon>logout</mat-icon>
+            <span>Sign out</span>
+          </button>
+        </mat-menu>
+      }
     </mat-toolbar>
 
     <main class="content">
