@@ -40,7 +40,7 @@ export class LayoutComponent {
   readonly auth = inject(AuthService);
 
   /** Phase gates which nav items are visible; bump as modules land. */
-  readonly currentPhase = 1;
+  readonly currentPhase = 4;
 
   readonly navItems: NavItem[] = [
     { label: 'Dashboard', icon: 'dashboard', route: '/dashboard', phase: 0 },

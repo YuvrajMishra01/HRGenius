@@ -75,5 +75,102 @@ INSERT INTO JOBS (TITLE, DESCRIPTION, DEPARTMENT_ID, LOCATION, EMPLOYMENT_TYPE, 
 VALUES ('HR Generalist', 'Recruitment, onboarding and employee engagement', 2, 'Remote', 'FULL_TIME', '5-8 LPA', 'OPEN', CURRENT_DATE);
 
 -- A first notification for the admin
+-- =====================================================================
+-- Candidates / applications / interviews (hiring pipeline demo data)
+-- =====================================================================
+INSERT INTO CANDIDATES (NAME, EMAIL, PHONE, SKILLS, EXPERIENCE_YEARS, STATUS) VALUES
+  ('Kavya Rao',    'kavya.rao@example.com',    '+91-9900112233', 'Java, Spring Boot, Oracle SQL', 4.0, 'INTERVIEWED');
+INSERT INTO CANDIDATES (NAME, EMAIL, PHONE, SKILLS, EXPERIENCE_YEARS, STATUS) VALUES
+  ('Mohit Bansal', 'mohit.bansal@example.com', '+91-9900223344', 'Angular, TypeScript', 3.5, 'SCREENING');
+INSERT INTO CANDIDATES (NAME, EMAIL, PHONE, SKILLS, EXPERIENCE_YEARS, STATUS) VALUES
+  ('Fatima Sheikh','fatima.sheikh@example.com','+91-9900334455', 'Recruitment, Onboarding', 5.0, 'SHORTLISTED');
+INSERT INTO CANDIDATES (NAME, EMAIL, PHONE, SKILLS, EXPERIENCE_YEARS, STATUS) VALUES
+  ('Sanjay Gupta', 'sanjay.gupta@example.com', '+91-9900445566', 'Accounting, Tally', 2.0, 'NEW');
+
+INSERT INTO JOB_APPLICATIONS (CANDIDATE_ID, JOB_ID, APPLICATION_DATE, STATUS, REMARKS) VALUES
+  (1, 1, CURRENT_DATE - 9, 'INTERVIEW', 'Strong backend fundamentals');
+INSERT INTO JOB_APPLICATIONS (CANDIDATE_ID, JOB_ID, APPLICATION_DATE, STATUS, REMARKS) VALUES
+  (2, 1, CURRENT_DATE - 6, 'SCREENING', 'Portfolio review pending');
+INSERT INTO JOB_APPLICATIONS (CANDIDATE_ID, JOB_ID, APPLICATION_DATE, STATUS, REMARKS) VALUES
+  (3, 2, CURRENT_DATE - 4, 'SHORTLISTED', 'Referral from HR team');
+INSERT INTO JOB_APPLICATIONS (CANDIDATE_ID, JOB_ID, APPLICATION_DATE, STATUS, REMARKS) VALUES
+  (4, 2, CURRENT_DATE - 2, 'APPLIED', null);
+
+-- Interviews: one upcoming (relative to run date) and one completed
+INSERT INTO INTERVIEWS (APPLICATION_ID, INTERVIEWER_ID, INTERVIEW_DATE, INTERVIEW_MODE, STATUS, FEEDBACK, RESULT)
+VALUES (1, 1, CURRENT_TIMESTAMP + INTERVAL '2' DAY, 'ONLINE', 'SCHEDULED', null, null);
+INSERT INTO INTERVIEWS (APPLICATION_ID, INTERVIEWER_ID, INTERVIEW_DATE, INTERVIEW_MODE, STATUS, FEEDBACK, RESULT)
+VALUES (3, 6, CURRENT_TIMESTAMP - INTERVAL '1' DAY, 'ONSITE', 'COMPLETED', 'Great culture fit, solid process knowledge.', 'PASS');
+
+-- =====================================================================
+-- Attendance: last 7 days for all 6 employees (weekends = HOLIDAY,
+-- deterministic mix of PRESENT/HALF_DAY/ABSENT/LEAVE)
+-- =====================================================================
+INSERT INTO ATTENDANCE (EMPLOYEE_ID, ATTENDANCE_DATE, CHECK_IN, CHECK_OUT, STATUS, WORKING_HOURS)
+SELECT e.ID,
+       CURRENT_DATE - 1,
+       CAST(CURRENT_DATE AS TIMESTAMP) + INTERVAL '9' HOUR + INTERVAL '5' MINUTE,
+       CAST(CURRENT_DATE AS TIMESTAMP) + INTERVAL '18' HOUR,
+       'PRESENT', 8.50
+FROM EMPLOYEES e;
+INSERT INTO ATTENDANCE (EMPLOYEE_ID, ATTENDANCE_DATE, CHECK_IN, CHECK_OUT, STATUS, WORKING_HOURS)
+SELECT e.ID,
+       CURRENT_DATE - 2,
+       CAST(CURRENT_DATE AS TIMESTAMP) + INTERVAL '9' HOUR + INTERVAL '12' MINUTE,
+       CAST(CURRENT_DATE AS TIMESTAMP) + INTERVAL '18' HOUR + INTERVAL '10' MINUTE,
+       'PRESENT', 8.97
+FROM EMPLOYEES e;
+INSERT INTO ATTENDANCE (EMPLOYEE_ID, ATTENDANCE_DATE, CHECK_IN, CHECK_OUT, STATUS, WORKING_HOURS)
+SELECT e.ID,
+       CURRENT_DATE - 3,
+       CAST(CURRENT_DATE AS TIMESTAMP) + INTERVAL '9' HOUR + INTERVAL '30' MINUTE,
+       CAST(CURRENT_DATE AS TIMESTAMP) + INTERVAL '13' HOUR,
+       'HALF_DAY', 3.50
+FROM EMPLOYEES e WHERE e.ID IN (2, 5);
+INSERT INTO ATTENDANCE (EMPLOYEE_ID, ATTENDANCE_DATE, CHECK_IN, CHECK_OUT, STATUS, WORKING_HOURS)
+SELECT e.ID, CURRENT_DATE - 3, null, null, 'LEAVE', null
+FROM EMPLOYEES e WHERE e.ID IN (1, 3, 4, 6);
+INSERT INTO ATTENDANCE (EMPLOYEE_ID, ATTENDANCE_DATE, CHECK_IN, CHECK_OUT, STATUS, WORKING_HOURS)
+SELECT e.ID, CURRENT_DATE - 4, null, null, 'ABSENT', null
+FROM EMPLOYEES e WHERE e.ID = 3;
+
+-- A recent hire so the dashboard shows new-hire KPIs and trend (id 7)
+INSERT INTO EMPLOYEES (EMPLOYEE_CODE, FIRST_NAME, LAST_NAME, EMAIL, PHONE, JOINING_DATE, EMPLOYMENT_TYPE, STATUS, DEPARTMENT_ID, DESIGNATION_ID)
+VALUES ('EMP007', 'Rohan', 'Kulkarni', 'rohan.kulkarni@hrgenius.local', '+91-9860044412', CURRENT_DATE - 10, 'FULL_TIME', 'ACTIVE', 1, 1);
+UPDATE EMPLOYEES SET MANAGER_ID = 1 WHERE ID = 7;
+
+-- =====================================================================
+-- Leave: 2 pending (approval queue), 1 approved, 1 rejected
+-- =====================================================================
+INSERT INTO LEAVE_REQUESTS (EMPLOYEE_ID, LEAVE_TYPE_ID, START_DATE, END_DATE, REASON, STATUS, APPROVED_BY)
+VALUES (2, 1, CURRENT_DATE + 5, CURRENT_DATE + 7, 'Family function', 'PENDING', null);
+INSERT INTO LEAVE_REQUESTS (EMPLOYEE_ID, LEAVE_TYPE_ID, START_DATE, END_DATE, REASON, STATUS, APPROVED_BY)
+VALUES (3, 2, CURRENT_DATE + 2, CURRENT_DATE + 3, 'Fever and medical rest', 'PENDING', null);
+INSERT INTO LEAVE_REQUESTS (EMPLOYEE_ID, LEAVE_TYPE_ID, START_DATE, END_DATE, REASON, STATUS, APPROVED_BY)
+VALUES (5, 1, CURRENT_DATE - 20, CURRENT_DATE - 19, 'Personal errand', 'APPROVED', 1);
+INSERT INTO LEAVE_REQUESTS (EMPLOYEE_ID, LEAVE_TYPE_ID, START_DATE, END_DATE, REASON, STATUS, APPROVED_BY)
+VALUES (4, 3, CURRENT_DATE - 40, CURRENT_DATE - 39, 'Overlapping with release', 'REJECTED', 1);
+
+-- =====================================================================
+-- Payroll: last month, all 6 employees, PROCESSED
+-- (Net = Basic + Allowances - Deductions - Tax, kept consistent)
+-- =====================================================================
+INSERT INTO PAYROLLS (EMPLOYEE_ID, PAY_MONTH, PAY_YEAR, BASIC_SALARY, ALLOWANCES, DEDUCTIONS, TAX, NET_SALARY, STATUS)
+SELECT e.ID,
+       EXTRACT(MONTH FROM CURRENT_DATE - INTERVAL '1' MONTH),
+       EXTRACT(YEAR  FROM CURRENT_DATE - INTERVAL '1' MONTH),
+       55000, 12000, 2500, 8250, 56250, 'PROCESSED'
+FROM EMPLOYEES e;
+UPDATE PAYROLLS SET BASIC_SALARY = 85000, NET_SALARY = 91250 WHERE EMPLOYEE_ID = 1;
+UPDATE PAYROLLS SET BASIC_SALARY = 32000, NET_SALARY = 33500 WHERE EMPLOYEE_ID = 5;
+
+-- =====================================================================
+-- Performance: one submitted review and one draft
+-- =====================================================================
+INSERT INTO PERFORMANCE_REVIEWS (EMPLOYEE_ID, REVIEWER_ID, REVIEW_PERIOD, RATING, STRENGTHS, WEAKNESSES, GOALS, COMMENTS, STATUS)
+VALUES (2, 1, '2025-H2', 4, 'Reliable delivery, strong testing habits', 'Presentation skills', 'Lead a module end to end', 'Consistent performer', 'SUBMITTED');
+INSERT INTO PERFORMANCE_REVIEWS (EMPLOYEE_ID, REVIEWER_ID, REVIEW_PERIOD, RATING, STRENGTHS, WEAKNESSES, GOALS, COMMENTS, STATUS)
+VALUES (3, 1, '2025-H2', 3, null, null, null, 'Draft — pending 1:1 discussion', 'DRAFT');
+
 INSERT INTO NOTIFICATIONS (USER_ID, TITLE, MESSAGE, TYPE, READ_FLAG)
 VALUES (1, 'Welcome to HRGenius', 'The workspace is ready. Start by exploring the dashboard.', 'SYSTEM', 0);

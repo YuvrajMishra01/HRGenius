@@ -1,0 +1,28 @@
+.grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 4px 16px;
+  min-width: 560px;
+
+  @media (max-width: 700px) {
+    grid-template-columns: 1fr;
+    min-width: 0;
+  }
+}
+
+.span-2 {
+  grid-column: 1 / -1;
+}
+
+.alert {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: #fdecea;
+  color: #b71c1c;
+  border: 1px solid #f5c6cb;
+  border-radius: 8px;
+  padding: 10px 14px;
+  margin-bottom: 12px;
+  font-size: 14px;
+}

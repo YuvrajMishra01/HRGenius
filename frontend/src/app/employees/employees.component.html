@@ -1,0 +1,168 @@
+<div class="page-head">
+  <div>
+    <h1>Employees</h1>
+    <p class="subtitle">Directory with server-side search, filters and pagination</p>
+  </div>
+  @if (canEdit()) {
+    <button mat-flat-button color="primary" (click)="openAdd()">
+      <mat-icon>person_add</mat-icon>
+      Add employee
+    </button>
+  }
+</div>
+
+<mat-card class="toolbar">
+  <mat-card-content>
+    <mat-form-field appearance="outline" class="search-field">
+      <mat-label>Search name, code or email</mat-label>
+      <input
+        matInput
+        [ngModel]="search()"
+        (ngModelChange)="onSearchInput($event)"
+        placeholder="e.g. Rohan or EMP007"
+      />
+      <mat-icon matPrefix>search</mat-icon>
+    </mat-form-field>
+
+    <mat-form-field appearance="outline">
+      <mat-label>Department</mat-label>
+      <mat-select [ngModel]="departmentId()" (ngModelChange)="departmentId.set($event); onFilterChange()">
+        <mat-option [value]="null">All departments</mat-option>
+        @for (d of departments(); track d.id) {
+          <mat-option [value]="d.id">{{ d.name }}</mat-option>
+        }
+      </mat-select>
+    </mat-form-field>
+
+    <mat-form-field appearance="outline">
+      <mat-label>Status</mat-label>
+      <mat-select [ngModel]="status()" (ngModelChange)="status.set($event); onFilterChange()">
+        <mat-option value="">All statuses</mat-option>
+        @for (s of statusOptions; track s) {
+          <mat-option [value]="s">{{ s }}</mat-option>
+        }
+      </mat-select>
+    </mat-form-field>
+
+    <mat-form-field appearance="outline">
+      <mat-label>Employment type</mat-label>
+      <mat-select [ngModel]="employmentType()" (ngModelChange)="employmentType.set($event); onFilterChange()">
+        <mat-option value="">All types</mat-option>
+        @for (t of typeOptions; track t) {
+          <mat-option [value]="t">{{ t }}</mat-option>
+        }
+      </mat-select>
+    </mat-form-field>
+  </mat-card-content>
+</mat-card>
+
+@if (loading()) {
+  <mat-progress-bar mode="indeterminate" aria-label="Loading employees" />
+}
+
+@if (loadError()) {
+  <mat-card class="state-card">
+    <mat-card-content class="state">
+      <mat-icon class="warn">cloud_off</mat-icon>
+      <h3>Couldn't load employees</h3>
+      <p>The backend didn't respond. Check that the API server is running.</p>
+      <button mat-stroked-button (click)="load()">
+        <mat-icon>refresh</mat-icon>
+        Retry
+      </button>
+    </mat-card-content>
+  </mat-card>
+} @else {
+  <mat-card class="table-card">
+    <table
+      mat-table
+      [dataSource]="rows()"
+      matSort
+      [matSortActive]="sortBy()"
+      [matSortDirection]="sortDir()"
+      (matSortChange)="onSort($event)"
+    >
+      <ng-container matColumnDef="employeeCode">
+        <th mat-header-cell *matHeaderCellDef mat-sort-header>Code</th>
+        <td mat-cell *matCellDef="let e" class="mono">{{ e.employeeCode }}</td>
+      </ng-container>
+
+      <ng-container matColumnDef="name">
+        <th mat-header-cell *matHeaderCellDef mat-sort-header>Name</th>
+        <td mat-cell *matCellDef="let e">
+          <div class="cell-name">
+            <span class="name-text">{{ e.firstName }} {{ e.lastName }}</span>
+            <span class="name-sub">{{ e.email }}</span>
+          </div>
+        </td>
+      </ng-container>
+
+      <ng-container matColumnDef="department">
+        <th mat-header-cell *matHeaderCellDef>Department</th>
+        <td mat-cell *matCellDef="let e">{{ e.departmentName ?? '—' }}</td>
+      </ng-container>
+
+      <ng-container matColumnDef="designation">
+        <th mat-header-cell *matHeaderCellDef>Designation</th>
+        <td mat-cell *matCellDef="let e">{{ e.designationTitle ?? '—' }}</td>
+      </ng-container>
+
+      <ng-container matColumnDef="joiningDate">
+        <th mat-header-cell *matHeaderCellDef mat-sort-header>Joined</th>
+        <td mat-cell *matCellDef="let e">{{ e.joiningDate | date: 'd MMM y' }}</td>
+      </ng-container>
+
+      <ng-container matColumnDef="employmentType">
+        <th mat-header-cell *matHeaderCellDef>Type</th>
+        <td mat-cell *matCellDef="let e">
+          <mat-chip-option class="type-chip" [selected]="false">{{ e.employmentType }}</mat-chip-option>
+        </td>
+      </ng-container>
+
+      <ng-container matColumnDef="status">
+        <th mat-header-cell *matHeaderCellDef mat-sort-header>Status</th>
+        <td mat-cell *matCellDef="let e">
+          <span class="status-badge" [class]="statusClass(e.status)">{{ e.status }}</span>
+        </td>
+      </ng-container>
+
+      <ng-container matColumnDef="actions">
+        <th mat-header-cell *matHeaderCellDef class="actions-col">Actions</th>
+        <td mat-cell *matCellDef="let e" class="actions-col">
+          @if (canEdit()) {
+            <button mat-icon-button (click)="openEdit(e)" matTooltip="Edit">
+              <mat-icon>edit</mat-icon>
+            </button>
+          }
+          @if (canDelete()) {
+            <button mat-icon-button (click)="confirmDelete(e)" matTooltip="Deactivate">
+              <mat-icon>person_off</mat-icon>
+            </button>
+          }
+        </td>
+      </ng-container>
+
+      <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
+      <tr mat-row *matRowDef="let row; columns: displayedColumns" class="data-row"></tr>
+
+      <tr class="mat-row" *matNoDataRow>
+        <td class="mat-cell no-data" [attr.colspan]="displayedColumns.length">
+          @if (search() || status() || employmentType() || departmentId() != null) {
+            No employees match the current filters.
+          } @else {
+            No employees yet.
+          }
+        </td>
+      </tr>
+    </table>
+
+    <mat-paginator
+      [length]="total()"
+      [pageIndex]="pageIndex()"
+      [pageSize]="pageSize()"
+      [pageSizeOptions]="[5, 10, 25, 50]"
+      (page)="onPage($event)"
+      showFirstLastButtons
+    />
+  </mat-card>
+}

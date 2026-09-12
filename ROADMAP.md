@@ -6,9 +6,9 @@ Status legend: ✅ done · 🔄 in progress · ⬜ pending
 |---|---|---|
 | 0 | Foundation: Spring Boot + Angular scaffolds, DB profiles, common API envelope, exception handling, health API, docs | ✅ |
 | 1 | Auth: User entity, BCrypt, JWT, Spring Security, Angular login/guards/interceptor | ✅ |
-| 2 | Admin dashboard with aggregated stats APIs + charts | ⬜ |
-| 3 | Employee CRUD, search/filter/pagination | ⬜ |
-| 4 | Department & designation management | ⬜ |
+| 2 | Admin dashboard with aggregated stats APIs + charts | ✅ |
+| 3 | Employee CRUD, search/filter/pagination | ✅ |
+| 4 | Department & designation management | ✅ |
 | 5 | Recruitment: jobs, candidates, applications, interviews | ⬜ |
 | 6 | Onboarding workflow (candidate → employee → completion %) | ⬜ |
 | 7 | Attendance: check-in/out, monthly views | ⬜ |

@@ -24,7 +24,17 @@ export const routes: Routes = [
         loadComponent: () =>
           import('./dashboard/dashboard.component').then((m) => m.DashboardComponent),
       },
-      // Phase 2+ adds employees, departments, recruitment, ... routes here.
+      {
+        path: 'employees',
+        loadComponent: () =>
+          import('./employees/employees.component').then((m) => m.EmployeesComponent),
+      },
+      {
+        path: 'departments',
+        loadComponent: () =>
+          import('./departments/departments.component').then((m) => m.DepartmentsComponent),
+      },
+      // Phase 5+ adds recruitment, onboarding, ... routes here.
       {
         path: '**',
         redirectTo: 'dashboard',

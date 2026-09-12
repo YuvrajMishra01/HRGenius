@@ -84,17 +84,134 @@ to that user (stateless logout without a blacklist). Returns `200` with
 `GET /api/v1/admin/only` — `@PreAuthorize("hasRole('ADMIN')")`. `200` for ADMIN, `403` for
 any other authenticated role. Demonstrates the authorization chain used by all future modules.
 
-## Phase 3+ — Employees (planned)
+## Phase 2 — Dashboard ✅
 
-| Method | Path | Roles |
-|---|---|---|
-| GET | /employees | ADMIN, HR, MANAGER |
-| GET | /employees/{id} | ADMIN, HR, MANAGER, self |
-| POST | /employees | ADMIN, HR |
-| PUT | /employees/{id} | ADMIN, HR |
-| DELETE | /employees/{id} | ADMIN |
+### GET /dashboard/stats — JWT required, roles: ADMIN, HR
 
-Standard query params on list endpoints: `page` (0-based), `size`, `sort` (e.g. `createdAt,desc`), plus module-specific filters.
+One round trip feeding the whole admin dashboard. All aggregation happens in the database
+(GROUP BY / aggregate queries) — never in Java.
+
+Response `data` shape:
+
+```json
+{
+  "kpis": {
+    "totalEmployees": 7, "activeEmployees": 7, "newHiresLast30Days": 1,
+    "openPositions": 2, "totalCandidates": 4, "pendingLeaveRequests": 2
+  },
+  "departmentDistribution": [{ "name": "Engineering", "count": 4 }],
+  "hiringTrend": [{ "year": 2026, "month": 9, "count": 1 }],
+  "hiringPipeline": [{ "status": "APPLIED", "count": 1 }],
+  "attendanceToday": {
+    "day": "2026-09-11", "present": 0, "absent": 0, "halfDay": 0,
+    "onLeave": 0, "holiday": 0, "totalRecords": 0, "attendancePercent": 0.0
+  },
+  "leaveSummary": [{ "status": "PENDING", "count": 2 }],
+  "payrollThisMonth": { "year": 2026, "month": 9, "payslips": 0, "totalNet": 0 },
+  "recentHires": [{ "id": 7, "employeeCode": "EMP007", "fullName": "Rohan Kulkarni",
+                    "department": "Engineering", "designation": "Software Engineer",
+                    "joiningDate": "2026-09-01", "status": "ACTIVE" }],
+  "pendingApprovals": [{ "id": 2, "employeeName": "Vikram Singh",
+                          "leaveType": "SICK_LEAVE", "startDate": "2026-09-13",
+                          "endDate": "2026-09-14", "status": "PENDING" }],
+  "upcomingInterviews": [{ "id": 1, "candidateName": "Kavya Rao",
+                           "jobTitle": "Backend Developer",
+                           "interviewDate": "2026-09-13T18:02:00+05:30", "mode": "ONLINE" }]
+}
+```
+
+- `hiringPipeline` always contains all six stages in stable order (zero-filled).
+- `hiringTrend` covers the trailing 12 months; empty months are absent.
+- `recentHires` = last 30 days, max 5 · `pendingApprovals` = oldest first, max 5 ·
+  `upcomingInterviews` = next 5 SCHEDULED from now.
+- Errors: `401` unauthenticated · `403` MANAGER/EMPLOYEE (manager-scoped variant planned).
+
+## Phase 3 — Employees ✅
+
+Base path: `/api/v1/employees`. List endpoints support
+`?page=0&size=10&sortBy=employeeCode&sortDir=asc` plus filters.
+
+| Method | Path | Roles | Notes |
+|---|---|---|---|
+| GET | /employees | ADMIN, HR, MANAGER | paginated, sortable, filterable |
+| GET | /employees/{id} | ADMIN, HR, MANAGER | 404 when unknown |
+| POST | /employees | ADMIN, HR | 201 · 400 validation · 409 duplicates · 404 bad FK |
+| PUT | /employees/{id} | ADMIN, HR | 200 · same error contract as POST |
+| DELETE | /employees/{id} | ADMIN | **soft delete** → status TERMINATED |
+
+### GET /employees — query parameters
+
+| Param | Meaning |
+|---|---|
+| `search` | case-insensitive contains across name, code, email |
+| `departmentId` | exact department |
+| `status` | ACTIVE, ON_LEAVE, RESIGNED, TERMINATED |
+| `employmentType` | FULL_TIME, PART_TIME, CONTRACT, INTERN |
+| `page` / `size` | 0-based page, size capped at 100 |
+| `sortBy` | whitelist: employeeCode, firstName, lastName, email, joiningDate, status, createdAt |
+| `sortDir` | asc / desc (anything but "desc" = asc) |
+
+Response `data`: `{ content, page, size, totalElements, totalPages, first, last }`.
+
+### POST/PUT body
+
+```json
+{
+  "employeeCode": "EMP010",
+  "firstName": "Asha", "lastName": "Kaur",
+  "email": "asha.kaur@hrgenius.local",
+  "phone": "+91-…", "dateOfBirth": "1996-04-02", "gender": "FEMALE",
+  "address": "Pune, India",
+  "joiningDate": "2026-09-01",
+  "employmentType": "FULL_TIME", "status": "ACTIVE",
+  "departmentId": 1, "designationId": 1, "managerId": null
+}
+```
+
+Validation errors return `400` with `errors: { field: message }`. Business conflicts
+(duplicate code/email) return `409`. A designation from a different department is `400`
+(`IllegalArgumentException`). Self-management (`managerId = id`) is `409`.
+
+### DELETE semantics
+
+Soft delete only: the row stays (history intact) with `status: TERMINATED`. Returns `409`
+while the employee still manages others ("Reassign managed employees…").
+
+### Supporting read endpoints
+
+The Phase 3 dropdown endpoints graduated to full CRUD in Phase 4 — see the
+Departments & Designations section below.
+
+## Phase 4 — Departments & Designations ✅
+
+Base paths: `/api/v1/departments` and `/api/v1/designations`. Reads: ADMIN, HR, MANAGER.
+Writes (create/update/delete): **ADMIN only**.
+
+| Method | Path | Success | Errors |
+|---|---|---|---|
+| GET | /departments | 200 — with `managerName` + `employeeCount` | 401 |
+| GET | /departments/{id} | 200 | 404 |
+| POST | /departments | 201 | 400 validation · 409 duplicate name |
+| PUT | /departments/{id} | 200 | 400 / 404 / 409 |
+| DELETE | /departments/{id} | 204 | 404 · **409 while it still has employees** |
+| GET | /designations?departmentId= | 200 — with `departmentName` + `employeeCount` | 401 |
+| POST | /designations | 201 | 400 · 409 duplicate title per department · 404 bad FK |
+| PUT | /designations/{id} | 200 | 400 / 404 / 409 |
+| DELETE | /designations/{id} | 204 | 404 · **409 while employees hold it** |
+
+Department body: `{ "name" (required, unique), "description", "managerId" (optional,
+must reference an existing employee) }`. Responses carry `managerName` and
+`employeeCount`, computed with grouped count queries (no N+1). Designation body:
+`{ "title" (required), "departmentId", "description" }` — `title` is unique within a
+department. Deleting a non-empty department or an in-use designation returns `409`.
+
+### GET /employees/options
+
+`GET /api/v1/employees/options?search=` — lightweight manager-picker projection:
+`[{ "id": 3, "employeeCode": "EMP003", "fullName": "Vikram Singh",
+"departmentName": "Engineering" }]` (TERMINATED excluded; optional search across name
+and code). Used by the department dialog (manager) and the employee dialog (manager
+picker, replacing the Phase 3 placeholder).
 
 ## JWT & Security Notes
 

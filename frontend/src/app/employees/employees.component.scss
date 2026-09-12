@@ -1,0 +1,146 @@
+.page-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 16px;
+
+  h1 {
+    margin: 0;
+    font-size: 26px;
+    font-weight: 600;
+  }
+
+  .subtitle {
+    margin: 2px 0 0;
+    color: rgba(0, 0, 0, 0.55);
+    font-size: 13.5px;
+  }
+}
+
+.toolbar mat-card-content {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  align-items: flex-start;
+  padding-bottom: 4px;
+
+  .search-field {
+    min-width: 280px;
+    flex: 1;
+  }
+
+  mat-form-field {
+    width: 190px;
+  }
+}
+
+.table-card {
+  mat-paginator {
+    border-top: 1px solid rgba(0, 0, 0, 0.06);
+  }
+}
+
+table.mat-table {
+  width: 100%;
+}
+
+.mono {
+  font-family: 'Roboto Mono', ui-monospace, monospace;
+  font-size: 13px;
+}
+
+.cell-name {
+  display: flex;
+  flex-direction: column;
+
+  .name-text {
+    font-weight: 500;
+  }
+
+  .name-sub {
+    font-size: 12px;
+    color: rgba(0, 0, 0, 0.5);
+  }
+}
+
+.status-badge {
+  display: inline-block;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.4px;
+  border-radius: 10px;
+  padding: 3px 10px;
+
+  &.active {
+    background: #e8f5e9;
+    color: #2e7d32;
+  }
+
+  &.on-leave {
+    background: #fff3e0;
+    color: #ef6c00;
+  }
+
+  &.resigned {
+    background: #e3f2fd;
+    color: #1565c0;
+  }
+
+  &.terminated {
+    background: #ffebee;
+    color: #c62828;
+  }
+}
+
+.type-chip {
+  font-size: 11px;
+}
+
+.actions-col {
+  width: 110px;
+  text-align: right;
+  white-space: nowrap;
+}
+
+.data-row {
+  &:hover {
+    background: rgba(63, 81, 181, 0.04);
+  }
+}
+
+.no-data {
+  text-align: center;
+  padding: 28px 0;
+  color: rgba(0, 0, 0, 0.5);
+}
+
+.state-card {
+  max-width: 560px;
+  margin: 24px auto;
+
+  .state {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    gap: 8px;
+    padding: 24px;
+
+    mat-icon.warn {
+      font-size: 40px;
+      width: 40px;
+      height: 40px;
+      color: #ef6c00;
+    }
+
+    h3 {
+      margin: 4px 0;
+    }
+
+    p {
+      margin: 0;
+      color: rgba(0, 0, 0, 0.6);
+    }
+  }
+}
