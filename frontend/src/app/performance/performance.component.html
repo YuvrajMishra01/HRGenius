@@ -1,0 +1,127 @@
+<div class="page">
+  <div class="page-head">
+    <div>
+      <h1>Performance</h1>
+      <p class="sub">Reviews, ratings, and the DRAFT → SUBMITTED → ACKNOWLEDGED lifecycle</p>
+    </div>
+    @if (canWrite()) {
+      <button mat-flat-button color="primary" (click)="createReview()">
+        <mat-icon>add</mat-icon> New review
+      </button>
+    }
+  </div>
+
+  @if (error(); as err) {
+    <div class="alert"><mat-icon inline>error_outline</mat-icon><span>{{ err }}</span></div>
+  }
+
+  <!-- Summary -->
+  @if (summary(); as s) {
+    <div class="kpis">
+      <div class="kpi-box">
+        <span class="kpi-label">Total reviews</span>
+        <span class="kpi-value">{{ s.totalReviews }}</span>
+      </div>
+      <div class="kpi-box">
+        <span class="kpi-label">Draft</span>
+        <span class="kpi-value warn">{{ s.draftCount }}</span>
+      </div>
+      <div class="kpi-box">
+        <span class="kpi-label">Submitted</span>
+        <span class="kpi-value info">{{ s.submittedCount }}</span>
+      </div>
+      <div class="kpi-box">
+        <span class="kpi-label">Acknowledged</span>
+        <span class="kpi-value ok">{{ s.acknowledgedCount }}</span>
+      </div>
+      <div class="kpi-box">
+        <span class="kpi-label">Average rating</span>
+        <span class="kpi-value">{{ s.averageRating ?? '—' }} <span class="stars">/ 5</span></span>
+      </div>
+      <div class="kpi-box dist">
+        <span class="kpi-label">Distribution</span>
+        <div class="dist-row">
+          @for (b of s.ratingDistribution; track b.rating) {
+            <span class="dist-chip">{{ stars(b.rating) }} ×{{ b.count }}</span>
+          } @empty {
+            <span class="muted small">No official ratings yet</span>
+          }
+        </div>
+      </div>
+    </div>
+  }
+
+  <!-- Filters -->
+  <div class="filters">
+    @for (s of statuses; track s) {
+      <button class="chip" [class.active]="statusFilter() === s" (click)="setFilter(s)">
+        {{ s === 'ALL' ? 'All' : s.charAt(0) + s.slice(1).toLowerCase() }}
+      </button>
+    }
+  </div>
+
+  <!-- Reviews -->
+  @if (loading()) {
+    <p class="muted">Loading…</p>
+  } @else if (filteredReviews().length === 0) {
+    <p class="muted">No reviews match this filter.</p>
+  } @else {
+    <table class="rev-table">
+      <thead>
+        <tr>
+          <th>Employee</th>
+          <th>Period</th>
+          <th>Reviewer</th>
+          <th>Rating</th>
+          <th>Status</th>
+          <th>Goals</th>
+          @if (canWrite()) {
+            <th class="actions-col">Actions</th>
+          }
+        </tr>
+      </thead>
+      <tbody>
+        @for (r of filteredReviews(); track r.id) {
+          <tr>
+            <td>
+              <div class="emp-name">{{ r.employeeName }}</div>
+              <div class="emp-meta">{{ r.employeeCode }} @if (r.departmentName) {· {{ r.departmentName }}}</div>
+            </td>
+            <td>{{ r.reviewPeriod }}</td>
+            <td>{{ r.reviewerName }}</td>
+            <td>
+              @if (r.rating != null) {
+                <span class="rating" [class.low]="r.rating <= 2">{{ stars(r.rating) }}</span>
+              } @else {
+                <span class="muted">—</span>
+              }
+            </td>
+            <td><span class="status-pill" [attr.data-status]="r.status">{{ r.status }}</span></td>
+            <td class="goals-cell" [matTooltip]="r.goals || ''">{{ r.goals || '—' }}</td>
+            @if (canWrite()) {
+              <td class="actions-col">
+                @if (r.status === 'DRAFT') {
+                  <button mat-icon-button matTooltip="Edit draft" (click)="edit(r)">
+                    <mat-icon>edit</mat-icon>
+                  </button>
+                  <button mat-icon-button color="primary" matTooltip="Rate & submit" (click)="rate(r)">
+                    <mat-icon>star</mat-icon>
+                  </button>
+                  <button mat-icon-button matTooltip="Delete draft" (click)="deleteReview(r)">
+                    <mat-icon>delete</mat-icon>
+                  </button>
+                } @else if (r.status === 'SUBMITTED') {
+                  <button mat-icon-button color="primary" matTooltip="Acknowledge" (click)="acknowledge(r)">
+                    <mat-icon>how_to_reg</mat-icon>
+                  </button>
+                } @else {
+                  <span class="muted small">Complete</span>
+                }
+              </td>
+            }
+          </tr>
+        }
+      </tbody>
+    </table>
+  }
+</div>

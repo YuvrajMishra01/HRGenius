@@ -174,3 +174,11 @@ VALUES (3, 1, '2025-H2', 3, null, null, null, 'Draft — pending 1:1 discussion'
 
 INSERT INTO NOTIFICATIONS (USER_ID, TITLE, MESSAGE, TYPE, READ_FLAG)
 VALUES (1, 'Welcome to HRGenius', 'The workspace is ready. Start by exploring the dashboard.', 'SYSTEM', 0);
+
+-- =====================================================================
+-- Onboarding: EMP007 (Rohan, hired 10 days ago) is mid-onboarding —
+-- 4 of 8 checklist items done (50%). Checklist is a JSON array in a CLOB.
+-- =====================================================================
+INSERT INTO ONBOARDINGS (EMPLOYEE_ID, JOINING_DATE, STATUS, COMPLETION_PERCENTAGE, CHECKLIST)
+VALUES (7, CURRENT_DATE - 10, 'IN_PROGRESS', 50.00,
+  '[{"label":"Offer letter signed","done":true},{"label":"Background verification completed","done":true},{"label":"ID proofs & documents collected","done":true},{"label":"Employee account & email created","done":true},{"label":"Workstation / equipment assigned","done":false},{"label":"Payroll & tax details submitted","done":false},{"label":"Policy & code-of-conduct briefing","done":false},{"label":"Team introduction & mentor assigned","done":false}]');

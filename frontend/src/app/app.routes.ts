@@ -34,7 +34,37 @@ export const routes: Routes = [
         loadComponent: () =>
           import('./departments/departments.component').then((m) => m.DepartmentsComponent),
       },
-      // Phase 5+ adds recruitment, onboarding, ... routes here.
+      {
+        path: 'recruitment',
+        loadComponent: () =>
+          import('./recruitment/recruitment.component').then((m) => m.RecruitmentComponent),
+      },
+      {
+        path: 'onboarding',
+        loadComponent: () =>
+          import('./onboarding/onboarding.component').then((m) => m.OnboardingComponent),
+      },
+      {
+        path: 'attendance',
+        loadComponent: () =>
+          import('./attendance/attendance.component').then((m) => m.AttendanceComponent),
+      },
+      {
+        path: 'leave',
+        loadComponent: () =>
+          import('./leave/leave.component').then((m) => m.LeaveComponent),
+      },
+      {
+        path: 'payroll',
+        loadComponent: () =>
+          import('./payroll/payroll.component').then((m) => m.PayrollComponent),
+      },
+      {
+        path: 'performance',
+        loadComponent: () =>
+          import('./performance/performance.component').then((m) => m.PerformanceComponent),
+      },
+      // Phase 11+ adds documents, ... routes here.
       {
         path: '**',
         redirectTo: 'dashboard',

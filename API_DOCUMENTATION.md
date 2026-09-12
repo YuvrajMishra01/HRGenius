@@ -207,11 +207,182 @@ department. Deleting a non-empty department or an in-use designation returns `40
 
 ### GET /employees/options
 
-`GET /api/v1/employees/options?search=` — lightweight manager-picker projection:
-`[{ "id": 3, "employeeCode": "EMP003", "fullName": "Vikram Singh",
-"departmentName": "Engineering" }]` (TERMINATED excluded; optional search across name
-and code). Used by the department dialog (manager) and the employee dialog (manager
-picker, replacing the Phase 3 placeholder).
+`GET /api/v1/employees/options?search=` — lightweight picker projection:
+`[{ "id": 3, "label": "Vikram Singh (EMP003)" }]` (TERMINATED excluded; optional search
+across name and code). Used by the department dialog (manager), the employee dialog
+(manager picker), and interview scheduling (interviewer picker).
+
+## Phase 5 — Recruitment ✅
+
+Reads: ADMIN, HR, MANAGER · Writes (all four resources): **ADMIN, HR**.
+
+| Method | Path | Success | Errors |
+|---|---|---|---|
+| GET | /jobs | 200 — `[{ …job, applicationCount }]` | 401 |
+| POST | /jobs | 201 | 400 validation · 404 unknown department |
+| PUT | /jobs/{id} | 200 | 400 / 404 |
+| DELETE | /jobs/{id} | 200 | 404 · **409 while applications exist** |
+| GET | /candidates | 200 — with `applicationCount`, newest first | 401 |
+| POST | /candidates | 201 | 400 validation · **409 duplicate email** |
+| PUT | /candidates/{id} | 200 | 400 / 404 / 409 email owned by another candidate |
+| DELETE | /candidates/{id} | 200 | 404 · **409 while applications exist** |
+| GET | /applications | 200 — candidate/job/department resolved | 401 |
+| POST | /applications | 201 | 400 job not OPEN · **409 duplicate (candidate, job)** |
+| PATCH | /applications/{id}/status | 200 | 404 · **409 illegal stage move** |
+| GET | /interviews | 200 — candidate/job/interviewer resolved | 401 |
+| POST | /interviews | 201 | 404 · 400 past date · **409 wrong stage or live interview exists** |
+| PATCH | /interviews/{id} | 200 — reschedule (SCHEDULED only) | 404 / 409 |
+| POST | /interviews/{id}/complete | 200 — feedback + result | 404 / 409 |
+| POST | /interviews/{id}/cancel | 200 | 404 / 409 |
+
+### Pipeline transition map
+
+`APPLIED → SCREENING → SHORTLISTED → INTERVIEW → SELECTED | REJECTED`, where REJECTED
+is reachable from SCREENING, SHORTLISTED and INTERVIEW. Terminal stages (`SELECTED`,
+`REJECTED`) cannot move; any other move is `409` with
+`Cannot move application from <current> to <target>`. Candidate status is kept in sync
+with pipeline progress.
+
+### Interview rules
+
+Scheduling is allowed only for `SHORTLISTED` or `INTERVIEW` applications and
+**auto-advances SHORTLISTED → INTERVIEW**. Only one live (`SCHEDULED`) interview per
+application. Completing records feedback + result (PASS/FAIL/ON_HOLD) but deliberately
+does not move the pipeline — HR moves applications explicitly.
+
+## Phase 6 — Onboarding ✅
+
+Reads: ADMIN, HR, MANAGER · Writes: **ADMIN, HR**.
+
+| Method | Path | Success | Errors |
+|---|---|---|---|
+| GET | /onboardings | 200 — employee/application resolved + checklist | 401 |
+| POST | /onboardings/start-application | 201 — converts SELECTED → employee | 404 · **409 not SELECTED / already onboarded** |
+| POST | /onboardings/start-employee | 201 — record for an existing employee | 404 · **409 record exists** |
+| PATCH | /onboardings/{id}/checklist | 200 — `{ itemIndex, done }` | 404 · 400 bad index |
+
+### Conversion (POST /onboardings/start-application)
+
+Requires a `SELECTED` application (one onboarding per application). Creates the
+Employee: next free `EMP###` code, name split from the candidate, generated unique
+`<local-part>@hrgenius.local` email, job's department, ACTIVE, FULL_TIME. Marks the
+candidate **HIRED** and opens the default 8-item checklist at PENDING / 0%.
+Joining date defaults to today.
+
+### Checklist
+
+Stored as a JSON array in the `CHECKLIST` CLOB (JPA converter). Toggling an item
+recomputes `completionPercentage` (done/total × 100) and derives status:
+0 done → `PENDING`, partial → `IN_PROGRESS`, all done → `COMPLETED`.
+A null/empty checklist column reads as the default 8-item template, all unchecked.
+
+## Phase 7 — Attendance ✅
+
+Reads: ADMIN, HR, MANAGER · Writes (check-in/out, marking): **ADMIN, HR**
+(user accounts are not yet linked to employees, so self-service is deferred).
+
+| Method | Path | Success | Errors |
+|---|---|---|---|
+| GET | /attendance/today | 200 — `{ date, summary, records }` | 401 |
+| GET | /attendance/month?year=&month= | 200 — per-employee roll-up + day map (defaults to current month) | 401 |
+| POST | /attendance/check-in?employeeId= | 201 — PRESENT record with check-in | 404 · **409 already checked in** |
+| POST | /attendance/check-out?employeeId= | 200 — sets check-out + `workingHours` | 404 · **409 no check-in / already checked out** |
+| POST | /attendance/mark | 200 — upsert `{ employeeId, date, status }` | 404 · 400 validation |
+
+### Rules
+
+- One record per employee per day (`UK_ATT_EMP_DATE`).
+- Check-in creates a `PRESENT` record; check-out computes `workingHours`
+  (minutes/60, 2 dp; negative duration clamps to 0).
+- `mark` upserts the day: working statuses (PRESENT/HALF_DAY) keep existing
+  check-in/out times; ABSENT/LEAVE/HOLIDAY **clear** them (and hours).
+- Month rows cover every employee (0-record rows included);
+  `attendancePercent = (present + 0.5 × halfDay) / totalRecords × 100`, rounded to 1 dp.
+- Statuses: `PRESENT, HALF_DAY, ABSENT, LEAVE, HOLIDAY` (CK_ATT_STATUS).
+
+## Phase 8 — Leave ✅
+
+Reads: ADMIN, HR, MANAGER · Writes (types, requests, decisions, deletes): **ADMIN, HR**.
+All success payloads use the standard `{ success, message, data }` envelope; DELETE returns 204.
+
+| Method | Path | Success | Errors |
+|---|---|---|---|
+| GET | /leave/types | 200 — all types with `usageCount` | 401 |
+| POST | /leave/types | 201 — created type | 400 validation · **409 duplicate name** |
+| PATCH | /leave/types/{id} | 200 — updated type | 404 · **409 duplicate name** |
+| DELETE | /leave/types/{id} | 204 | 404 · **409 type has requests** |
+| GET | /leave/requests?status= | 200 — rich list (optional status filter, newest first) | 401 |
+| POST | /leave/requests | 201 — PENDING request with `workingDays` | 404 · 400 range · **409 overlap / insufficient balance** |
+| PATCH | /leave/requests/{id}/approve | 200 — APPROVED + `approverEmail` | 404 · **409 not PENDING · 409 balance re-check** |
+| PATCH | /leave/requests/{id}/reject | 200 — REJECTED + `approverEmail` | 404 · **409 not PENDING** |
+| PATCH | /leave/requests/{id}/cancel | 200 — PENDING → CANCELLED | 404 · **409 not PENDING** |
+| DELETE | /leave/requests/{id} | 204 — decided requests only | 404 · **409 request is PENDING** |
+| GET | /leave/balances/{employeeId}?year= | 200 — per-type `usedDays` / `remainingDays` | 404 |
+| GET | /leave/summary | 200 — page KPIs (`approvalRate` 1 dp) | 401 |
+
+### Rules
+
+- Balance accounting counts **calendar days** of APPROVED requests whose start date falls
+  inside the year; the API's `workingDays` (display) excludes SATURDAY/SUNDAY.
+- Overlap guard: a new request may not intersect an existing PENDING/APPROVED request of the
+  same employee (single query; CANCELLED/REJECTED don't block).
+- Balance guard runs at **submission and again at approval**, so concurrent approvals cannot
+  overdraw a type's `yearlyLimit`.
+- Approval records the deciding user (`APPROVED_BY` audit column) from the JWT principal.
+- Cancel keeps history (PENDING → CANCELLED); hard delete is allowed only for decided requests.
+
+## Phase 9 — Payroll ✅
+
+Reads: ADMIN, HR, MANAGER · Writes (run, components, lifecycle, delete): **ADMIN, HR**.
+The EMPLOYEE role has no payroll access (sensitive financial data).
+All success payloads use the standard `{ success, message, data }` envelope; DELETE returns 204.
+
+| Method | Path | Success | Errors |
+|---|---|---|---|
+| POST | /payrolls/run | 201 — `{ year, month, created, skipped, periodPayslips, periodTotalNet }` | 400 validation · **400 future period** |
+| GET | /payrolls | 200 — all periods with totals, newest first | 401 |
+| GET | /payrolls/{year}/{month} | 200 — `{ summary, payslips }` | 400 range |
+| PATCH | /payrolls/{id}/components | 200 — updated row, net recomputed | 404 · 400 negative · **409 PAID immutable** |
+| PATCH | /payrolls/{id}/process | 200 — DRAFT → PROCESSED | 404 · **409 not DRAFT** |
+| PATCH | /payrolls/{id}/pay | 200 — PROCESSED → PAID | 404 · **409 not PROCESSED** |
+| DELETE | /payrolls/{id} | 204 — DRAFT/PROCESSED only | 404 · **409 PAID permanent** |
+
+### Rules
+
+- A run creates one DRAFT payslip per ACTIVE employee not yet in the period; existing rows
+  are skipped and never modified (idempotent re-runs).
+- New drafts are pre-filled from the employee's latest payslip (or zeros) — but `netSalary`
+  is always **recomputed** as basic + allowances − deductions − tax, clamped at 0, never
+  copied from stored values.
+- Lifecycle is one-way `DRAFT → PROCESSED → PAID`; PAID payslips are permanent financial
+  records (no edit, no re-pay, no delete). Corrections after payment require a new run.
+- Money is BigDecimal end-to-end (NUMBER(12,2)); no floating point anywhere in the math.
+- Period validation: month 1–12, year 2000–2999, no future periods.
+
+## Phase 10 — Performance ✅
+
+Reads (reviews, summary): ADMIN, HR, MANAGER · Writes (create, edit, rate, acknowledge, delete): **ADMIN, HR**.
+All success payloads use the standard `{ success, message, data }` envelope; DELETE returns 204.
+
+| Method | Path | Success | Errors |
+|---|---|---|---|
+| GET | /performance/reviews | 200 — list with employee/reviewer names | 401 |
+| GET | /performance/summary | 200 — counts per status, average rating (official ratings only), distribution | 401 |
+| POST | /performance/reviews | 201 — DRAFT review | 400 validation · 404 unknown employee/reviewer · **409 duplicate employee+period** |
+| PATCH | /performance/reviews/{id} | 200 — edited DRAFT | 404 · **409 not DRAFT** |
+| PATCH | /performance/reviews/{id}/rate | 200 — rating 1–5 + narrative, DRAFT → SUBMITTED | 404 · 400 rating out of range · **409 not DRAFT** |
+| PATCH | /performance/reviews/{id}/acknowledge | 200 — SUBMITTED → ACKNOWLEDGED | 404 · **409 not SUBMITTED** |
+| DELETE | /performance/reviews/{id} | 204 — DRAFT only | 404 · **409 not DRAFT** |
+
+### Rules
+
+- One review per employee per period — duplicates are rejected with 409 at creation.
+- Lifecycle is one-way `DRAFT → SUBMITTED → ACKNOWLEDGED`; only DRAFT reviews can be edited
+  or deleted. The employee of a review can never be assigned as its own reviewer.
+- `rating` (1–5) may exist on a DRAFT as reviewer notes, but aggregates (average, distribution)
+  count **SUBMITTED/ACKNOWLEDGED only** — a draft rating is never official.
+- Acknowledge is the employee sign-off: no rating required, no comments, idempotent-free
+  (second attempt 409).
 
 ## JWT & Security Notes
 

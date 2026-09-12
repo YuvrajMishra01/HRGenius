@@ -9,12 +9,12 @@ Status legend: ✅ done · 🔄 in progress · ⬜ pending
 | 2 | Admin dashboard with aggregated stats APIs + charts | ✅ |
 | 3 | Employee CRUD, search/filter/pagination | ✅ |
 | 4 | Department & designation management | ✅ |
-| 5 | Recruitment: jobs, candidates, applications, interviews | ⬜ |
-| 6 | Onboarding workflow (candidate → employee → completion %) | ⬜ |
-| 7 | Attendance: check-in/out, monthly views | ⬜ |
-| 8 | Leave: types, balance, request → manager approval workflow | ⬜ |
-| 9 | Payroll: salary structure, monthly run, payslip (BigDecimal) | ⬜ |
-| 10 | Performance: goals, KPIs, manager review, ratings | ⬜ |
+| 5 | Recruitment: jobs, candidates, applications, interviews | ✅ |
+| 6 | Onboarding workflow (candidate → employee → completion %) | ✅ |
+| 7 | Attendance: check-in/out, monthly views | ✅ |
+| 8 | Leave: types, balance, request → manager approval workflow | ✅ |
+| 9 | Payroll: salary structure, monthly run, payslip (BigDecimal) | ✅ |
+| 10 | Performance: goals, KPIs, manager review, ratings | ✅ |
 | 11 | Documents: upload/download/delete, metadata, validation | ⬜ |
 | 12 | Notifications: events + unread badge | ⬜ |
 | 13 | Analytics: real-data charts | ⬜ |

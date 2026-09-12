@@ -1,0 +1,185 @@
+<div class="page">
+  <div class="page-head">
+    <div>
+      <h1>Leave Management</h1>
+      <p class="sub">Requests, approvals, and yearly balances</p>
+    </div>
+    @if (canWrite()) {
+      <div class="head-actions">
+        <button mat-stroked-button (click)="openTypeDialog(null)">
+          <mat-icon>category</mat-icon> New type
+        </button>
+        <button mat-flat-button color="primary" (click)="openNewRequestDialog()">
+          <mat-icon>add</mat-icon> New request
+        </button>
+      </div>
+    }
+  </div>
+
+  @if (error(); as err) {
+    <div class="alert"><mat-icon inline>error_outline</mat-icon><span>{{ err }}</span></div>
+  }
+
+  <!-- KPI strip -->
+  @if (summary(); as s) {
+    <div class="kpis">
+      <mat-card class="kpi">
+        <mat-card-content>
+          <div class="kpi-label">Pending approval</div>
+          <div class="kpi-value warn">{{ s.pendingCount }}</div>
+        </mat-card-content>
+      </mat-card>
+      <mat-card class="kpi">
+        <mat-card-content>
+          <div class="kpi-label">Approved this year</div>
+          <div class="kpi-value ok">{{ s.approvedThisYear }}</div>
+        </mat-card-content>
+      </mat-card>
+      <mat-card class="kpi">
+        <mat-card-content>
+          <div class="kpi-label">Rejected</div>
+          <div class="kpi-value bad">{{ s.rejectedCount }}</div>
+        </mat-card-content>
+      </mat-card>
+      <mat-card class="kpi">
+        <mat-card-content>
+          <div class="kpi-label">Approval rate</div>
+          <div class="kpi-value">{{ s.approvalRate }}%</div>
+        </mat-card-content>
+      </mat-card>
+    </div>
+  }
+
+  <div class="content-grid">
+    <!-- Requests -->
+    <div class="requests-panel">
+      <div class="panel-head">
+        <h2>Requests</h2>
+        <div class="filters">
+          @for (s of statuses; track s) {
+            <button class="chip" [class.active]="statusFilter() === s" (click)="setFilter(s)">
+              {{ s === 'ALL' ? 'All' : s.charAt(0) + s.slice(1).toLowerCase() }}
+            </button>
+          }
+        </div>
+      </div>
+
+      @if (loading()) {
+        <p class="muted">Loading…</p>
+      } @else if (requests().length === 0) {
+        <p class="muted">No leave requests match this filter.</p>
+      } @else {
+        <table class="req-table">
+          <thead>
+            <tr>
+              <th>Employee</th>
+              <th>Type</th>
+              <th>Dates</th>
+              <th class="num">Days</th>
+              <th>Status</th>
+              <th>Reason</th>
+              @if (canWrite()) {
+                <th class="actions-col">Actions</th>
+              }
+            </tr>
+          </thead>
+          <tbody>
+            @for (r of requests(); track r.id) {
+              <tr>
+                <td>
+                  <div class="emp-name">{{ r.employeeName }}</div>
+                  <div class="emp-meta">{{ r.employeeCode }} @if (r.departmentName) {· {{ r.departmentName }}}</div>
+                </td>
+                <td>{{ r.leaveTypeName }}</td>
+                <td class="dates">{{ r.startDate | date : 'MMM d' }} – {{ r.endDate | date : 'MMM d' }}</td>
+                <td class="num">{{ r.workingDays }}</td>
+                <td><span class="status-pill" [attr.data-status]="r.status">{{ r.status }}</span></td>
+                <td class="reason" [matTooltip]="r.approverEmail ? ('Decided by ' + r.approverEmail) : null">
+                  {{ r.reason || '—' }}
+                </td>
+                @if (canWrite()) {
+                  <td class="actions-col">
+                    @if (r.status === 'PENDING') {
+                      <button mat-icon-button color="primary" matTooltip="Approve" (click)="approve(r)">
+                        <mat-icon>check_circle</mat-icon>
+                      </button>
+                      <button mat-icon-button matTooltip="Reject" (click)="reject(r)">
+                        <mat-icon>cancel</mat-icon>
+                      </button>
+                    } @else if (r.status === 'APPROVED' || r.status === 'REJECTED') {
+                      <span class="muted small">Decided</span>
+                    }
+                  </td>
+                }
+              </tr>
+            }
+          </tbody>
+        </table>
+      }
+    </div>
+
+    <!-- Balances side panel -->
+    <div class="balance-panel">
+      <div class="panel-head">
+        <h2>Balances</h2>
+      </div>
+      <mat-form-field appearance="outline" class="balance-picker">
+        <mat-label>Employee</mat-label>
+        <mat-select [value]="balanceEmployeeId()" (selectionChange)="loadBalance($event.value)">
+          @for (e of employeeOptions(); track e.id) {
+            <mat-option [value]="e.id">{{ e.label }}</mat-option>
+          }
+        </mat-select>
+      </mat-form-field>
+
+      @if (balance(); as b) {
+        <p class="muted small balance-year">{{ b.employeeName }} · {{ b.year }}</p>
+        @for (row of b.balances; track row.leaveTypeId) {
+          <div class="balance-row">
+            <div class="balance-top">
+              <span class="balance-name">{{ row.leaveTypeName }}</span>
+              <span class="balance-nums">{{ row.usedDays }} / {{ row.yearlyLimit }} used</span>
+            </div>
+            <mat-progress-bar
+              mode="determinate"
+              [value]="row.yearlyLimit > 0 ? (row.usedDays * 100 / row.yearlyLimit) : 0"
+              [class.high]="row.usedDays / row.yearlyLimit > 0.8" />
+            <div class="balance-remaining">{{ row.remainingDays }} days remaining</div>
+          </div>
+        }
+      } @else {
+        <p class="muted">Select an employee to see their yearly balances.</p>
+      }
+    </div>
+  </div>
+
+  <!-- Types management -->
+  <div class="types-panel">
+    <div class="panel-head">
+      <h2>Leave types</h2>
+    </div>
+    <div class="type-cards">
+      @for (t of types(); track t.id) {
+        <div class="type-card">
+          <div class="type-info">
+            <span class="type-name">{{ t.name }}</span>
+            <span class="type-limit">{{ t.yearlyLimit }} days / year · {{ t.usageCount }} request(s)</span>
+            @if (t.description) {
+              <span class="type-desc">{{ t.description }}</span>
+            }
+          </div>
+          @if (canWrite()) {
+            <div class="type-actions">
+              <button mat-icon-button matTooltip="Edit" (click)="openTypeDialog(t)">
+                <mat-icon>edit</mat-icon>
+              </button>
+              <button mat-icon-button matTooltip="Delete" (click)="deleteType(t)">
+                <mat-icon>delete</mat-icon>
+              </button>
+            </div>
+          }
+        </div>
+      }
+    </div>
+  </div>
+</div>

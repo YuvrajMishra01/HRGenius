@@ -1,0 +1,122 @@
+<div class="page">
+  <div class="page-head">
+    <div>
+      <h1>Payroll</h1>
+      <p class="sub">Monthly runs, payslip components, and payment lifecycle</p>
+    </div>
+    @if (canWrite()) {
+      <button mat-flat-button color="primary" (click)="openRunDialog()">
+        <mat-icon>play_arrow</mat-icon> Run payroll
+      </button>
+    }
+  </div>
+
+  @if (error(); as err) {
+    <div class="alert"><mat-icon inline>error_outline</mat-icon><span>{{ err }}</span></div>
+  }
+
+  <div class="content-grid">
+    <!-- Period rail -->
+    <aside class="periods-rail">
+      <h2>Periods</h2>
+      @if (loading()) {
+        <p class="muted">Loading…</p>
+      } @else {
+        @for (p of periods()?.periods ?? []; track p.year + '-' + p.month) {
+          <button class="period-card" [class.active]="selected() === p.year + '-' + p.month"
+                  (click)="selectPeriod(p.year + '-' + p.month)">
+            <span class="period-name">{{ monthName(p.month) }} {{ p.year }}</span>
+            <span class="period-meta">{{ p.payslipCount }} payslips · {{ money(p.totalNet) }}</span>
+          </button>
+        } @empty {
+          <p class="muted">No payroll periods yet — run one to get started.</p>
+        }
+      }
+    </aside>
+
+    <!-- Period detail -->
+    <section class="period-detail">
+      @if (period(); as p) {
+        <div class="kpis">
+          <div class="kpi-box">
+            <span class="kpi-label">Payslips</span>
+            <span class="kpi-value">{{ p.summary.payslipCount }}</span>
+          </div>
+          <div class="kpi-box">
+            <span class="kpi-label">Total gross</span>
+            <span class="kpi-value">{{ money(p.summary.totalGross) }}</span>
+          </div>
+          <div class="kpi-box">
+            <span class="kpi-label">Total net</span>
+            <span class="kpi-value">{{ money(p.summary.totalNet) }}</span>
+          </div>
+          <div class="kpi-box">
+            <span class="kpi-label">Draft / Processed / Paid</span>
+            <span class="kpi-value small">{{ p.summary.draftCount }} / {{ p.summary.processedCount }} / {{ p.summary.paidCount }}</span>
+          </div>
+        </div>
+
+        @if (p.payslips.length === 0) {
+          <p class="muted">No payslips in this period.</p>
+        } @else {
+          <table class="pay-table">
+            <thead>
+              <tr>
+                <th>Employee</th>
+                <th class="num">Basic</th>
+                <th class="num">Allowances</th>
+                <th class="num">Deductions</th>
+                <th class="num">Tax</th>
+                <th class="num">Net</th>
+                <th>Status</th>
+                @if (canWrite()) {
+                  <th class="actions-col">Actions</th>
+                }
+              </tr>
+            </thead>
+            <tbody>
+              @for (row of p.payslips; track row.id) {
+                <tr>
+                  <td>
+                    <div class="emp-name">{{ row.employeeName }}</div>
+                    <div class="emp-meta">{{ row.employeeCode }} @if (row.departmentName) {· {{ row.departmentName }}}</div>
+                  </td>
+                  <td class="num">{{ money(row.basicSalary) }}</td>
+                  <td class="num">{{ money(row.allowances) }}</td>
+                  <td class="num">{{ money(row.deductions) }}</td>
+                  <td class="num">{{ money(row.tax) }}</td>
+                  <td class="num net">{{ money(row.netSalary) }}</td>
+                  <td><span class="status-pill" [attr.data-status]="row.status">{{ row.status }}</span></td>
+                  @if (canWrite()) {
+                    <td class="actions-col">
+                      @if (row.status === 'DRAFT') {
+                        <button mat-icon-button matTooltip="Edit components" (click)="editComponents(row)">
+                          <mat-icon>edit</mat-icon>
+                        </button>
+                        <button mat-icon-button color="primary" matTooltip="Mark processed" (click)="process(row)">
+                          <mat-icon>task_alt</mat-icon>
+                        </button>
+                        <button mat-icon-button matTooltip="Delete draft" (click)="delete(row)">
+                          <mat-icon>delete</mat-icon>
+                        </button>
+                      } @else if (row.status === 'PROCESSED') {
+                        <button mat-icon-button matTooltip="Edit components" (click)="editComponents(row)">
+                          <mat-icon>edit</mat-icon>
+                        </button>
+                        <button mat-icon-button color="primary" matTooltip="Mark paid" (click)="pay(row)">
+                          <mat-icon>payments</mat-icon>
+                        </button>
+                      } @else {
+                        <span class="muted small">Final</span>
+                      }
+                    </td>
+                  }
+                </tr>
+              }
+            </tbody>
+          </table>
+        }
+      }
+    </section>
+  </div>
+</div>

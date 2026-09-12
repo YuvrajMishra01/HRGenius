@@ -1,0 +1,156 @@
+<div class="page">
+  <header class="page-head">
+    <div>
+      <h1>Attendance</h1>
+      <p class="sub">Check-in/out, daily statuses and monthly view</p>
+    </div>
+    <button mat-stroked-button (click)="reload()" [disabled]="loading()">
+      <mat-icon>refresh</mat-icon> Refresh
+    </button>
+  </header>
+
+  @if (loading()) {
+    <div class="state-card"><mat-icon class="spin">sync</mat-icon> Loading attendance…</div>
+  } @else if (loadError(); as error) {
+    <div class="state-card error">
+      <mat-icon>cloud_off</mat-icon>
+      <span>{{ error }}</span>
+      <button mat-button (click)="reload()">Retry</button>
+    </div>
+  } @else {
+    <!-- ================================================ TODAY -->
+    <section class="today">
+      <h2>Today · {{ todayData()!.date | date:'EEEE, d MMMM' }}</h2>
+      <div class="today-kpis">
+        <div class="kpi present">
+          <span class="num">{{ todayData()!.summary.present }}</span><span class="lbl">Present</span>
+        </div>
+        <div class="kpi half">
+          <span class="num">{{ todayData()!.summary.halfDay }}</span><span class="lbl">Half day</span>
+        </div>
+        <div class="kpi leave">
+          <span class="num">{{ todayData()!.summary.leave }}</span><span class="lbl">Leave</span>
+        </div>
+        <div class="kpi absent">
+          <span class="num">{{ todayData()!.summary.absent }}</span><span class="lbl">Absent</span>
+        </div>
+        <div class="kpi holiday">
+          <span class="num">{{ todayData()!.summary.holiday }}</span><span class="lbl">Holiday</span>
+        </div>
+      </div>
+
+      <div class="table-card">
+        <table>
+          <thead>
+            <tr>
+              <th>Employee</th>
+              <th>Status</th>
+              <th>Check-in</th>
+              <th>Check-out</th>
+              <th>Hours</th>
+              @if (canWrite()) { <th class="actions-col">Actions</th> }
+            </tr>
+          </thead>
+          <tbody>
+            @for (r of todayData()!.records; track r.employeeId) {
+              <tr>
+                <td>
+                  <span class="primary">{{ r.employeeName }}</span>
+                  <span class="secondary">{{ r.employeeCode }} · {{ r.departmentName }}</span>
+                </td>
+                <td><span class="chip" [class]="cellClass(r.status)">{{ r.status }}</span></td>
+                <td>{{ r.checkIn ? (r.checkIn | date:'HH:mm') : '—' }}</td>
+                <td>{{ r.checkOut ? (r.checkOut | date:'HH:mm') : '—' }}</td>
+                <td>{{ r.workingHours ?? '—' }}</td>
+                @if (canWrite()) {
+                  <td class="actions-col">
+                    @if (!r.checkIn) {
+                      <button mat-stroked-button
+                              [disabled]="busyEmployeeId() === r.employeeId"
+                              (click)="checkIn(r, r.employeeId)">
+                        <mat-icon>login</mat-icon> Check in
+                      </button>
+                    } @else if (!r.checkOut) {
+                      <button mat-stroked-button
+                              [disabled]="busyEmployeeId() === r.employeeId"
+                              (click)="checkOut(r)">
+                        <mat-icon>logout</mat-icon> Check out
+                      </button>
+                    } @else {
+                      <span class="done">Complete</span>
+                    }
+                  </td>
+                }
+              </tr>
+            } @empty {
+              <tr><td colspan="6" class="empty">No one has checked in today.</td></tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- ================================================ MONTH -->
+    <section class="month">
+      <div class="month-head">
+        <h2>{{ monthLabel() }}</h2>
+        <div class="month-nav">
+          <button mat-icon-button (click)="shiftMonth(-1)" matTooltip="Previous month">
+            <mat-icon>chevron_left</mat-icon>
+          </button>
+          <button mat-stroked-button (click)="shiftMonth(1)" matTooltip="Next month">
+            Next <mat-icon>chevron_right</mat-icon>
+          </button>
+        </div>
+      </div>
+
+      <div class="grid-wrap">
+        <table class="grid">
+          <thead>
+            <tr>
+              <th class="sticky-col">Employee</th>
+              <th class="pct-col">%</th>
+              @for (day of daysInMonth(); track day) {
+                <th [class.weekend]="isWeekend(day)" [class.today-col]="isToday(viewYear(), viewMonth(), day)">
+                  {{ day }}
+                </th>
+              }
+            </tr>
+          </thead>
+          <tbody>
+            @for (row of monthData()!.rows; track row.employeeId) {
+              <tr>
+                <td class="sticky-col">
+                  <span class="primary">{{ row.employeeName }}</span>
+                  <span class="secondary">{{ row.employeeCode }}</span>
+                </td>
+                <td class="pct-col">
+                  <span class="pct" [class.low]="row.attendancePercent < 60">{{ row.attendancePercent }}%</span>
+                  <span class="mini">{{ row.present }}P·{{ row.halfDay }}H·{{ row.absent }}A·{{ row.leave }}L</span>
+                </td>
+                @for (day of daysInMonth(); track day) {
+                  <td [class.weekend]="isWeekend(day)"
+                      [class.today-col]="isToday(viewYear(), viewMonth(), day)"
+                      [class.clickable]="canWrite()"
+                      (click)="openMark(row, day)">
+                    <span class="cell" [class]="cellClass(row.days[dayKey(day)])">
+                      {{ row.days[dayKey(day)] ? row.days[dayKey(day)][0] : '' }}
+                    </span>
+                  </td>
+                }
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+      <div class="legend">
+        <span class="cell cell-present">P</span> Present
+        <span class="cell cell-half">H</span> Half day
+        <span class="cell cell-absent">A</span> Absent
+        <span class="cell cell-leave">L</span> Leave
+        <span class="cell cell-holiday">H</span> Holiday
+        @if (canWrite()) { <span class="hint">· click any day cell to mark/correct attendance</span> }
+      </div>
+    </section>
+  }
+</div>

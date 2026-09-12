@@ -11,6 +11,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.core.AuthenticationException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
+import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.servlet.resource.NoResourceFoundException;
@@ -54,6 +55,13 @@ public class GlobalExceptionHandler {
                 ? HttpStatus.FORBIDDEN
                 : HttpStatus.UNAUTHORIZED;
         return build(status, ex.getMessage(), req, Map.of());
+    }
+
+    /** Non-numeric values for numeric path variables (e.g. /onboardings/abc) → 400, not 500. */
+    @ExceptionHandler(MethodArgumentTypeMismatchException.class)
+    public ResponseEntity<ApiError> handleTypeMismatch(MethodArgumentTypeMismatchException ex,
+                                                       HttpServletRequest req) {
+        return build(HttpStatus.BAD_REQUEST, "Invalid value for path parameter", req, Map.of());
     }
 
     @ExceptionHandler(IllegalArgumentException.class)

@@ -1,0 +1,82 @@
+<div class="page">
+  <header class="page-head">
+    <div>
+      <h1>Onboarding</h1>
+      <p class="sub">Checklist-driven new-hire onboarding</p>
+    </div>
+    <button mat-stroked-button (click)="reload()" [disabled]="loading()">
+      <mat-icon>refresh</mat-icon> Refresh
+    </button>
+  </header>
+
+  @if (loading()) {
+    <div class="state-card"><mat-icon class="spin">sync</mat-icon> Loading onboarding records…</div>
+  } @else if (loadError(); as error) {
+    <div class="state-card error">
+      <mat-icon>cloud_off</mat-icon>
+      <span>{{ error }}</span>
+      <button mat-button (click)="reload()">Retry</button>
+    </div>
+  } @else {
+    <div class="kpis">
+      <div class="kpi"><span class="num">{{ onboardings().length }}</span><span class="lbl">Total records</span></div>
+      <div class="kpi"><span class="num">{{ inProgressCount() }}</span><span class="lbl">In progress</span></div>
+      <div class="kpi"><span class="num">{{ completedCount() }}</span><span class="lbl">Completed</span></div>
+    </div>
+
+    @if (canWrite()) {
+      <div class="toolbar">
+        <button mat-flat-button color="primary" (click)="startFromPipeline()">
+          <mat-icon>person_add</mat-icon> Start from pipeline
+        </button>
+        <button mat-stroked-button (click)="startForEmployee()">
+          <mat-icon>badge</mat-icon> Start for employee
+        </button>
+      </div>
+    }
+
+    <div class="cards">
+      @for (o of onboardings(); track o.id) {
+        <div class="onb-card">
+          <div class="card-head" (click)="toggleExpanded(o.id)">
+            <div class="who">
+              <span class="name">{{ o.employeeName }}</span>
+              <span class="meta">
+                {{ o.employeeCode }} · {{ o.departmentName || '—' }}
+                @if (o.jobTitle) { · {{ o.jobTitle }} }
+              </span>
+            </div>
+            <div class="side">
+              <span class="chip" [class]="statusClass(o.status)">{{ o.status }}</span>
+              <span class="pct">{{ o.completionPercentage }}%</span>
+            </div>
+          </div>
+
+          <mat-progress-bar mode="determinate" [value]="o.completionPercentage"></mat-progress-bar>
+
+          <div class="card-foot">
+            <span class="joined">Joined {{ o.joiningDate | date }}</span>
+            <button mat-icon-button (click)="toggleExpanded(o.id)" [matTooltip]="expandedId() === o.id ? 'Collapse' : 'Expand checklist'">
+              <mat-icon>{{ expandedId() === o.id ? 'expand_less' : 'expand_more' }}</mat-icon>
+            </button>
+          </div>
+
+          @if (expandedId() === o.id) {
+            <div class="checklist">
+              @for (item of o.checklist; track item.label; let i = $index) {
+                <mat-checkbox
+                  [checked]="item.done"
+                  [disabled]="!canWrite()"
+                  (change)="toggleItem(o, item, i)">
+                  {{ item.label }}
+                </mat-checkbox>
+              }
+            </div>
+          }
+        </div>
+      } @empty {
+        <div class="state-card">No onboarding records yet. Start one from the recruitment pipeline.</div>
+      }
+    </div>
+  }
+</div>

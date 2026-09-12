@@ -1,0 +1,240 @@
+:host {
+  display: block;
+  padding: 20px 24px;
+  max-width: 1400px;
+  margin: 0 auto;
+}
+
+.page-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 16px;
+
+  h1 {
+    margin: 0;
+    font-size: 24px;
+    font-weight: 500;
+  }
+
+  .sub {
+    margin: 4px 0 0;
+    color: rgba(0, 0, 0, 0.6);
+    font-size: 14px;
+  }
+}
+
+h2 {
+  font-size: 17px;
+  font-weight: 500;
+  margin: 0 0 10px;
+}
+
+.state-card {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  justify-content: center;
+  background: #fff;
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  border-radius: 12px;
+  padding: 28px;
+  color: rgba(0, 0, 0, 0.6);
+  margin-bottom: 16px;
+
+  &.error { color: #b71c1c; }
+
+  .spin { animation: spin 1.2s linear infinite; }
+}
+
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+.today {
+  margin-bottom: 24px;
+}
+
+.today-kpis {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+  gap: 10px;
+  margin-bottom: 12px;
+
+  .kpi {
+    background: #fff;
+    border: 1px solid rgba(0, 0, 0, 0.08);
+    border-radius: 12px;
+    padding: 12px 16px;
+    display: flex;
+    flex-direction: column;
+
+    .num { font-size: 22px; font-weight: 600; }
+    .lbl { font-size: 12.5px; color: rgba(0, 0, 0, 0.6); }
+  }
+}
+
+.table-card {
+  background: #fff;
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  border-radius: 12px;
+  overflow: hidden;
+
+  table {
+    width: 100%;
+    border-collapse: collapse;
+
+    th, td {
+      text-align: left;
+      padding: 10px 14px;
+      border-bottom: 1px solid rgba(0, 0, 0, 0.06);
+      font-size: 14px;
+    }
+
+    th {
+      background: #fafafa;
+      font-weight: 500;
+      color: rgba(0, 0, 0, 0.6);
+      font-size: 12.5px;
+    }
+
+    .actions-col { text-align: right; }
+
+    .empty {
+      text-align: center;
+      color: rgba(0, 0, 0, 0.5);
+      padding: 18px;
+    }
+  }
+}
+
+.primary {
+  display: block;
+  font-weight: 500;
+}
+
+.secondary {
+  display: block;
+  font-size: 12px;
+  color: rgba(0, 0, 0, 0.55);
+}
+
+.done {
+  font-size: 13px;
+  color: #2e7d32;
+}
+
+.chip {
+  display: inline-block;
+  padding: 2px 10px;
+  border-radius: 999px;
+  font-size: 11.5px;
+  font-weight: 600;
+}
+
+.month-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+
+  .month-nav {
+    display: flex;
+    gap: 6px;
+    align-items: center;
+  }
+}
+
+.grid-wrap {
+  overflow-x: auto;
+  background: #fff;
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  border-radius: 12px;
+}
+
+.grid {
+  border-collapse: collapse;
+  min-width: 100%;
+
+  th, td {
+    border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+    padding: 6px 4px;
+    font-size: 12.5px;
+    text-align: center;
+    white-space: nowrap;
+  }
+
+  thead th {
+    position: sticky;
+    top: 0;
+    background: #fafafa;
+    font-weight: 500;
+    color: rgba(0, 0, 0, 0.6);
+    z-index: 1;
+  }
+
+  .sticky-col {
+    position: sticky;
+    left: 0;
+    background: #fff;
+    text-align: left;
+    padding: 8px 14px;
+    min-width: 180px;
+    z-index: 2;
+  }
+
+  thead .sticky-col { z-index: 3; }
+
+  .pct-col {
+    min-width: 120px;
+    text-align: left;
+    padding: 8px 10px;
+
+    .pct { font-weight: 600; display: block; }
+    .pct.low { color: #c62828; }
+    .mini { font-size: 11px; color: rgba(0, 0, 0, 0.5); }
+  }
+
+  .weekend { background: #fafafa; }
+
+  .today-col {
+    outline: 2px solid #1565c0;
+    outline-offset: -2px;
+  }
+
+  td.clickable { cursor: pointer; }
+
+  td.clickable:hover .cell { outline: 1.5px solid #1565c0; }
+}
+
+.cell {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  border-radius: 6px;
+  font-size: 11.5px;
+  font-weight: 600;
+
+  &.cell-present { background: #e8f5e9; color: #2e7d32; }
+  &.cell-half { background: #fff3e0; color: #e65100; }
+  &.cell-absent { background: #ffebee; color: #c62828; }
+  &.cell-leave { background: #e3f2fd; color: #1565c0; }
+  &.cell-holiday { background: #ede7f6; color: #5e35b1; }
+  &.cell-empty { background: transparent; }
+}
+
+.legend {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+  margin-top: 10px;
+  font-size: 12.5px;
+  color: rgba(0, 0, 0, 0.6);
+
+  .cell { width: 20px; height: 20px; margin-left: 10px; }
+  .cell:first-child { margin-left: 0; }
+  .hint { color: rgba(0, 0, 0, 0.45); }
+}
