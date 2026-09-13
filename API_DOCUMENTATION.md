@@ -384,6 +384,83 @@ All success payloads use the standard `{ success, message, data }` envelope; DEL
 - Acknowledge is the employee sign-off: no rating required, no comments, idempotent-free
   (second attempt 409).
 
+## Phase 11 — Documents ✅
+
+Reads (list, download): ADMIN, HR, MANAGER · Upload: **ADMIN, HR** · Delete: **ADMIN, HR**.
+MANAGER is deliberately not allowed to upload. All list payloads use the standard envelope;
+upload returns 201, delete returns 204, download streams bytes.
+
+| Method | Path | Success | Errors |
+|---|---|---|---|
+| GET | /documents?employeeId= | 200 — metadata list, newest first | 400 missing param · 401 |
+| POST | /documents | 201 — metadata (multipart/form-data: employeeId, documentType, file) | 400 validation · 404 unknown employee |
+| GET | /documents/{id}/download | 200 — bytes + `Content-Disposition` (UTF-8 filename) | 404 unknown id or missing file |
+| DELETE | /documents/{id} | 204 | 404 · 403 (MANAGER) |
+
+### Rules
+
+- Allowed types: `RESUME, OFFER_LETTER, ID_PROOF, CERTIFICATE, EXPERIENCE_LETTER, OTHER`.
+- Extension whitelist: pdf, doc, docx, jpg, jpeg, png. Max size 5 MB (service guard;
+  Spring multipart cap 6 MB). Empty files rejected.
+- Bytes are stored under `app.documents.storage-dir` (env `DOCS_STORAGE_DIR`, default
+  `./uploads/documents`) with UUID-prefixed sanitized names — original names and any
+  user-controlled path never touch disk; resolved paths are re-verified to stay inside
+  the storage directory.
+- Downloads stream through `StreamingResponseBody` and always return the original file
+  name via `filename*=UTF-8''`. Delete removes metadata and the stored file (a stale
+  orphan file never fails the request).
+
+## Phase 12 — Notifications ✅
+
+Every endpoint is scoped to the JWT principal — there is no cross-user access, so all
+authenticated roles (including EMPLOYEE) may read and clear their own rows. List payloads
+use the standard envelope; PATCH returns 200.
+
+| Method | Path | Success | Errors |
+|---|---|---|---|
+| GET | /notifications | 200 — latest 50 rows, newest first | 401 |
+| GET | /notifications/unread | 200 — `{ unread: n }` badge count | 401 |
+| PATCH | /notifications/{id}/read | 200 — row (idempotent) | 404 unknown id **or someone else's row** |
+| PATCH | /notifications/read-all | 200 — `{ unread: nChanged }` | 401 |
+
+### Rules
+
+- Rows are addressed to **login USERS**. The User↔Employee link resolves by matching
+  `EMPLOYEES.EMAIL` (unique) — no schema change; employees without a login silently
+  receive nothing.
+- Events emitted (same transaction as the triggering action, so a rollback never
+  notifies): leave request **submitted/approved/rejected** (→ employee), onboarding
+  **started** (→ employee), payroll payslip **PAID** (→ employee), performance review
+  **SUBMITTED** (→ employee) and **ACKNOWLEDGED** (→ reviewer).
+- Types: `SYSTEM, LEAVE, ONBOARDING, PAYROLL, PERFORMANCE, RECRUITMENT`.
+- The bulk mark-read is native SQL (`read_flag = 1`) because READ_FLAG is NUMBER(1) —
+  JPQL boolean literals bind as BOOLEAN and are rejected by Oracle mode.
+- The frontend toolbar bell polls `/unread` every 30 s; mark-read actions share one
+  badge signal so the count updates instantly without waiting for a poll.
+
+## Phase 13 — Analytics ✅
+
+All endpoints: **ADMIN, HR** only (same policy as the dashboard — org-wide figures).
+Read-only; every response uses the standard envelope.
+
+| Method | Path | Success |
+|---|---|---|
+| GET | /analytics/workforce | active/terminated headcount, avgTenureYears (1 dp), counts by department, employment type, and tenure cohort (<1y, 1–3y, 3–5y, 5+y) |
+| GET | /analytics/funnel | total applications + per-job funnel (total, active, selected, rejected — active = not yet terminal) |
+| GET | /analytics/interviews | status counters (completed/scheduled/cancelled) + result counters (pass/fail/onHold) + passRate over COMPLETED only (1 dp) |
+| GET | /analytics/leave | current-year request counts per leave type (busiest first) + per status |
+| GET | /analytics/payroll-trend | per-period payslip count and total net, **oldest first** (chart order) |
+| GET | /analytics/performance | total reviews, average rating (1 dp, official ratings only), counts by status, rating distribution 1–5 |
+
+### Rules
+
+- Every grouping is computed in the database (GROUP BY + CASE sums); the service only maps
+  rows. No entity lists are ever returned.
+- Tenure cohorts and passRate are Java-side derivations over aggregate rows.
+- Performance analytics count **official ratings only** (SUBMITTED/ACKNOWLEDGED) — a
+  DRAFT's rating is reviewer notes and never enters average or distribution.
+- Leave demand is keyed by request start date within the current calendar year.
+
 ## JWT & Security Notes
 
 - Algorithm HS384; secret from `JWT_SECRET` env var (local dev default documented in `application.yml`).

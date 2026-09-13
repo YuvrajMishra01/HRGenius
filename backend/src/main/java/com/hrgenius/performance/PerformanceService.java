@@ -6,6 +6,8 @@ import java.util.List;
 
 import com.hrgenius.employee.Employee;
 import com.hrgenius.employee.EmployeeRepository;
+import com.hrgenius.notification.Notification;
+import com.hrgenius.notification.NotificationService;
 
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -27,11 +29,14 @@ public class PerformanceService {
 
     private final PerformanceReviewRepository reviewRepository;
     private final EmployeeRepository employeeRepository;
+    private final NotificationService notifications;
 
     public PerformanceService(PerformanceReviewRepository reviewRepository,
-                              EmployeeRepository employeeRepository) {
+                              EmployeeRepository employeeRepository,
+                              NotificationService notifications) {
         this.reviewRepository = reviewRepository;
         this.employeeRepository = employeeRepository;
+        this.notifications = notifications;
     }
 
     // ------------------------------------------------------------ views
@@ -108,7 +113,12 @@ public class PerformanceService {
         review.setRating(request.rating());
         review.setComments(request.comments());
         review.setStatus(PerformanceReview.ReviewStatus.SUBMITTED);
-        return toResponse(reviewRepository.save(review));
+        PerformanceReview saved = reviewRepository.save(review);
+        notifications.notifyEmployee(saved.getEmployee(), Notification.NotificationType.PERFORMANCE,
+                "Performance review submitted",
+                "Your " + saved.getReviewPeriod() + " review was submitted with rating "
+                        + saved.getRating() + "/5. Please acknowledge it.");
+        return toResponse(saved);
     }
 
     /** The reviewed employee acknowledges the submitted review (one-way). */
@@ -119,7 +129,12 @@ public class PerformanceService {
             throw new IllegalStateException("Only SUBMITTED reviews can be acknowledged");
         }
         review.setStatus(PerformanceReview.ReviewStatus.ACKNOWLEDGED);
-        return toResponse(reviewRepository.save(review));
+        PerformanceReview saved = reviewRepository.save(review);
+        notifications.notifyEmployee(saved.getReviewer(), Notification.NotificationType.PERFORMANCE,
+                "Review acknowledged",
+                saved.getEmployee().getFirstName() + " acknowledged the " + saved.getReviewPeriod()
+                        + " review.");
+        return toResponse(saved);
     }
 
     /** DRAFT reviews can be deleted; anything submitted keeps history. */

@@ -11,6 +11,10 @@ spring:
     locations: classpath:db/migration
   jackson:
     default-property-inclusion: non_null
+  servlet:
+    multipart:
+      max-file-size: 6MB
+      max-request-size: 8MB
 
 server:
   port: 8080
@@ -26,6 +30,8 @@ app:
     # shared/production environment; this default is for local development only.
     secret: ${JWT_SECRET:change-me-local-dev-secret-key-at-least-32-bytes-long!!}
     expiration-minutes: 60
+  documents:
+    storage-dir: ${DOCS_STORAGE_DIR:./uploads/documents}
 
 hrgenius:
   security:

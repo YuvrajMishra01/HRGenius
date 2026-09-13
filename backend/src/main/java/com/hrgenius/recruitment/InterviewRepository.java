@@ -16,6 +16,13 @@ public interface InterviewRepository extends JpaRepository<Interview, Long> {
     /** Interview guard: only one live (SCHEDULED) interview per application. */
     boolean existsByApplication_IdAndStatus(Long applicationId, Interview.InterviewStatus status);
 
+    /** Analytics: [status, count] and [result, count] groupings. */
+    @Query("select i.status, count(i) from Interview i group by i.status")
+    List<Object[]> countByStatusRaw();
+
+    @Query("select i.result, count(i) from Interview i where i.result is not null group by i.result")
+    List<Object[]> countByResultRaw();
+
     /** Rich interview list with application/candidate/job/interviewer resolved. */
     @Query("""
             select i.id, i.application.id, c.name, j.title,

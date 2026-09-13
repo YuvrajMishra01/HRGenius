@@ -64,7 +64,21 @@ export const routes: Routes = [
         loadComponent: () =>
           import('./performance/performance.component').then((m) => m.PerformanceComponent),
       },
-      // Phase 11+ adds documents, ... routes here.
+      {
+        path: 'documents',
+        loadComponent: () =>
+          import('./documents/documents.component').then((m) => m.DocumentsComponent),
+      },
+      {
+        path: 'notifications',
+        loadComponent: () =>
+          import('./notifications/notifications.component').then((m) => m.NotificationsComponent),
+      },
+      {
+        path: 'analytics',
+        loadComponent: () =>
+          import('./analytics/analytics.component').then((m) => m.AnalyticsComponent),
+      },
       {
         path: '**',
         redirectTo: 'dashboard',

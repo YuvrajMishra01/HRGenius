@@ -10,6 +10,8 @@ import java.util.Set;
 import com.hrgenius.employee.Employee;
 import com.hrgenius.employee.EmployeeRepository;
 import com.hrgenius.employee.EmployeeStatus;
+import com.hrgenius.notification.Notification;
+import com.hrgenius.notification.NotificationService;
 
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
@@ -34,11 +36,14 @@ public class PayrollService {
 
     private final PayrollRepository payrollRepository;
     private final EmployeeRepository employeeRepository;
+    private final NotificationService notifications;
 
     public PayrollService(PayrollRepository payrollRepository,
-                          EmployeeRepository employeeRepository) {
+                          EmployeeRepository employeeRepository,
+                          NotificationService notifications) {
         this.payrollRepository = payrollRepository;
         this.employeeRepository = employeeRepository;
+        this.notifications = notifications;
     }
 
     // ------------------------------------------------------------ run
@@ -127,7 +132,12 @@ public class PayrollService {
             throw new IllegalStateException("Only PROCESSED payslips can be marked PAID");
         }
         payslip.setStatus(Payroll.PayrollStatus.PAID);
-        return toRow(payrollRepository.save(payslip));
+        Payroll saved = payrollRepository.save(payslip);
+        notifications.notifyEmployee(payslip.getEmployee(), Notification.NotificationType.PAYROLL,
+                "Salary paid",
+                "Your " + payslip.getPayYear() + "-" + String.format("%02d", payslip.getPayMonth())
+                        + " salary of " + payslip.getNetSalary() + " has been paid.");
+        return toRow(saved);
     }
 
     /** PAID payslips are permanent financial records — never deletable. */

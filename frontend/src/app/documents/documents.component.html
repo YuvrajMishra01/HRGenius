@@ -1,0 +1,90 @@
+<main class="documents-page">
+  <header class="page-head">
+    <div>
+      <h1>Documents</h1>
+      <p>Employee files — resumes, offer letters, IDs, and certificates</p>
+    </div>
+    @if (canWrite()) {
+      <button mat-flat-button color="primary" (click)="openUpload()" [disabled]="selectedEmployeeId() == null">
+        <mat-icon>upload_file</mat-icon> Upload document
+      </button>
+    }
+  </header>
+
+  @if (serverError(); as error) {
+    <div class="alert"><mat-icon inline>warning</mat-icon><span>{{ error }}</span></div>
+  }
+
+  <section class="toolbar">
+    <mat-form-field appearance="outline" class="employee-picker">
+      <mat-label>Employee</mat-label>
+      <mat-select [value]="selectedEmployeeId()" (selectionChange)="selectEmployee($event.value)">
+        @for (e of employees(); track e.id) {
+          <mat-option [value]="e.id">{{ e.label }}</mat-option>
+        }
+      </mat-select>
+    </mat-form-field>
+
+    @if (selectedEmployee(); as emp) {
+      <div class="type-chips">
+        @for (t of types; track t) {
+          <span class="chip" [class.active]="typeCounts().get(t)">
+            <mat-icon inline>{{ typeIcon(t) }}</mat-icon>
+            {{ typeLabel(t) }} · {{ typeCounts().get(t) ?? 0 }}
+          </span>
+        }
+      </div>
+    }
+  </section>
+
+  <section class="content">
+    @if (loading()) {
+      <mat-card class="state-card"><mat-card-content>Loading documents…</mat-card-content></mat-card>
+    } @else if (!selectedEmployeeId()) {
+      <mat-card class="state-card"><mat-card-content>Select an employee to see their documents.</mat-card-content></mat-card>
+    } @else if (documents().length === 0) {
+      <mat-card class="state-card">
+        <mat-card-content>
+          <mat-icon>folder_open</mat-icon>
+          <p>No documents for {{ selectedEmployee()?.label }} yet.</p>
+          @if (canWrite()) { <p class="hint">Use “Upload document” to add the first file.</p> }
+        </mat-card-content>
+      </mat-card>
+    } @else {
+      <table class="doc-table">
+        <thead>
+          <tr>
+            <th>FILE</th>
+            <th>TYPE</th>
+            <th>SIZE</th>
+            <th>UPLOADED</th>
+            <th class="actions-col">ACTIONS</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (doc of documents(); track doc.id) {
+            <tr>
+              <td class="file-cell">
+                <mat-icon class="file-icon">{{ typeIcon(doc.documentType) }}</mat-icon>
+                <span class="file-name">{{ doc.fileName }}</span>
+              </td>
+              <td><span class="type-pill">{{ typeLabel(doc.documentType) }}</span></td>
+              <td>{{ formatSize(doc.fileSize) }}</td>
+              <td>{{ doc.uploadedAt | date: 'MMM d, y · HH:mm' }}</td>
+              <td class="actions-col">
+                <button mat-icon-button matTooltip="Download" (click)="download(doc)">
+                  <mat-icon>download</mat-icon>
+                </button>
+                @if (canWrite()) {
+                  <button mat-icon-button matTooltip="Delete" class="warn" (click)="confirmDelete(doc)">
+                    <mat-icon>delete</mat-icon>
+                  </button>
+                }
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    }
+  </section>
+</main>

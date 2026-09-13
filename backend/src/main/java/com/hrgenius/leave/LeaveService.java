@@ -12,6 +12,8 @@ import com.hrgenius.auth.User;
 import com.hrgenius.auth.UserRepository;
 import com.hrgenius.employee.Employee;
 import com.hrgenius.employee.EmployeeRepository;
+import com.hrgenius.notification.Notification;
+import com.hrgenius.notification.NotificationService;
 
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -41,15 +43,18 @@ public class LeaveService {
     private final LeaveTypeRepository typeRepository;
     private final EmployeeRepository employeeRepository;
     private final UserRepository userRepository;
+    private final NotificationService notifications;
 
     public LeaveService(LeaveRequestRepository requestRepository,
                         LeaveTypeRepository typeRepository,
                         EmployeeRepository employeeRepository,
-                        UserRepository userRepository) {
+                        UserRepository userRepository,
+                        NotificationService notifications) {
         this.requestRepository = requestRepository;
         this.typeRepository = typeRepository;
         this.employeeRepository = employeeRepository;
         this.userRepository = userRepository;
+        this.notifications = notifications;
     }
 
     // ------------------------------------------------------------ types
@@ -133,7 +138,12 @@ public class LeaveService {
         entity.setEndDate(request.endDate());
         entity.setReason(request.reason());
         entity.setStatus(LeaveRequest.LeaveStatus.PENDING);
-        return toResponse(requestRepository.save(entity));
+        LeaveRequest saved = requestRepository.save(entity);
+        notifications.notifyEmployee(employee, Notification.NotificationType.LEAVE,
+                "Leave request submitted",
+                "Your " + type.getName() + " request for " + saved.getStartDate() + " to "
+                        + saved.getEndDate() + " is pending approval.");
+        return toResponse(saved);
     }
 
     /** Approve or reject a PENDING request; body is empty — decision is in the path. */
@@ -157,7 +167,12 @@ public class LeaveService {
         }
         entity.setStatus(target);
         entity.setApprovedBy(currentUser());
-        return toResponse(requestRepository.save(entity));
+        LeaveRequest saved = requestRepository.save(entity);
+        notifications.notifyEmployee(entity.getEmployee(), Notification.NotificationType.LEAVE,
+                "Leave request " + target.name().toLowerCase(),
+                "Your " + entity.getLeaveType().getName() + " request for " + saved.getStartDate()
+                        + " to " + saved.getEndDate() + " was " + target.name().toLowerCase() + ".");
+        return toResponse(saved);
     }
 
     /** Withdraw a PENDING request (back to CANCELLED, never deleted). */

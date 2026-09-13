@@ -645,3 +645,154 @@ unaffected).
 `ROADMAP.md` (Phase 10 ✅), `DEVELOPMENT_LOG.md` (Phase 10 entry).
 
 **Next:** Phase 11 — Documents: upload/download/delete, metadata, validation.
+
+---
+
+## PHASE 11 — DOCUMENTS
+
+**Objective:** Upload/download/delete, metadata, validation — backend + frontend.
+
+**Result: ✅ PASS**
+
+| Check | Verification |
+|---|---|
+| Backend tests | **146/146** — 10 new: upload 201 with full metadata (name/size/type/employee), disallowed extension 400, unknown type 400, unknown employee 404, empty file 400, list returns metadata without bytes, download round-trip (exact bytes + Content-Disposition + Content-Type), download unknown 404, delete removes metadata + file (download then 404), RBAC matrix (MANAGER read-only — upload AND delete forbidden; EMPLOYEE 403; ADMIN/HR full) |
+| Frontend | `ng build` clean · **29/29** tests |
+| Live API | curl upload → metadata `{id:1, Sneha Patil, OFFER_LETTER, 26 B}` · download returned exact uploaded bytes with `Content-Disposition: live-doc.pdf` |
+| Live UI | Employee picker → Sneha's docs; chip counts update (Offer Letter · 1) · Upload dialog: file picker + type select + save → new row + chip appeared · Download button streams blob save · Delete confirm names the file → row + chip removed · console clean |
+
+**Implemented**
+- **Backend:** 4 endpoints in `com.hrgenius.document` on `/api/v1/documents`. Upload validates
+  type (6 enum values), extension whitelist (pdf/doc/docx/jpg/jpeg/png), 5 MB cap, and the
+  employee's existence; bytes are stored under `app.documents.storage-dir` with UUID-prefixed
+  sanitized names and path-escape re-verification. Download streams via
+  `StreamingResponseBody` with UTF-8 filename Content-Disposition. Delete removes metadata
+  plus the stored file (orphans never fail the request). Reads ADMIN/HR/MANAGER; upload and
+  delete ADMIN/HR — MANAGER is read-only by design.
+- **Frontend:** employee picker with per-type count chips, documents table (icon, name, type
+  pill, human-readable size, upload timestamp), blob-based download (the plain href cannot
+  carry the JWT), upload dialog (file input with client-side size check, type select, busy
+  state, server error surface), delete confirm dialog. Sidebar bumped to
+  "Phase 11 — Documents".
+
+**Bugs the cycle caught** (full trail above): a corrupted controller write (the recurring
+failure mode — caught by grep, rewritten cleanly), a duplicate `app:` YAML key from an
+in-place config insert (merged into one block), my own test expecting `fileSize` 29 vs the
+actual 27-byte payload plus the cascade from `extractId` never running, an untestable-over-
+HTTP oversized upload (Tomcat aborts the connection mid-request — documented, guard covered
+by review), a self-contradicting RBAC expectation (the test asserted MANAGER upload 400
+while the controller intentionally returns 403), one test-helper syntax error (`}` → `});`),
+and a flaky stale-keep-alive login after the streaming test (one-shot retry).
+
+**Docs updated:** `API_DOCUMENTATION.md` (4-endpoint contract + storage/validation rules),
+`ROADMAP.md` (Phase 11 ✅), `DEVELOPMENT_LOG.md` (Phase 11 entry).
+
+**Next:** Phase 12 — Notifications: events + unread badge.
+
+---
+
+## PHASE 12 — NOTIFICATIONS
+
+**Objective:** Events + unread badge — in-app notifications delivered to login users,
+backend + frontend.
+
+**Result: ✅ PASS**
+
+| Check | Verification |
+|---|---|
+| Backend tests | **152/152** — 6 new: principal-scoped list/unread (seed row visible to admin only, HR starts empty), mark-read clears badge + idempotent, read-all sweeps, foreign-owned id → 404 (not 403), unknown id 404, leave submit+approve delivers 2 LEAVE events to the linked employee, employee-without-login event silently dropped, all-roles RBAC incl. anonymous 401 |
+| Frontend | `ng build` clean · **29/29** tests |
+| Live API | Employee unread 0 → 2 after HR submitted + approved her leave (2027 dates, no seed/test interference) → read-all → 0; admin feed shows the seeded SYSTEM row; unknown id 404 |
+| Live UI | Employee login shows badge "1" on the toolbar bell after a live event · bell navigates to /notifications · rows render type icon, unread dot, timestamp · mark-read flips the row and the badge in the same tick (shared signal) · badge hidden entirely at zero |
+
+**Implemented**
+- **Backend** (`com.hrgenius.notification`, 4 endpoints on `/api/v1/notifications`): entity on the
+  existing NOTIFICATIONS table (no migration needed); rows are addressed to USERS with the
+  User↔Employee link resolved by matching `EMPLOYEES.EMAIL` (unique) — employees without a
+  login silently receive nothing. Reads/marks are scoped to the JWT principal (a foreign id
+  answers 404, not 403 — rows outside your scope simply do not exist). Event emission joins
+  the caller's transaction, so notifications never describe rolled-back work. Events wired:
+  leave submitted/approved/rejected, onboarding started (both paths), payslip PAID, review
+  SUBMITTED (→ employee) and ACKNOWLEDGED (→ reviewer).
+- **Frontend**: toolbar bell with `matBadge` (30 s `/unread` polling), /notifications page with
+  type-coloured icon tiles, unread dots, mark-read and mark-all-read. The badge lives in a
+  shared service signal written by both the poller and the page, so counts update instantly
+  without waiting for the next poll. Route `/notifications` + sidebar phase gate bumped to 12.
+
+**Bugs the cycle caught** (ERROR → ROOT CAUSE → FIX → VERIFY)
+1. **JPQL bulk boolean vs NUMBER(1)**: `update … set read = true` bound a BOOLEAN literal
+   into the NUMBER(1) READ_FLAG column — H2 Oracle mode (and real Oracle) rejected it with
+   "Values of types NUMERIC(1) and BOOLEAN are not comparable" → 500 on read-all. Rewritten
+   as a native query with `read_flag = 1/0` literals, which is also what production Oracle
+   requires.
+2. Test bugs: the leave-approve endpoint is PATCH not POST (my helper sent POST → 500
+   surfaced the real bug above), and counts were asserted absolutely although LeaveApiTest's
+   own decisions deliver LEAVE events to the same user — switched to delta assertions.
+3. Live-UI finding (not an app bug): Material's open account-menu renders a transparent
+   full-screen backdrop that swallows toolbar clicks; combined with a 439 px-wide preview
+   pane where the user chip visually overlaps the bell, coordinate-based clicks landed on
+   the menu. DOM-verified the bell via real event dispatch; behaviour is correct on normal
+   viewports.
+4. Badge lag: the page and the bell each kept their own unread state, so marking read in
+   the page took up to 30 s to clear the toolbar badge — replaced with one shared service
+   signal written by both.
+
+**Docs updated:** `API_DOCUMENTATION.md` (4-endpoint contract + event catalogue),
+`ROADMAP.md` (Phase 12 ✅), `DEVELOPMENT_LOG.md` (this entry).
+
+**Next:** Phase 13 — Analytics: real-data charts.
+
+---
+
+## PHASE 13 — ANALYTICS
+
+**Objective:** Real-data charts beyond the dashboard's live aggregates — deeper,
+chart-shaped views of workforce, hiring funnel, interviews, leave demand, payroll
+trend, and performance health.
+
+**Result: ✅ PASS**
+
+| Check | Verification |
+|---|---|
+| Backend tests | **159/159** — 7 new (pure-seed, read-only, runs alphabetically FIRST): workforce composition (7 active, avg tenure 3.6 y, Engineering 4 leads, FULL_TIME 6/INTERN 1, tenure cohorts 1/1/3/2), funnel per job (2+2 applications, all active, none terminal), interview quality (1 completed PASS → passRate 100.0, DRAFT-exclusion pattern), leave demand (CASUAL 2 > SICK 1 = EARNED 1, busiest first), payroll trend (7 payslips / 406,000 net, oldest first), performance (avg 4.0 official-only, DRAFT rating 3 excluded), RBAC matrix (MANAGER+EMPLOYEE 403 on all six endpoints, anonymous 401) |
+| Frontend | `ng build` clean · **29/29** tests |
+| Live API | All six endpoints return exact seed numbers: workforce `{active:7, avgTenureYears:3.6}`, funnel `{totalApplications:4}`, interviews `{passRate:100.0}`, payroll-trend `[{2026-8, 7, 406000}]`, performance `{averageRating:4.0, byRating:[{4,1}]}` |
+| Live UI | Admin: 5 KPIs (7 · 3.6 yrs · 4 · 100% · 4★), 8 cards, funnel table with per-job stage counts, 7 bar charts with correct row counts · Manager: "Analytics is restricted to ADMIN and HR" state · console clean |
+
+**Implemented**
+- **Backend** (`com.hrgenius.analytics`, 6 endpoints on `/api/v1/analytics`, ADMIN/HR only):
+  `AnalyticsDto` record tree + `AnalyticsService` where **every grouping is computed in the
+  database** (GROUP BY + CASE sums — e.g. the per-job funnel is one query with conditional
+  SUMs for active/selected/rejected). New repository queries: employees per employment type,
+  raw joining-date list (avg tenure + cohorts derived in Java), leave requests per type per
+  year (busiest first), interview status/result groupings, per-job funnel. Reused existing
+  aggregates where they existed (`ratingDistribution`, `periodTotals`, `countByDepartmentRaw`).
+  Payroll trend is returned oldest-first for chart order (periodTotals is newest-first).
+- **Frontend** (`/analytics`): `AnalyticsService.loadAll()` fetches all six sections in one
+  parallel `forkJoin` round trip; KPI strip (active, avg tenure, applications, pass rate,
+  avg rating); hiring funnel card (bar chart + stage-count table); headcount by department,
+  employment mix, tenure cohorts, leave demand, and rating-distribution bar charts (reusing
+  the zero-dependency `BarChartComponent`); interview outcome chips; net-payroll-per-period
+  bars with money labels. Explicit 403-restricted and offline states; refresh button. Route
+  `/analytics` + sidebar phase gate bumped to 13.
+
+**Bugs the cycle caught** (ERROR → ROOT CAUSE → FIX → VERIFY)
+1. **`avgTenureYears` long vs double**: DTO declared the field `long` while the service
+   computed a rounded double (3.6) — compile error. Fixed the DTO to `double`.
+2. **Stale V2 comment nearly poisoned a test**: the seed's payroll block says "all 6
+   employees" but EMP007 is inserted BEFORE the payroll INSERT…SELECT, so the period has
+   7 payslips / 406,000 net. My first assertion trusted the comment (6 / 349,750) and
+   failed; the Phase 9 live verification (₹4,06,000) confirmed the payload was right and
+   my expectation wrong. Rule: derive expectations from actual insertion order, not
+   comments.
+3. **Spring 6.2 `getStatusCode()` returns `HttpStatusCode`**, not `HttpStatus` — my RBAC
+   helper's return type broke test compilation. Also: the first `mvnw test` run looked
+   green only because grep filtered compile errors and surefire reports were stale —
+   always confirm the new suite actually ran before trusting the total.
+4. Template can't see file-local functions (Phase 2 lesson repeated): the funnel table
+   called a local `titleCase` — exposed `statusLabel()` as a component method.
+
+**Docs updated:** `API_DOCUMENTATION.md` (6-endpoint analytics contract), `ROADMAP.md`
+(Phase 13 ✅), `DEVELOPMENT_LOG.md` (this entry).
+
+**Next:** Phase 14 — Cross-cutting search/filter/pagination hardening.

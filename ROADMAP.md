@@ -15,9 +15,9 @@ Status legend: ✅ done · 🔄 in progress · ⬜ pending
 | 8 | Leave: types, balance, request → manager approval workflow | ✅ |
 | 9 | Payroll: salary structure, monthly run, payslip (BigDecimal) | ✅ |
 | 10 | Performance: goals, KPIs, manager review, ratings | ✅ |
-| 11 | Documents: upload/download/delete, metadata, validation | ⬜ |
-| 12 | Notifications: events + unread badge | ⬜ |
-| 13 | Analytics: real-data charts | ⬜ |
+| 11 | Documents: upload/download/delete, metadata, validation | ✅ |
+| 12 | Notifications: events + unread badge | ✅ |
+| 13 | Analytics: real-data charts | ✅ |
 | 14 | Cross-cutting search/filter/pagination hardening | ⬜ |
 | 15 | Reports: CSV/PDF exports | ⬜ |
 | 16 | Optional AI module (resume skill extraction, match score) | ⬜ |

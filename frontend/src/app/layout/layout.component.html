@@ -12,7 +12,7 @@
         </a>
       }
     </mat-nav-list>
-    <div class="sidebar-footer">v0.2 · Phase 10 — Performance</div>
+    <div class="sidebar-footer">v0.2 · Phase 13 — Analytics</div>
   </mat-sidenav>
 
   <mat-sidenav-content>
@@ -21,6 +21,10 @@
       <span class="spacer"></span>
 
       @if (auth.user(); as user) {
+        <a mat-icon-button routerLink="/notifications" class="bell"
+           [matTooltip]="unreadCount() > 0 ? unreadCount() + ' unread notification(s)' : 'Notifications'">
+          <mat-icon [matBadge]="unreadCount() || null" matBadgeColor="warn" matBadgeSize="small">notifications</mat-icon>
+        </a>
         <button
           mat-button
           class="user-chip"

@@ -10,6 +10,8 @@ import com.hrgenius.employee.Employee;
 import com.hrgenius.employee.EmployeeRepository;
 import com.hrgenius.employee.EmployeeStatus;
 import com.hrgenius.employee.EmploymentType;
+import com.hrgenius.notification.Notification;
+import com.hrgenius.notification.NotificationService;
 import com.hrgenius.recruitment.ApplicationStatus;
 import com.hrgenius.recruitment.Candidate;
 import com.hrgenius.recruitment.CandidateRepository;
@@ -36,15 +38,18 @@ public class OnboardingService {
     private final EmployeeRepository employeeRepository;
     private final JobApplicationRepository applicationRepository;
     private final CandidateRepository candidateRepository;
+    private final NotificationService notifications;
 
     public OnboardingService(OnboardingRepository onboardingRepository,
                              EmployeeRepository employeeRepository,
                              JobApplicationRepository applicationRepository,
-                             CandidateRepository candidateRepository) {
+                             CandidateRepository candidateRepository,
+                             NotificationService notifications) {
         this.onboardingRepository = onboardingRepository;
         this.employeeRepository = employeeRepository;
         this.applicationRepository = applicationRepository;
         this.candidateRepository = candidateRepository;
+        this.notifications = notifications;
     }
 
     @Transactional(readOnly = true)
@@ -85,6 +90,9 @@ public class OnboardingService {
         candidate.setStatus(CandidateStatus.HIRED);
         candidateRepository.save(candidate);
 
+        notifications.notifyEmployee(employee, Notification.NotificationType.ONBOARDING,
+                "Welcome to HRGenius",
+                "Your onboarding has started. Joining date: " + joiningDate + ".");
         return createRecord(employee, application, joiningDate);
     }
 
@@ -97,6 +105,9 @@ public class OnboardingService {
             throw new IllegalStateException("This employee already has an onboarding record");
         }
         LocalDate joiningDate = request.joiningDate() != null ? request.joiningDate() : employee.getJoiningDate();
+        notifications.notifyEmployee(employee, Notification.NotificationType.ONBOARDING,
+                "Onboarding started",
+                "An onboarding checklist was opened for you. Joining date: " + joiningDate + ".");
         return createRecord(employee, null, joiningDate);
     }
 

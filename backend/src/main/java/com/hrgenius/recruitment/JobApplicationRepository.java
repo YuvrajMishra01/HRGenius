@@ -23,6 +23,27 @@ public interface JobApplicationRepository extends JpaRepository<JobApplication, 
     @Query("select a.job.id, count(a) from JobApplication a group by a.job.id")
     List<Object[]> countByJobGrouped();
 
+    /**
+     * Analytics funnel per job: [jobId, title, jobStatus, total, active,
+     * selected, rejected]. "Active" = not yet terminal (SELECTED/REJECTED).
+     * All counts computed DB-side with CASE sums.
+     */
+    @Query("""
+            select a.job.id, a.job.title, a.job.status,
+                   count(a),
+                   sum(case when a.status not in
+                        (com.hrgenius.recruitment.ApplicationStatus.SELECTED,
+                         com.hrgenius.recruitment.ApplicationStatus.REJECTED)
+                       then 1 else 0 end),
+                   sum(case when a.status = com.hrgenius.recruitment.ApplicationStatus.SELECTED
+                       then 1 else 0 end),
+                   sum(case when a.status = com.hrgenius.recruitment.ApplicationStatus.REJECTED
+                       then 1 else 0 end)
+            from JobApplication a
+            group by a.job.id, a.job.title, a.job.status
+            """)
+    List<Object[]> funnelByJobRaw();
+
     /** Rich application list with candidate + job + department resolved. */
     @Query("""
             select a.id, c.id, c.name, c.email,

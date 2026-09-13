@@ -1,5 +1,6 @@
-import { Component, inject } from '@angular/core';
+import { Component, OnDestroy, OnInit, computed, inject, signal } from '@angular/core';
 import { MatButtonModule } from '@angular/material/button';
+import { MatBadgeModule } from '@angular/material/badge';
 import { MatIconModule } from '@angular/material/icon';
 import { MatListModule } from '@angular/material/list';
 import { MatMenuModule } from '@angular/material/menu';
@@ -9,6 +10,7 @@ import { MatTooltipModule } from '@angular/material/tooltip';
 import { RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
 
 import { AuthService } from '../core/auth.service';
+import { NotificationService } from '../notifications/notification.service';
 
 export interface NavItem {
   label: string;
@@ -31,16 +33,38 @@ export interface NavItem {
     MatIconModule,
     MatButtonModule,
     MatMenuModule,
+    MatBadgeModule,
     MatTooltipModule,
   ],
   templateUrl: './layout.component.html',
   styleUrl: './layout.component.scss',
 })
-export class LayoutComponent {
+export class LayoutComponent implements OnInit, OnDestroy {
   readonly auth = inject(AuthService);
+  private readonly notificationApi = inject(NotificationService);
+
+  /** Toolbar badge; the notifications page writes the same shared signal. */
+  readonly unreadCount = computed(() => this.notificationApi.badge());
+  private pollTimer: ReturnType<typeof setInterval> | null = null;
+
+  ngOnInit(): void {
+    this.pollBadge();
+    this.pollTimer = setInterval(() => this.pollBadge(), 30000);
+  }
+
+  ngOnDestroy(): void {
+    if (this.pollTimer) clearInterval(this.pollTimer);
+  }
+
+  private pollBadge(): void {
+    this.notificationApi.unread().subscribe({
+      next: (res) => this.notificationApi.badge.set(res.data.unread),
+      error: () => undefined,
+    });
+  }
 
   /** Phase gates which nav items are visible; bump as modules land. */
-  readonly currentPhase = 10;
+  readonly currentPhase = 13;
 
   readonly navItems: NavItem[] = [
     { label: 'Dashboard', icon: 'dashboard', route: '/dashboard', phase: 0 },

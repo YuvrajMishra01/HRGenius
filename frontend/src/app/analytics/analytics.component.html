@@ -1,0 +1,125 @@
+<main class="analytics-page">
+  <header class="page-head">
+    <div>
+      <h1>Analytics</h1>
+      <p>Deeper, chart-shaped views of real HR data</p>
+    </div>
+    <button mat-icon-button matTooltip="Refresh" (click)="refresh()">
+      <mat-icon>refresh</mat-icon>
+    </button>
+  </header>
+
+  @if (loading()) {
+    <mat-card class="state-card"><mat-card-content>Loading analytics…</mat-card-content></mat-card>
+  } @else if (forbidden()) {
+    <mat-card class="state-card">
+      <mat-card-content>
+        <mat-icon>lock</mat-icon>
+        <p>Analytics is restricted to ADMIN and HR.</p>
+      </mat-card-content>
+    </mat-card>
+  } @else if (loadError() || !data()) {
+    <mat-card class="state-card">
+      <mat-card-content>
+        <mat-icon>wifi_off</mat-icon>
+        <p>Could not load analytics.</p>
+      </mat-card-content>
+    </mat-card>
+  } @else {
+    <section class="kpi-strip">
+      <div class="kpi">
+        <mat-icon>groups</mat-icon>
+        <div><strong>{{ data()!.workforce.active }}</strong><span>Active employees</span></div>
+      </div>
+      <div class="kpi">
+        <mat-icon>history</mat-icon>
+        <div><strong>{{ data()!.workforce.avgTenureYears }} yrs</strong><span>Average tenure</span></div>
+      </div>
+      <div class="kpi">
+        <mat-icon>work</mat-icon>
+        <div><strong>{{ data()!.funnel.totalApplications }}</strong><span>Total applications</span></div>
+      </div>
+      <div class="kpi">
+        <mat-icon>fact_check</mat-icon>
+        <div><strong>{{ data()!.interviews.passRate }}%</strong><span>Interview pass rate</span></div>
+      </div>
+      <div class="kpi">
+        <mat-icon>trending_up</mat-icon>
+        <div><strong>{{ data()!.performance.averageRating || '—' }}</strong><span>Avg review rating</span></div>
+      </div>
+    </section>
+
+    <section class="grid">
+      <mat-card class="card wide">
+        <mat-card-header><mat-card-title>Hiring funnel — applications per job</mat-card-title></mat-card-header>
+        <mat-card-content>
+          <app-bar-chart [bars]="funnelBars()" />
+          <table class="funnel-table">
+            <thead>
+              <tr><th>JOB</th><th>STATUS</th><th>TOTAL</th><th>ACTIVE</th><th>SELECTED</th><th>REJECTED</th></tr>
+            </thead>
+            <tbody>
+              @for (job of data()!.funnel.perJob; track job.jobId) {
+                <tr>
+                  <td class="job-title">{{ job.title }}</td>
+                  <td><span class="pill">{{ statusLabel(job.status) }}</span></td>
+                  <td>{{ job.applications }}</td>
+                  <td>{{ job.active }}</td>
+                  <td>{{ job.selected }}</td>
+                  <td>{{ job.rejected }}</td>
+                </tr>
+              } @empty {
+                <tr><td colspan="6" class="empty">No applications yet.</td></tr>
+              }
+            </tbody>
+          </table>
+        </mat-card-content>
+      </mat-card>
+
+      <mat-card class="card">
+        <mat-card-header><mat-card-title>Headcount by department</mat-card-title></mat-card-header>
+        <mat-card-content><app-bar-chart [bars]="workforceBars()" /></mat-card-content>
+      </mat-card>
+
+      <mat-card class="card">
+        <mat-card-header><mat-card-title>Employment mix</mat-card-title></mat-card-header>
+        <mat-card-content><app-bar-chart [bars]="typeBars()" /></mat-card-content>
+      </mat-card>
+
+      <mat-card class="card">
+        <mat-card-header><mat-card-title>Tenure cohorts</mat-card-title></mat-card-header>
+        <mat-card-content><app-bar-chart [bars]="tenureBars()" /></mat-card-content>
+      </mat-card>
+
+      <mat-card class="card">
+        <mat-card-header>
+          <mat-card-title>Interview outcomes (completed only)</mat-card-title>
+        </mat-card-header>
+        <mat-card-content>
+          <div class="outcome-row">
+            <span class="outcome pass"><strong>{{ data()!.interviews.pass }}</strong> Pass</span>
+            <span class="outcome fail"><strong>{{ data()!.interviews.fail }}</strong> Fail</span>
+            <span class="outcome hold"><strong>{{ data()!.interviews.onHold }}</strong> On hold</span>
+            <span class="outcome"><strong>{{ data()!.interviews.scheduled }}</strong> Scheduled</span>
+            <span class="outcome"><strong>{{ data()!.interviews.cancelled }}</strong> Cancelled</span>
+          </div>
+        </mat-card-content>
+      </mat-card>
+
+      <mat-card class="card">
+        <mat-card-header><mat-card-title>Leave demand {{ data()!.leave.year }} (by type)</mat-card-title></mat-card-header>
+        <mat-card-content><app-bar-chart [bars]="leaveBars()" /></mat-card-content>
+      </mat-card>
+
+      <mat-card class="card">
+        <mat-card-header><mat-card-title>Review rating distribution (official only)</mat-card-title></mat-card-header>
+        <mat-card-content><app-bar-chart [bars]="ratingBars()" /></mat-card-content>
+      </mat-card>
+
+      <mat-card class="card wide">
+        <mat-card-header><mat-card-title>Net payroll by period</mat-card-title></mat-card-header>
+        <mat-card-content><app-bar-chart [bars]="payrollBars()" /></mat-card-content>
+      </mat-card>
+    </section>
+  }
+</main>

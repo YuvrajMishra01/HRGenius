@@ -65,4 +65,18 @@ public interface EmployeeRepository
     List<Employee> findByJoiningDateGreaterThanEqualOrderByJoiningDateDesc(LocalDate since, Pageable pageable);
 
     Page<Employee> findByStatus(EmployeeStatus status, Pageable pageable);
+
+    // ---------------------------------------------- analytics (Phase 13)
+
+    /** Employees per employment type (all statuses): [type, count]. */
+    @Query("""
+            select e.employmentType, count(e)
+            from Employee e
+            group by e.employmentType
+            """)
+    List<Object[]> countByEmploymentTypeRaw();
+
+    /** Every joining date (avg tenure + cohort buckets are computed in Java). */
+    @Query("select e.joiningDate from Employee e")
+    List<LocalDate> findAllJoiningDates();
 }

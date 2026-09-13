@@ -4425,3 +4425,200 @@
          ╵     [32m~~~~~~~~[0m
 
 [39m[22m
+[1m[33m[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1mNG8113: CurrencyPipe is not used within the template of PayrollComponent[0m [1m[35m[plugin angular-compiler][0m
+
+    src/app/payroll/payroll.component.ts:28:4:
+[37m      28 │     [32mCurrencyPipe[37m,
+         ╵     [32m~~~~~~~~~~~~[0m
+
+
+[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1mNG8113: DatePipe is not used within the template of PayrollComponent[0m [1m[35m[plugin angular-compiler][0m
+
+    src/app/payroll/payroll.component.ts:29:4:
+[37m      29 │     [32mDatePipe[37m,
+         ╵     [32m~~~~~~~~[0m
+
+[39m[22m
+[1m[31m[31mX [41;31m[[41;97mERROR[41;31m][0m [1mNG8004: No pipe found with name 'titlecase'.
+To fix this, import the "TitleCasePipe" class from "@angular/common" and add it to the "imports" array of the component.[0m [1m[35m[plugin angular-compiler][0m
+
+    src/app/documents/documents.component.html:33:37:
+[37m      33 │ ...  {{ t.replace('_', ' ') | [32mtitlecase[37m }} · {{ typeCounts().get(...
+         ╵                               [32m~~~~~~~~~[0m
+
+  Error occurs in the template of component DocumentsComponent.
+
+    src/app/documents/documents.component.ts:42:15:
+[37m      42 │   templateUrl: [32m'./documents.component.html'[37m,
+         ╵                [32m~~~~~~~~~~~~~~~~~~~~~~~~~~~~[0m
+
+
+[31mX [41;31m[[41;97mERROR[41;31m][0m [1mNG5002: Parser Error: Unexpected token / at column 27 in [ doc.documentType.replace(/_/g, ' ') | titlecase ] in D:\Project\frontend\src\app\documents\documents.component.html@70:42[0m [1m[35m[plugin angular-compiler][0m
+
+    src/app/documents/documents.component.html:71:42:
+[37m      71 │ ...ype-pill">[32m{{ doc.documentType.replace(/_/g, ' ') | titlecase }}[37m...
+         ╵              [32m~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~[0m
+
+  Error occurs in the template of component DocumentsComponent.
+
+    src/app/documents/documents.component.ts:42:15:
+[37m      42 │   templateUrl: [32m'./documents.component.html'[37m,
+         ╵                [32m~~~~~~~~~~~~~~~~~~~~~~~~~~~~[0m
+
+
+[31mX [41;31m[[41;97mERROR[41;31m][0m [1mTS2554: Expected 2 arguments, but got 1.[0m [1m[35m[plugin angular-compiler][0m
+
+    src/app/documents/documents.component.html:71:62:
+[37m      71 │ ...e-pill">{{ doc.documentType.[32mreplace[37m(/_/g, ' ') | titlecase }}</...
+         ╵                                [32m~~~~~~~[0m
+
+  Error occurs in the template of component DocumentsComponent.
+
+    src/app/documents/documents.component.ts:42:15:
+[37m      42 │   templateUrl: [32m'./documents.component.html'[37m,
+         ╵                [32m~~~~~~~~~~~~~~~~~~~~~~~~~~~~[0m
+
+
+[31mX [41;31m[[41;97mERROR[41;31m][0m [1mNG8004: No pipe found with name 'titlecase'.
+To fix this, import the "TitleCasePipe" class from "@angular/common" and add it to the "imports" array of the component.[0m [1m[35m[plugin angular-compiler][0m
+
+    src/app/documents/documents.component.html:71:83:
+[37m      71 │ ...>{{ doc.documentType.replace(/_/g, ' ') | [32mtitlecase[37m }}</span></td>
+         ╵                                              [32m~~~~~~~~~[0m
+
+  Error occurs in the template of component DocumentsComponent.
+
+    src/app/documents/documents.component.ts:42:15:
+[37m      42 │   templateUrl: [32m'./documents.component.html'[37m,
+         ╵                [32m~~~~~~~~~~~~~~~~~~~~~~~~~~~~[0m
+
+[39m[22m
+[1m[33m[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1mNG8113: CurrencyPipe is not used within the template of PayrollComponent[0m [1m[35m[plugin angular-compiler][0m
+
+    src/app/payroll/payroll.component.ts:28:4:
+[37m      28 │     [32mCurrencyPipe[37m,
+         ╵     [32m~~~~~~~~~~~~[0m
+
+
+[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1mNG8113: DatePipe is not used within the template of PayrollComponent[0m [1m[35m[plugin angular-compiler][0m
+
+    src/app/payroll/payroll.component.ts:29:4:
+[37m      29 │     [32mDatePipe[37m,
+         ╵     [32m~~~~~~~~[0m
+
+[39m[22m
+[1m[31m[31mX [41;31m[[41;97mERROR[41;31m][0m [1mNG8004: No pipe found with name 'titlecase'.
+To fix this, import the "TitleCasePipe" class from "@angular/common" and add it to the "imports" array of the component.[0m [1m[35m[plugin angular-compiler][0m
+
+    src/app/documents/documents.component.html:33:37:
+[37m      33 │ ...  {{ t.replace('_', ' ') | [32mtitlecase[37m }} · {{ typeCounts().get(...
+         ╵                               [32m~~~~~~~~~[0m
+
+  Error occurs in the template of component DocumentsComponent.
+
+    src/app/documents/documents.component.ts:42:15:
+[37m      42 │   templateUrl: [32m'./documents.component.html'[37m,
+         ╵                [32m~~~~~~~~~~~~~~~~~~~~~~~~~~~~[0m
+
+
+[31mX [41;31m[[41;97mERROR[41;31m][0m [1mNG5002: Parser Error: Unexpected token / at column 27 in [ doc.documentType.replace(/_/g, ' ') | titlecase ] in D:\Project\frontend\src\app\documents\documents.component.html@70:42[0m [1m[35m[plugin angular-compiler][0m
+
+    src/app/documents/documents.component.html:71:42:
+[37m      71 │ ...ype-pill">[32m{{ doc.documentType.replace(/_/g, ' ') | titlecase }}[37m...
+         ╵              [32m~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~[0m
+
+  Error occurs in the template of component DocumentsComponent.
+
+    src/app/documents/documents.component.ts:42:15:
+[37m      42 │   templateUrl: [32m'./documents.component.html'[37m,
+         ╵                [32m~~~~~~~~~~~~~~~~~~~~~~~~~~~~[0m
+
+
+[31mX [41;31m[[41;97mERROR[41;31m][0m [1mTS2554: Expected 2 arguments, but got 1.[0m [1m[35m[plugin angular-compiler][0m
+
+    src/app/documents/documents.component.html:71:62:
+[37m      71 │ ...e-pill">{{ doc.documentType.[32mreplace[37m(/_/g, ' ') | titlecase }}</...
+         ╵                                [32m~~~~~~~[0m
+
+  Error occurs in the template of component DocumentsComponent.
+
+    src/app/documents/documents.component.ts:42:15:
+[37m      42 │   templateUrl: [32m'./documents.component.html'[37m,
+         ╵                [32m~~~~~~~~~~~~~~~~~~~~~~~~~~~~[0m
+
+
+[31mX [41;31m[[41;97mERROR[41;31m][0m [1mNG8004: No pipe found with name 'titlecase'.
+To fix this, import the "TitleCasePipe" class from "@angular/common" and add it to the "imports" array of the component.[0m [1m[35m[plugin angular-compiler][0m
+
+    src/app/documents/documents.component.html:71:83:
+[37m      71 │ ...>{{ doc.documentType.replace(/_/g, ' ') | [32mtitlecase[37m }}</span></td>
+         ╵                                              [32m~~~~~~~~~[0m
+
+  Error occurs in the template of component DocumentsComponent.
+
+    src/app/documents/documents.component.ts:42:15:
+[37m      42 │   templateUrl: [32m'./documents.component.html'[37m,
+         ╵                [32m~~~~~~~~~~~~~~~~~~~~~~~~~~~~[0m
+
+[39m[22m
+[1m[33m[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1mNG8113: CurrencyPipe is not used within the template of PayrollComponent[0m [1m[35m[plugin angular-compiler][0m
+
+    src/app/payroll/payroll.component.ts:28:4:
+[37m      28 │     [32mCurrencyPipe[37m,
+         ╵     [32m~~~~~~~~~~~~[0m
+
+
+[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1mNG8113: DatePipe is not used within the template of PayrollComponent[0m [1m[35m[plugin angular-compiler][0m
+
+    src/app/payroll/payroll.component.ts:29:4:
+[37m      29 │     [32mDatePipe[37m,
+         ╵     [32m~~~~~~~~[0m
+
+[39m[22m
+[1m[31m[31mX [41;31m[[41;97mERROR[41;31m][0m [1mNG5002: Parser Error: Unexpected token / at column 27 in [ doc.documentType.replace(/_/g, ' ') | titlecase ] in D:\Project\frontend\src\app\documents\documents.component.html@70:42[0m [1m[35m[plugin angular-compiler][0m
+
+    src/app/documents/documents.component.html:71:42:
+[37m      71 │ ...ype-pill">[32m{{ doc.documentType.replace(/_/g, ' ') | titlecase }}[37m...
+         ╵              [32m~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~[0m
+
+  Error occurs in the template of component DocumentsComponent.
+
+    src/app/documents/documents.component.ts:43:15:
+[37m      43 │   templateUrl: [32m'./documents.component.html'[37m,
+         ╵                [32m~~~~~~~~~~~~~~~~~~~~~~~~~~~~[0m
+
+
+[31mX [41;31m[[41;97mERROR[41;31m][0m [1mTS2554: Expected 2 arguments, but got 1.[0m [1m[35m[plugin angular-compiler][0m
+
+    src/app/documents/documents.component.html:71:62:
+[37m      71 │ ...e-pill">{{ doc.documentType.[32mreplace[37m(/_/g, ' ') | titlecase }}</...
+         ╵                                [32m~~~~~~~[0m
+
+  Error occurs in the template of component DocumentsComponent.
+
+    src/app/documents/documents.component.ts:43:15:
+[37m      43 │   templateUrl: [32m'./documents.component.html'[37m,
+         ╵                [32m~~~~~~~~~~~~~~~~~~~~~~~~~~~~[0m
+
+[39m[22m
+[1m[33m[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1mNG8113: TitleCasePipe is not used within the template of DocumentsComponent[0m [1m[35m[plugin angular-compiler][0m
+
+    src/app/documents/documents.component.ts:32:4:
+[37m      32 │     [32mTitleCasePipe[37m,
+         ╵     [32m~~~~~~~~~~~~~[0m
+
+
+[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1mNG8113: CurrencyPipe is not used within the template of PayrollComponent[0m [1m[35m[plugin angular-compiler][0m
+
+    src/app/payroll/payroll.component.ts:28:4:
+[37m      28 │     [32mCurrencyPipe[37m,
+         ╵     [32m~~~~~~~~~~~~[0m
+
+
+[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1mNG8113: DatePipe is not used within the template of PayrollComponent[0m [1m[35m[plugin angular-compiler][0m
+
+    src/app/payroll/payroll.component.ts:29:4:
+[37m      29 │     [32mDatePipe[37m,
+         ╵     [32m~~~~~~~~[0m
+
+[39m[22m

@@ -89,4 +89,15 @@ public interface LeaveRequestRepository extends JpaRepository<LeaveRequest, Long
     long countByStatusBetweenStartDates(@Param("status") LeaveRequest.LeaveStatus status,
                                         @Param("yearStart") LocalDate yearStart,
                                         @Param("yearEnd") LocalDate yearEnd);
+
+    /** Analytics: request count per leave type within one year, busiest first. */
+    @Query("""
+            select t.name, count(l)
+            from LeaveRequest l join l.leaveType t
+            where l.startDate >= :yearStart and l.startDate <= :yearEnd
+            group by t.name
+            order by count(l) desc
+            """)
+    List<Object[]> countByTypeWithinYear(@Param("yearStart") LocalDate yearStart,
+                                         @Param("yearEnd") LocalDate yearEnd);
 }
