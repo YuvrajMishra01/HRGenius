@@ -2,8 +2,11 @@ package com.hrgenius.performance;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
+import java.util.Comparator;
 import java.util.List;
 
+import com.hrgenius.common.Lists;
+import com.hrgenius.common.PageResponse;
 import com.hrgenius.employee.Employee;
 import com.hrgenius.employee.EmployeeRepository;
 import com.hrgenius.notification.Notification;
@@ -42,11 +45,21 @@ public class PerformanceService {
     // ------------------------------------------------------------ views
 
     @Transactional(readOnly = true)
-    public List<PerformanceDto.ReviewResponse> list(Long employeeId) {
+    public PageResponse<PerformanceDto.ReviewResponse> list(Long employeeId, PerformanceReview.ReviewStatus status,
+                                                            String search, Integer page, Integer size) {
+        String term = Lists.cleanSearch(search);
         List<PerformanceReview> rows = employeeId == null
                 ? reviewRepository.findAllWithDetails()
                 : reviewRepository.findByEmployeeWithDetails(employeeId);
-        return rows.stream().map(PerformanceService::toResponse).toList();
+        List<PerformanceDto.ReviewResponse> mapped = rows.stream()
+                .map(PerformanceService::toResponse)
+                .filter(r -> status == null || r.status() == status)
+                .filter(Lists.containsTerm(
+                        r -> r.employeeName() + " " + r.employeeCode() + " " + r.reviewerName()
+                                + " " + r.reviewPeriod(), term))
+                .sorted(Comparator.comparing(PerformanceDto.ReviewResponse::id).reversed())
+                .toList();
+        return Lists.page(mapped, Lists.cleanPage(page), Lists.cleanSize(size));
     }
 
     @Transactional(readOnly = true)

@@ -3,6 +3,7 @@ package com.hrgenius.performance;
 import java.util.List;
 
 import com.hrgenius.common.ApiResponse;
+import com.hrgenius.common.PageResponse;
 
 import jakarta.validation.Valid;
 
@@ -36,9 +37,13 @@ public class PerformanceController {
 
     @GetMapping("/reviews")
     @PreAuthorize("hasAnyRole('ADMIN', 'HR', 'MANAGER')")
-    public ResponseEntity<ApiResponse<List<PerformanceDto.ReviewResponse>>> reviews(
-            @RequestParam(required = false) Long employeeId) {
-        return ResponseEntity.ok(ApiResponse.of(service.list(employeeId)));
+    public ResponseEntity<ApiResponse<PageResponse<PerformanceDto.ReviewResponse>>> reviews(
+            @RequestParam(required = false) Long employeeId,
+            @RequestParam(required = false) PerformanceReview.ReviewStatus status,
+            @RequestParam(required = false) String search,
+            @RequestParam(required = false) Integer page,
+            @RequestParam(required = false) Integer size) {
+        return ResponseEntity.ok(ApiResponse.of(service.list(employeeId, status, search, page, size)));
     }
 
     @GetMapping("/summary")

@@ -1,0 +1,8 @@
+﻿Employee Code,Name,Email,Phone,Department,Designation,Employment Type,Status,Joining Date
+EMP001,Rahul Verma,manager@hrgenius.local,'+91-9810011122,Engineering,Senior Software Engineer,FULL_TIME,ACTIVE,2021-03-15
+EMP002,Anita Desai,employee@hrgenius.local,'+91-9810033344,Engineering,Software Engineer,FULL_TIME,ACTIVE,2023-07-10
+EMP003,Vikram Singh,vikram.singh@hrgenius.local,'+91-9820055566,Engineering,Software Engineer,FULL_TIME,ACTIVE,2022-01-03
+EMP004,Sneha Patil,sneha.patil@hrgenius.local,'+91-9830077788,Finance,Accountant,FULL_TIME,ACTIVE,2022-09-19
+EMP005,Arjun Mehta,arjun.mehta@hrgenius.local,'+91-9840099900,Sales,Sales Executive,INTERN,ACTIVE,2024-02-05
+EMP006,Divya Nair,divya.nair@hrgenius.local,'+91-9850022211,Human Resources,HR Executive,FULL_TIME,ACTIVE,2020-11-23
+EMP007,Rohan Kulkarni,rohan.kulkarni@hrgenius.local,'+91-9860044412,Engineering,Software Engineer,FULL_TIME,ACTIVE,2026-09-03

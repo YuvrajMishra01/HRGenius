@@ -12,6 +12,7 @@ import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.core.AuthenticationException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
+import org.springframework.web.bind.MissingServletRequestParameterException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.servlet.resource.NoResourceFoundException;
@@ -57,11 +58,20 @@ public class GlobalExceptionHandler {
         return build(status, ex.getMessage(), req, Map.of());
     }
 
-    /** Non-numeric values for numeric path variables (e.g. /onboardings/abc) → 400, not 500. */
+    /** Non-numeric/non-enum values for path variables or query params → 400, not 500. */
     @ExceptionHandler(MethodArgumentTypeMismatchException.class)
     public ResponseEntity<ApiError> handleTypeMismatch(MethodArgumentTypeMismatchException ex,
                                                        HttpServletRequest req) {
-        return build(HttpStatus.BAD_REQUEST, "Invalid value for path parameter", req, Map.of());
+        return build(HttpStatus.BAD_REQUEST,
+                "Invalid value for parameter: " + ex.getName(), req, Map.of());
+    }
+
+    /** Missing required query params (e.g. documents without employeeId) → 400, not 500. */
+    @ExceptionHandler(MissingServletRequestParameterException.class)
+    public ResponseEntity<ApiError> handleMissingParam(MissingServletRequestParameterException ex,
+                                                       HttpServletRequest req) {
+        return build(HttpStatus.BAD_REQUEST,
+                "Missing required parameter: " + ex.getParameterName(), req, Map.of());
     }
 
     @ExceptionHandler(IllegalArgumentException.class)

@@ -4,9 +4,17 @@
       <h1>Attendance</h1>
       <p class="sub">Check-in/out, daily statuses and monthly view</p>
     </div>
-    <button mat-stroked-button (click)="reload()" [disabled]="loading()">
-      <mat-icon>refresh</mat-icon> Refresh
-    </button>
+    <div class="head-actions">
+      <button mat-stroked-button (click)="export('csv')" matTooltip="Download this month as CSV">
+        <mat-icon>download</mat-icon> CSV
+      </button>
+      <button mat-stroked-button (click)="export('pdf')" matTooltip="Download this month as PDF">
+        <mat-icon>picture_as_pdf</mat-icon> PDF
+      </button>
+      <button mat-stroked-button (click)="reload()" [disabled]="loading()">
+        <mat-icon>refresh</mat-icon> Refresh
+      </button>
+    </div>
   </header>
 
   @if (loading()) {

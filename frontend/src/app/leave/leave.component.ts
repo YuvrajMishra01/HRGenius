@@ -13,6 +13,7 @@ import { MatTooltipModule } from '@angular/material/tooltip';
 import { forkJoin } from 'rxjs';
 
 import { AuthService } from '../core/auth.service';
+import { ReportService } from '../shared/report.service';
 import {
   BalanceResponse,
   LeaveRequest,
@@ -44,6 +45,7 @@ import {
 export class LeaveComponent implements OnInit {
   private readonly api = inject(LeaveService);
   private readonly dialogs = inject(MatDialog);
+  private readonly reports = inject(ReportService);
   readonly auth = inject(AuthService);
 
   readonly canWrite = computed(() => {
@@ -53,6 +55,16 @@ export class LeaveComponent implements OnInit {
 
   readonly statuses: (LeaveStatus | 'ALL')[] = ['ALL', 'PENDING', 'APPROVED', 'REJECTED', 'CANCELLED'];
   readonly statusFilter = signal<LeaveStatus | 'ALL'>('ALL');
+
+  /** Exports requests with the status tab currently selected. */
+  export(format: 'csv' | 'pdf'): void {
+    const filter = this.statusFilter();
+    const qs = filter === 'ALL' ? '' : `?status=${filter}`;
+    this.reports.download(
+      `/api/v1/reports/leave.${format}${qs}`,
+      `leave${filter === 'ALL' ? '' : '-' + filter.toLowerCase()}.${format}`,
+    );
+  }
 
   readonly loading = signal(true);
   readonly error = signal<string | null>(null);
@@ -84,8 +96,9 @@ export class LeaveComponent implements OnInit {
           this.employeeOptions.set(employees.data);
           this.loading.set(false);
         },
-        error: () => {
-          this.error.set('Could not load leave data');
+        error: (err) => {
+          this.error.set(
+            (err as { error?: { message?: string } })?.error?.message ?? 'Could not load leave data');
           this.loading.set(false);
         },
       });
@@ -94,7 +107,9 @@ export class LeaveComponent implements OnInit {
   private reloadRequests(): void {
     this.api.requests(this.currentStatus()).subscribe({
       next: (res) => this.requests.set(res.data),
-      error: () => this.error.set('Could not load leave requests'),
+      error: (err) =>
+        this.error.set(
+          (err as { error?: { message?: string } })?.error?.message ?? 'Could not load leave requests'),
     });
   }
 

@@ -1,8 +1,10 @@
 package com.hrgenius.recruitment;
 
 import java.util.List;
+import java.util.Map;
 
 import com.hrgenius.common.ApiResponse;
+import com.hrgenius.common.PageResponse;
 
 import jakarta.validation.Valid;
 
@@ -17,6 +19,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 /**
@@ -39,8 +42,12 @@ public class RecruitmentController {
 
     @GetMapping("/jobs")
     @PreAuthorize("hasAnyRole('ADMIN', 'HR', 'MANAGER')")
-    public ResponseEntity<ApiResponse<List<RecruitmentDto.JobResponse>>> jobs() {
-        return ResponseEntity.ok(ApiResponse.of(recruitmentService.listJobs()));
+    public ResponseEntity<ApiResponse<PageResponse<RecruitmentDto.JobResponse>>> jobs(
+            @RequestParam(required = false) String search,
+            @RequestParam(required = false) JobStatus status,
+            @RequestParam(required = false) Integer page,
+            @RequestParam(required = false) Integer size) {
+        return ResponseEntity.ok(ApiResponse.of(recruitmentService.listJobs(search, status, page, size)));
     }
 
     @PostMapping("/jobs")
@@ -69,8 +76,12 @@ public class RecruitmentController {
 
     @GetMapping("/candidates")
     @PreAuthorize("hasAnyRole('ADMIN', 'HR', 'MANAGER')")
-    public ResponseEntity<ApiResponse<List<RecruitmentDto.CandidateResponse>>> candidates() {
-        return ResponseEntity.ok(ApiResponse.of(recruitmentService.listCandidates()));
+    public ResponseEntity<ApiResponse<PageResponse<RecruitmentDto.CandidateResponse>>> candidates(
+            @RequestParam(required = false) String search,
+            @RequestParam(required = false) CandidateStatus status,
+            @RequestParam(required = false) Integer page,
+            @RequestParam(required = false) Integer size) {
+        return ResponseEntity.ok(ApiResponse.of(recruitmentService.listCandidates(search, status, page, size)));
     }
 
     @PostMapping("/candidates")
@@ -99,8 +110,19 @@ public class RecruitmentController {
 
     @GetMapping("/applications")
     @PreAuthorize("hasAnyRole('ADMIN', 'HR', 'MANAGER')")
-    public ResponseEntity<ApiResponse<List<RecruitmentDto.ApplicationResponse>>> applications() {
-        return ResponseEntity.ok(ApiResponse.of(recruitmentService.listApplications()));
+    public ResponseEntity<ApiResponse<PageResponse<RecruitmentDto.ApplicationResponse>>> applications(
+            @RequestParam(required = false) String search,
+            @RequestParam(required = false) ApplicationStatus status,
+            @RequestParam(required = false) Integer page,
+            @RequestParam(required = false) Integer size) {
+        return ResponseEntity.ok(ApiResponse.of(recruitmentService.listApplications(search, status, page, size)));
+    }
+
+    /** KPI strip totals (Phase 14): pipeline counts independent of pagination. */
+    @GetMapping("/applications/counts")
+    @PreAuthorize("hasAnyRole('ADMIN', 'HR', 'MANAGER')")
+    public ResponseEntity<ApiResponse<Map<ApplicationStatus, Long>>> applicationCounts() {
+        return ResponseEntity.ok(ApiResponse.of(recruitmentService.applicationCounts()));
     }
 
     @PostMapping("/applications")
@@ -124,8 +146,12 @@ public class RecruitmentController {
 
     @GetMapping("/interviews")
     @PreAuthorize("hasAnyRole('ADMIN', 'HR', 'MANAGER')")
-    public ResponseEntity<ApiResponse<List<RecruitmentDto.InterviewResponse>>> interviews() {
-        return ResponseEntity.ok(ApiResponse.of(recruitmentService.listInterviews()));
+    public ResponseEntity<ApiResponse<PageResponse<RecruitmentDto.InterviewResponse>>> interviews(
+            @RequestParam(required = false) String search,
+            @RequestParam(required = false) Interview.InterviewStatus status,
+            @RequestParam(required = false) Integer page,
+            @RequestParam(required = false) Integer size) {
+        return ResponseEntity.ok(ApiResponse.of(recruitmentService.listInterviews(search, status, page, size)));
     }
 
     @PostMapping("/interviews")

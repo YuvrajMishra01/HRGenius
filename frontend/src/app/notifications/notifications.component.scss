@@ -40,6 +40,16 @@
   gap: 10px;
 }
 
+.feed-controls {
+  display: flex;
+  align-items: center;
+
+  .feed-toggle {
+    --mat-button-toggle-height: 34px;
+    font-size: 13px;
+  }
+}
+
 .state-card {
   mat-card-content {
     display: flex;

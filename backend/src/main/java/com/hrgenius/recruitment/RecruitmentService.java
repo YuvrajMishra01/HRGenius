@@ -1,15 +1,21 @@
 package com.hrgenius.recruitment;
 
 import java.time.LocalDate;
+import java.util.EnumMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
+import com.hrgenius.common.Lists;
+import com.hrgenius.common.PageResponse;
+import com.hrgenius.common.SqlPaging;
 import com.hrgenius.department.Department;
 import com.hrgenius.department.DepartmentRepository;
 import com.hrgenius.employee.Employee;
 import com.hrgenius.employee.EmployeeRepository;
 
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -56,13 +62,39 @@ public class RecruitmentService {
 
     // ============================================================== jobs
 
+    /**
+     * DB-side paged job list (Phase 17): status + search filters, the
+     * per-job application count and the page window are all computed in
+     * SQL — scale is a database concern, not a heap one. Title ordering is
+     * now the DB's case-insensitive lower(title) sort.
+     */
     @Transactional(readOnly = true)
-    public List<RecruitmentDto.JobResponse> listJobs() {
-        Map<Long, Long> counts = applicationRepository.countByJobGrouped().stream()
-                .collect(Collectors.toMap(row -> (Long) row[0], row -> (Long) row[1]));
-        return jobRepository.findAll().stream()
-                .map(job -> toJobResponse(job, counts.getOrDefault(job.getId(), 0L)))
-                .toList();
+    public PageResponse<RecruitmentDto.JobResponse> listJobs(String search, JobStatus status,
+                                                             Integer page, Integer size) {
+        String pattern = SqlPaging.likeEscapeOrNull(search);
+        Pageable pageable = PageRequest.of(Lists.cleanPage(page), Lists.cleanSize(size));
+        return SqlPaging.of(jobRepository.findPagedProjected(status, pattern, pageable)
+                .map(RecruitmentService::toJobRow));
+    }
+
+    private static RecruitmentDto.JobResponse toJobRow(Object[] row) {
+        return new RecruitmentDto.JobResponse(
+                (Long) row[0], (String) row[1], (String) row[2],
+                (Long) row[3], (String) row[4],
+                (String) row[5],
+                row[6] == null ? null : row[6].toString(),
+                (String) row[7], (JobStatus) row[8],
+                (java.time.LocalDate) row[9], (java.time.LocalDate) row[10],
+                (Long) row[11]);
+    }
+
+    /** Pipeline stage → application count (KPI strip; never paginated). */
+    @Transactional(readOnly = true)
+    public Map<ApplicationStatus, Long> applicationCounts() {
+        Map<ApplicationStatus, Long> counts = new EnumMap<>(ApplicationStatus.class);
+        applicationRepository.countByStatusRaw()
+                .forEach(row -> counts.put((ApplicationStatus) row[0], (Long) row[1]));
+        return counts;
     }
 
     @Transactional
@@ -97,11 +129,22 @@ public class RecruitmentService {
 
     // ======================================================== candidates
 
+    /** DB-side paged candidate list (Phase 17): newest-first ordering in SQL. */
     @Transactional(readOnly = true)
-    public List<RecruitmentDto.CandidateResponse> listCandidates() {
-        return candidateRepository.findAllProjected().stream()
-                .map(RecruitmentService::toCandidateResponse)
-                .toList();
+    public PageResponse<RecruitmentDto.CandidateResponse> listCandidates(String search,
+                                                                         CandidateStatus status,
+                                                                         Integer page, Integer size) {
+        String pattern = SqlPaging.likeEscapeOrNull(search);
+        Pageable pageable = PageRequest.of(Lists.cleanPage(page), Lists.cleanSize(size));
+        return SqlPaging.of(candidateRepository.findPagedProjected(status, pattern, pageable)
+                .map(RecruitmentService::toCandidateRow));
+    }
+
+    private static RecruitmentDto.CandidateResponse toCandidateRow(Object[] row) {
+        return new RecruitmentDto.CandidateResponse(
+                (Long) row[0], (String) row[1], (String) row[2], (String) row[3],
+                (String) row[4], (String) row[5], (java.math.BigDecimal) row[6],
+                (CandidateStatus) row[7], (java.time.LocalDateTime) row[8], (Long) row[9]);
     }
 
     @Transactional
@@ -151,11 +194,22 @@ public class RecruitmentService {
 
     // ====================================================== applications
 
+    /** DB-side paged application list (Phase 17): id-ascending in SQL. */
     @Transactional(readOnly = true)
-    public List<RecruitmentDto.ApplicationResponse> listApplications() {
-        return applicationRepository.findAllProjected().stream()
-                .map(RecruitmentService::toApplicationResponse)
-                .toList();
+    public PageResponse<RecruitmentDto.ApplicationResponse> listApplications(String search,
+                                                                             ApplicationStatus status,
+                                                                             Integer page, Integer size) {
+        String pattern = SqlPaging.likeEscapeOrNull(search);
+        Pageable pageable = PageRequest.of(Lists.cleanPage(page), Lists.cleanSize(size));
+        return SqlPaging.of(applicationRepository.findPagedProjected(status, pattern, pageable)
+                .map(RecruitmentService::toApplicationRow));
+    }
+
+    private static RecruitmentDto.ApplicationResponse toApplicationRow(Object[] row) {
+        return new RecruitmentDto.ApplicationResponse(
+                (Long) row[0], (Long) row[1], (String) row[2], (String) row[3],
+                (Long) row[4], (String) row[5], (String) row[6],
+                (java.time.LocalDate) row[7], (ApplicationStatus) row[8], (String) row[9]);
     }
 
     @Transactional
@@ -217,11 +271,27 @@ public class RecruitmentService {
 
     // ======================================================== interviews
 
+    /** DB-side paged interview list (Phase 17): id-ascending in SQL. */
     @Transactional(readOnly = true)
-    public List<RecruitmentDto.InterviewResponse> listInterviews() {
-        return interviewRepository.findAllProjected().stream()
-                .map(RecruitmentService::toInterviewResponse)
-                .toList();
+    public PageResponse<RecruitmentDto.InterviewResponse> listInterviews(String search,
+                                                                         Interview.InterviewStatus status,
+                                                                         Integer page, Integer size) {
+        String pattern = SqlPaging.likeEscapeOrNull(search);
+        Pageable pageable = PageRequest.of(Lists.cleanPage(page), Lists.cleanSize(size));
+        return SqlPaging.of(interviewRepository.findPagedProjected(status, pattern, pageable)
+                .map(RecruitmentService::toInterviewRow));
+    }
+
+    private static RecruitmentDto.InterviewResponse toInterviewRow(Object[] row) {
+        return new RecruitmentDto.InterviewResponse(
+                (Long) row[0], (Long) row[1], (String) row[2], (String) row[3],
+                (Long) row[4], (String) row[5], (java.time.OffsetDateTime) row[6],
+                (Interview.InterviewMode) row[7], (Interview.InterviewStatus) row[8],
+                (String) row[9], (Interview.InterviewResult) row[10]);
+    }
+
+    private static String nullSafe(String value) {
+        return value == null ? "" : value;
     }
 
     /**

@@ -4,11 +4,19 @@
       <h1>Payroll</h1>
       <p class="sub">Monthly runs, payslip components, and payment lifecycle</p>
     </div>
-    @if (canWrite()) {
-      <button mat-flat-button color="primary" (click)="openRunDialog()">
-        <mat-icon>play_arrow</mat-icon> Run payroll
+    <div class="head-actions">
+      <button mat-stroked-button (click)="export('csv')" [disabled]="!selected()" matTooltip="Download CSV">
+        <mat-icon>download</mat-icon> CSV
       </button>
-    }
+      <button mat-stroked-button (click)="export('pdf')" [disabled]="!selected()" matTooltip="Download PDF">
+        <mat-icon>picture_as_pdf</mat-icon> PDF
+      </button>
+      @if (canWrite()) {
+        <button mat-flat-button color="primary" (click)="openRunDialog()">
+          <mat-icon>play_arrow</mat-icon> Run payroll
+        </button>
+      }
+    </div>
   </div>
 
   @if (error(); as err) {

@@ -1,8 +1,9 @@
 import { HttpClient, HttpResponse } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 import { Observable } from 'rxjs';
+import { map } from 'rxjs/operators';
 
-import { ApiResponse } from '../core/api.models';
+import { ApiResponse, Page } from '../core/api.models';
 
 /** Mirrors backend document module DTOs (Phase 11). */
 
@@ -45,9 +46,11 @@ export class DocumentService {
   private readonly http = inject(HttpClient);
 
   list(employeeId: number): Observable<ApiResponse<EmployeeDocument[]>> {
-    return this.http.get<ApiResponse<EmployeeDocument[]>>('/api/v1/documents', {
-      params: { employeeId: String(employeeId) },
-    });
+    return this.http
+      .get<ApiResponse<Page<EmployeeDocument>>>('/api/v1/documents', {
+        params: { employeeId: String(employeeId), size: '100' },
+      })
+      .pipe(map((r) => ({ ...r, data: r.data.content })));
   }
 
   upload(employeeId: number, documentType: DocumentType, file: File): Observable<ApiResponse<EmployeeDocument>> {

@@ -3,6 +3,7 @@ package com.hrgenius.leave;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.LocalDate;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -10,11 +11,16 @@ import java.util.Set;
 
 import com.hrgenius.auth.User;
 import com.hrgenius.auth.UserRepository;
+import com.hrgenius.common.Lists;
+import com.hrgenius.common.PageResponse;
+import com.hrgenius.common.SqlPaging;
 import com.hrgenius.employee.Employee;
 import com.hrgenius.employee.EmployeeRepository;
 import com.hrgenius.notification.Notification;
 import com.hrgenius.notification.NotificationService;
 
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -61,7 +67,10 @@ public class LeaveService {
 
     @Transactional(readOnly = true)
     public List<LeaveDto.LeaveTypeResponse> listTypes() {
-        return typeRepository.findAll().stream().map(this::toTypeResponse).toList();
+        return typeRepository.findAll().stream()
+                .sorted(Comparator.comparing(LeaveType::getName, String.CASE_INSENSITIVE_ORDER))
+                .map(this::toTypeResponse)
+                .toList();
     }
 
     @Transactional
@@ -99,12 +108,19 @@ public class LeaveService {
 
     // ------------------------------------------------------------ requests
 
+    /**
+     * DB-side paged rich list (Phase 17): status + search filters and the
+     * page window are computed in SQL; rows are fetched with their detail
+     * joins inside the same query so DTO mapping stays lazy-safe. The
+     * count twin is filter-exact, so totals always describe the filtered set.
+     */
     @Transactional(readOnly = true)
-    public List<LeaveDto.LeaveRequestResponse> listRequests(LeaveRequest.LeaveStatus status) {
-        List<LeaveRequest> rows = status == null
-                ? requestRepository.findAllWithDetails()
-                : requestRepository.findByStatusWithDetails(status);
-        return rows.stream().map(LeaveService::toResponse).toList();
+    public PageResponse<LeaveDto.LeaveRequestResponse> listRequests(LeaveRequest.LeaveStatus status,
+                                                                    String search, Integer page, Integer size) {
+        String pattern = SqlPaging.likeEscapeOrNull(search);
+        Pageable pageable = PageRequest.of(Lists.cleanPage(page), Lists.cleanSize(size));
+        return SqlPaging.of(requestRepository.findPagedWithDetails(status, pattern, pageable)
+                .map(LeaveService::toResponse));
     }
 
     @Transactional

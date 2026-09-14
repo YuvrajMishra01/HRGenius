@@ -68,6 +68,9 @@
             <ng-container matColumnDef="actions">
               <th mat-header-cell *matHeaderCellDef></th>
               <td mat-cell *matCellDef="let job" class="actions">
+                <button mat-icon-button (click)="showMatches(job)" matTooltip="AI candidate matches">
+                  <mat-icon>auto_awesome</mat-icon>
+                </button>
                 @if (canWrite()) {
                   <button mat-icon-button (click)="editJob(job)" matTooltip="Edit"><mat-icon>edit</mat-icon></button>
                   <button mat-icon-button (click)="deleteJob(job)" matTooltip="Delete">

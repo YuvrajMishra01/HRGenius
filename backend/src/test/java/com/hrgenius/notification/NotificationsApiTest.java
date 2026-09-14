@@ -63,7 +63,7 @@ class NotificationsApiTest {
 
         // HR starts empty — rows never leak across users.
         ResponseEntity<String> hrList = exchange(HttpMethod.GET, "/api/v1/notifications", hrHeaders(), null);
-        assertThat(hrList.getBody()).contains("\"data\":[]");
+        assertThat(hrList.getBody()).contains("\"content\":[]");
         ResponseEntity<String> hrUnread = exchange(HttpMethod.GET, "/api/v1/notifications/unread",
                 hrHeaders(), null);
         assertThat(hrUnread.getBody()).contains("\"unread\":0");

@@ -4,10 +4,10 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.List;
 import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
 import java.time.format.DateTimeFormatter;
-import java.util.List;
 import java.util.Locale;
 import java.util.Set;
 import java.util.UUID;
@@ -18,6 +18,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
+import com.hrgenius.common.Lists;
+import com.hrgenius.common.PageResponse;
 import com.hrgenius.employee.Employee;
 import com.hrgenius.employee.EmployeeRepository;
 
@@ -49,10 +51,16 @@ public class DocumentService {
     // ------------------------------------------------------------- queries
 
     @Transactional(readOnly = true)
-    public List<DocumentDto.DocumentResponse> list(Long employeeId) {
-        return repository.findByEmployeeIdOrderByUploadedAtDesc(employeeId).stream()
+    public PageResponse<DocumentDto.DocumentResponse> list(Long employeeId, String search,
+                                                           Integer page, Integer size) {
+        String term = Lists.cleanSearch(search);
+        List<DocumentDto.DocumentResponse> rows = repository.findByEmployeeIdOrderByUploadedAtDesc(employeeId)
+                .stream()
                 .map(this::toResponse)
+                .filter(Lists.containsTerm(
+                        r -> r.documentType() + " " + (r.fileName() == null ? "" : r.fileName()), term))
                 .toList();
+        return Lists.page(rows, Lists.cleanPage(page), Lists.cleanSize(size));
     }
 
     // -------------------------------------------------------------- upload

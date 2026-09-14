@@ -26,6 +26,7 @@ import {
 } from './employees.models';
 import { EmployeesService, EmployeeQuery } from './employees.service';
 import { EmployeeDialogComponent, EmployeeDialogData } from './employee-dialog.component';
+import { ReportService } from '../shared/report.service';
 
 /**
  * Employee directory (Phase 3): server-side search, filters, sorting and
@@ -57,6 +58,7 @@ import { EmployeeDialogComponent, EmployeeDialogData } from './employee-dialog.c
 export class EmployeesComponent implements OnInit {
   private readonly employeesService = inject(EmployeesService);
   private readonly dialog = inject(MatDialog);
+  private readonly reports = inject(ReportService);
   readonly auth = inject(AuthService);
 
   readonly displayedColumns = ['employeeCode', 'name', 'department', 'designation', 'joiningDate', 'employmentType', 'status', 'actions'];
@@ -69,6 +71,8 @@ export class EmployeesComponent implements OnInit {
   readonly sortDir = signal<'asc' | 'desc'>('asc');
   readonly loading = signal(false);
   readonly loadError = signal(false);
+  /** 403 → the directory is role-restricted; distinct from an offline API. */
+  readonly forbidden = signal(false);
 
   readonly search = signal('');
   readonly departmentId = signal<number | null>(null);
@@ -102,6 +106,18 @@ export class EmployeesComponent implements OnInit {
     this.searchSubject.next(term);
   }
 
+  /** Exports the directory with the filters currently applied to the table. */
+  export(format: 'csv' | 'pdf'): void {
+    const params = new URLSearchParams();
+    if (this.search()) params.set('search', this.search());
+    if (this.status()) params.set('status', this.status());
+    const qs = params.toString();
+    this.reports.download(
+      `/api/v1/reports/employees.${format}${qs ? '?' + qs : ''}`,
+      `employees.${format}`,
+    );
+  }
+
   onFilterChange(): void {
     this.pageIndex.set(0);
     this.load();
@@ -122,6 +138,7 @@ export class EmployeesComponent implements OnInit {
   load(): void {
     this.loading.set(true);
     this.loadError.set(false);
+    this.forbidden.set(false);
     const query: EmployeeQuery = {
       search: this.search() || undefined,
       departmentId: this.departmentId(),
@@ -139,9 +156,13 @@ export class EmployeesComponent implements OnInit {
         this.total.set(page.totalElements);
         this.loading.set(false);
       },
-      error: () => {
+      error: (err) => {
         this.loading.set(false);
-        this.loadError.set(true);
+        if (err?.status === 403) {
+          this.forbidden.set(true);
+        } else {
+          this.loadError.set(true);
+        }
       },
     });
   }

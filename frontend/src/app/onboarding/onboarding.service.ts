@@ -1,8 +1,9 @@
 import { HttpClient } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 import { Observable } from 'rxjs';
+import { map } from 'rxjs/operators';
 
-import { ApiResponse } from '../core/api.models';
+import { ApiResponse, Page } from '../core/api.models';
 
 /** Mirrors backend onboarding DTOs (Phase 6). */
 export type OnboardingStatus = 'PENDING' | 'IN_PROGRESS' | 'COMPLETED';
@@ -40,7 +41,9 @@ export class OnboardingService {
   private readonly http = inject(HttpClient);
 
   list(): Observable<ApiResponse<Onboarding[]>> {
-    return this.http.get<ApiResponse<Onboarding[]>>('/api/v1/onboardings');
+    return this.http
+      .get<ApiResponse<Page<Onboarding>>>('/api/v1/onboardings', { params: { size: '100' } })
+      .pipe(map((r) => ({ ...r, data: r.data.content })));
   }
 
   startFromApplication(applicationId: number, joiningDate: string | null): Observable<ApiResponse<Onboarding>> {

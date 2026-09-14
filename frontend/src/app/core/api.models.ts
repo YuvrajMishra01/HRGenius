@@ -5,6 +5,17 @@ export interface ApiResponse<T> {
   data: T;
 }
 
+/** Server pagination envelope (Phase 14) shared by every list endpoint. */
+export interface Page<T> {
+  content: T[];
+  page: number;
+  size: number;
+  totalElements: number;
+  totalPages: number;
+  first: boolean;
+  last: boolean;
+}
+
 /** Backend error shape from GlobalExceptionHandler */
 export interface ApiError {
   timestamp: string;

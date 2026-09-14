@@ -2,7 +2,7 @@ import { HttpClient } from '@angular/common/http';
 import { Injectable, inject, signal } from '@angular/core';
 import { Observable } from 'rxjs';
 
-import { ApiResponse } from '../core/api.models';
+import { ApiResponse, Page } from '../core/api.models';
 
 /** Mirrors backend notification DTOs (Phase 12). */
 export interface Notification {
@@ -28,8 +28,17 @@ export class NotificationService {
   /** Shared between the toolbar bell and the notifications page. */
   readonly badge = signal(0);
 
-  list(): Observable<ApiResponse<Notification[]>> {
-    return this.http.get<ApiResponse<Notification[]>>(this.baseUrl);
+  /**
+   * Paginated feed (Phase 17): the backend pages and filters in SQL, so the
+   * feed scales past any client clamp. Pass unreadOnly to use the DB-side
+   * `unread` filter.
+   */
+  listPage(page: number, size: number, unreadOnly: boolean): Observable<ApiResponse<Page<Notification>>> {
+    const params: Record<string, string> = { page: String(page), size: String(size) };
+    if (unreadOnly) {
+      params['unread'] = 'true';
+    }
+    return this.http.get<ApiResponse<Page<Notification>>>(this.baseUrl, { params });
   }
 
   unread(): Observable<ApiResponse<UnreadResponse>> {

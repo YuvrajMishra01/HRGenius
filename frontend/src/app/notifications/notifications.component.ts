@@ -4,6 +4,8 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
 import { MatIconModule } from '@angular/material/icon';
 import { MatTooltipModule } from '@angular/material/tooltip';
+import { MatButtonToggleModule } from '@angular/material/button-toggle';
+import { MatPaginatorModule, PageEvent } from '@angular/material/paginator';
 
 import { Notification, NotificationService } from './notification.service';
 
@@ -25,16 +27,30 @@ export function typeStyle(type: string | null): { icon: string; css: string } {
   }
 }
 
-/** Feeds the toolbar bell and the /notifications page (Phase 12). */
+/**
+ * Feeds the toolbar bell and the /notifications page (Phase 12). Since
+ * Phase 17 the feed is server-paginated with a DB-side unread filter, so
+ * it scales to any history length.
+ */
 @Component({
   selector: 'app-notifications',
   standalone: true,
-  imports: [DatePipe, MatButtonModule, MatCardModule, MatIconModule, MatTooltipModule],
+  imports: [
+    DatePipe,
+    MatButtonModule,
+    MatCardModule,
+    MatIconModule,
+    MatTooltipModule,
+    MatButtonToggleModule,
+    MatPaginatorModule,
+  ],
   templateUrl: './notifications.component.html',
   styleUrl: './notifications.component.scss',
 })
 export class NotificationsComponent implements OnInit, OnDestroy {
   private readonly api = inject(NotificationService);
+
+  readonly PAGE_SIZE = 10;
 
   readonly notifications = signal<Notification[]>([]);
   /** Shared with the toolbar bell so both stay in sync instantly. */
@@ -42,6 +58,11 @@ export class NotificationsComponent implements OnInit, OnDestroy {
   readonly loading = signal(true);
   readonly serverError = signal<string | null>(null);
   readonly busyId = signal<number | null>(null);
+
+  readonly page = signal(0);
+  readonly pageSize = signal(this.PAGE_SIZE);
+  readonly total = signal(0);
+  readonly unreadOnly = signal(false);
 
   private pollTimer: ReturnType<typeof setInterval> | null = null;
 
@@ -56,9 +77,11 @@ export class NotificationsComponent implements OnInit, OnDestroy {
 
   reload(): void {
     this.serverError.set(null);
-    this.api.list().subscribe({
+    this.loading.set(true);
+    this.api.listPage(this.page(), this.pageSize(), this.unreadOnly()).subscribe({
       next: (res) => {
-        this.notifications.set(res.data);
+        this.notifications.set(res.data.content);
+        this.total.set(res.data.totalElements);
         this.loading.set(false);
         this.refreshBadge();
       },
@@ -67,6 +90,18 @@ export class NotificationsComponent implements OnInit, OnDestroy {
         this.loading.set(false);
       },
     });
+  }
+
+  onPage(event: PageEvent): void {
+    this.page.set(event.pageIndex);
+    this.pageSize.set(event.pageSize);
+    this.reload();
+  }
+
+  onFilterChange(unreadOnly: boolean): void {
+    this.unreadOnly.set(unreadOnly);
+    this.page.set(0);
+    this.reload();
   }
 
   /** Polls the badge only — never disturbs the open list or error state. */
@@ -78,20 +113,18 @@ export class NotificationsComponent implements OnInit, OnDestroy {
   }
 
   refreshBadge(): void {
-    const unreadCount = this.notifications().filter((n) => !n.read).length;
-    this.unread.set(unreadCount);
+    // The badge is the DB-side unread total, not the page's rows — a single
+    // page can never speak for the whole feed.
+    this.refresh();
   }
 
   markRead(notification: Notification): void {
     if (notification.read || this.busyId() !== null) return;
     this.busyId.set(notification.id);
     this.api.markRead(notification.id).subscribe({
-      next: (res) => {
-        this.notifications.update((rows) =>
-          rows.map((n) => (n.id === notification.id ? (res.data ?? { ...n, read: true }) : n)),
-        );
-        this.refreshBadge();
+      next: () => {
         this.busyId.set(null);
+        this.reload();
       },
       error: () => {
         this.serverError.set('Could not mark as read');
@@ -103,8 +136,8 @@ export class NotificationsComponent implements OnInit, OnDestroy {
   markAllRead(): void {
     this.api.markAllRead().subscribe({
       next: () => {
-        this.notifications.update((rows) => rows.map((n) => ({ ...n, read: true })));
         this.unread.set(0);
+        this.reload();
       },
       error: () => this.serverError.set('Could not mark all as read'),
     });

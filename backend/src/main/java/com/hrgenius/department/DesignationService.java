@@ -7,6 +7,8 @@ import java.util.Map;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.hrgenius.common.Lists;
+import com.hrgenius.common.PageResponse;
 import com.hrgenius.employee.EmployeeRepository;
 
 import jakarta.persistence.EntityNotFoundException;
@@ -35,6 +37,19 @@ public class DesignationService {
         return designations.stream()
                 .map(d -> toResponse(d, counts.getOrDefault(d.getId(), 0L)))
                 .toList();
+    }
+
+    /** Admin table view: server-side search + pagination over all designations. */
+    @Transactional(readOnly = true)
+    public PageResponse<DepartmentDto.DesignationResponse> listPaged(String search, Integer page, Integer size) {
+        String term = Lists.cleanSearch(search);
+        Map<Long, Long> counts = employeeCounts();
+        List<DepartmentDto.DesignationResponse> rows = designationRepository.findAllByOrderByTitleAsc().stream()
+                .map(d -> toResponse(d, counts.getOrDefault(d.getId(), 0L)))
+                .filter(Lists.containsTerm(
+                        d -> d.title() + " " + (d.departmentName() == null ? "" : d.departmentName()), term))
+                .toList();
+        return Lists.page(rows, Lists.cleanPage(page), Lists.cleanSize(size));
     }
 
     @Transactional

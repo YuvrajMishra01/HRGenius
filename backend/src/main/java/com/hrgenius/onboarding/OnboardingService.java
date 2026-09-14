@@ -4,8 +4,11 @@ import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.LocalDate;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
 
+import com.hrgenius.common.Lists;
+import com.hrgenius.common.PageResponse;
 import com.hrgenius.employee.Employee;
 import com.hrgenius.employee.EmployeeRepository;
 import com.hrgenius.employee.EmployeeStatus;
@@ -53,10 +56,18 @@ public class OnboardingService {
     }
 
     @Transactional(readOnly = true)
-    public List<OnboardingDto.OnboardingResponse> list() {
-        return onboardingRepository.findAllWithDetails().stream()
+    public PageResponse<OnboardingDto.OnboardingResponse> list(OnboardingStatus status, String search,
+                                                               Integer page, Integer size) {
+        String term = Lists.cleanSearch(search);
+        List<OnboardingDto.OnboardingResponse> rows = onboardingRepository.findAllWithDetails().stream()
                 .map(OnboardingService::toResponse)
+                .filter(r -> status == null || r.status() == status)
+                .filter(Lists.containsTerm(
+                        r -> r.employeeName() + " " + r.employeeCode() + " "
+                                + (r.departmentName() == null ? "" : r.departmentName()), term))
+                .sorted(Comparator.comparing(OnboardingDto.OnboardingResponse::id).reversed())
                 .toList();
+        return Lists.page(rows, Lists.cleanPage(page), Lists.cleanSize(size));
     }
 
     /**

@@ -2,12 +2,17 @@ package com.hrgenius.notification;
 
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
-import java.util.List;
 
 import com.hrgenius.auth.User;
 import com.hrgenius.auth.UserRepository;
+import com.hrgenius.common.Lists;
+import com.hrgenius.common.PageResponse;
+import com.hrgenius.common.SqlPaging;
 import com.hrgenius.employee.Employee;
 import com.hrgenius.employee.EmployeeRepository;
+
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -49,12 +54,26 @@ public class NotificationService {
 
     // ------------------------------------------------------------- queries
 
+    /**
+     * Paginated personal feed (Phase 17): newest first, all filtering and
+     * paging happen in SQL. The unread flag binds as a NUMBER (1 or null)
+     * against READ_FLAG — deliberately never a Boolean (the Phase 12
+     * Oracle-mode hazard) — and the search term is LIKE-escaped before
+     * binding. A far-out page yields empty content, never an error.
+     */
     @Transactional(readOnly = true)
-    public List<NotificationDto.NotificationResponse> list() {
+    public PageResponse<NotificationDto.NotificationResponse> list(String search, Boolean unread,
+                                                                   Integer page, Integer size) {
         Long userId = currentUserId();
-        return repository.findTop50ByUser_IdOrderByCreatedAtDescIdDesc(userId).stream()
-                .map(NotificationService::toResponse)
-                .toList();
+        String term = Lists.cleanSearch(search);
+        // unread=true binds 0 (READ_FLAG = 0), never a Boolean — the Phase 12
+        // Oracle-mode hazard. Any other value leaves the flag unfiltered.
+        Integer unreadFlag = unread != null && unread ? 0 : null;
+        String pattern = term == null ? null : SqlPaging.likeEscape(term);
+        Pageable pageable = PageRequest.of(Lists.cleanPage(page), Lists.cleanSize(size));
+        return SqlPaging.of(repository
+                .findPagedFeed(userId, unreadFlag, pattern, pageable)
+                .map(NotificationService::toResponse));
     }
 
     @Transactional(readOnly = true)

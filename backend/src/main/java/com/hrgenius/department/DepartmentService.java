@@ -2,11 +2,14 @@ package com.hrgenius.department;
 
 import java.util.HashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.hrgenius.common.Lists;
+import com.hrgenius.common.PageResponse;
 import com.hrgenius.employee.Employee;
 import com.hrgenius.employee.EmployeeRepository;
 
@@ -27,12 +30,26 @@ public class DepartmentService {
     private final DesignationRepository designationRepository;
     private final EmployeeRepository employeeRepository;
 
+    /** Unpaged list — feeds dialogs and read-only tables (stable contract). */
     @Transactional(readOnly = true)
     public List<DepartmentDto.DepartmentResponse> list() {
         Map<Long, Long> counts = employeeCounts();
         return departmentRepository.findAllOrderedByName().stream()
                 .map(d -> toResponse(d, counts.getOrDefault(d.getId(), 0L)))
                 .toList();
+    }
+
+    /** Admin table view: server-side search + pagination. */
+    @Transactional(readOnly = true)
+    public PageResponse<DepartmentDto.DepartmentResponse> listPaged(String search, Integer page, Integer size) {
+        String term = Lists.cleanSearch(search);
+        Map<Long, Long> counts = employeeCounts();
+        List<DepartmentDto.DepartmentResponse> rows = departmentRepository.findAllOrderedByName().stream()
+                .map(d -> toResponse(d, counts.getOrDefault(d.getId(), 0L)))
+                .filter(d -> term == null
+                        || d.name().toLowerCase(Locale.ROOT).contains(term.toLowerCase(Locale.ROOT)))
+                .toList();
+        return Lists.page(rows, Lists.cleanPage(page), Lists.cleanSize(size));
     }
 
     @Transactional(readOnly = true)

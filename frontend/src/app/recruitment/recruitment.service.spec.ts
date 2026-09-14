@@ -19,11 +19,29 @@ describe('RecruitmentService', () => {
 
   afterEach(() => http.verify());
 
-  it('lists jobs from /api/v1/jobs', () => {
+  it('lists jobs from /api/v1/jobs and unwraps the page envelope (Phase 14)', () => {
     let result: unknown;
     service.jobs().subscribe((r) => (result = r));
-    http.expectOne('/api/v1/jobs').flush(envelope([]));
-    expect(result).toEqual({ success: true, message: 'OK', data: [] });
+    const req = http.expectOne((r) => r.url === '/api/v1/jobs' && r.params.get('size') === '100');
+    req.flush(
+      envelope({
+        content: [{ id: 1, title: 'Backend Developer' }],
+        page: 0,
+        size: 100,
+        totalElements: 1,
+        totalPages: 1,
+        first: true,
+        last: true,
+      }),
+    );
+    expect(result).toEqual({ success: true, message: 'OK', data: [{ id: 1, title: 'Backend Developer' }] });
+  });
+
+  it('fetches pipeline KPI counts from /api/v1/applications/counts', () => {
+    let result: unknown;
+    service.applicationCounts().subscribe((r) => (result = r));
+    http.expectOne('/api/v1/applications/counts').flush(envelope({ APPLIED: 1, SCREENING: 2 }));
+    expect(result).toEqual({ success: true, message: 'OK', data: { APPLIED: 1, SCREENING: 2 } });
   });
 
   it('sends PATCH with status+remarks for pipeline transitions', () => {

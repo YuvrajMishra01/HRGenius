@@ -3,6 +3,7 @@ package com.hrgenius.leave;
 import java.util.List;
 
 import com.hrgenius.common.ApiResponse;
+import com.hrgenius.common.PageResponse;
 
 import jakarta.validation.Valid;
 
@@ -67,9 +68,12 @@ public class LeaveController {
 
     @GetMapping("/requests")
     @PreAuthorize("hasAnyRole('ADMIN', 'HR', 'MANAGER')")
-    public ResponseEntity<ApiResponse<List<LeaveDto.LeaveRequestResponse>>> requests(
-            @RequestParam(required = false) LeaveRequest.LeaveStatus status) {
-        return ResponseEntity.ok(ApiResponse.of(service.listRequests(status)));
+    public ResponseEntity<ApiResponse<PageResponse<LeaveDto.LeaveRequestResponse>>> requests(
+            @RequestParam(required = false) LeaveRequest.LeaveStatus status,
+            @RequestParam(required = false) String search,
+            @RequestParam(required = false) Integer page,
+            @RequestParam(required = false) Integer size) {
+        return ResponseEntity.ok(ApiResponse.of(service.listRequests(status, search, page, size)));
     }
 
     @PostMapping("/requests")

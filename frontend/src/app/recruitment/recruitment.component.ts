@@ -20,6 +20,7 @@ import {
   JobApplication,
 } from './recruitment.models';
 import { RecruitmentService } from './recruitment.service';
+import { JobMatchDialog } from '../ai/job-match.dialog';
 import {
   ApplyDialog,
   CandidateDialog,
@@ -141,6 +142,14 @@ export class RecruitmentComponent implements OnInit {
       .open(JobDialog, { width: '560px' })
       .afterClosed()
       .subscribe((saved) => saved && this.reload());
+  }
+
+  /** Phase 16: ranked candidate matches for a job (deterministic engine). */
+  showMatches(job: Job): void {
+    this.dialog.open(JobMatchDialog, {
+      width: '560px',
+      data: { jobId: job.id, jobTitle: job.title },
+    });
   }
 
   editJob(job: Job): void {

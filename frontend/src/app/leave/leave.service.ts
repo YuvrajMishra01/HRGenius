@@ -1,8 +1,9 @@
 import { HttpClient } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 import { Observable } from 'rxjs';
+import { map } from 'rxjs/operators';
 
-import { ApiResponse } from '../core/api.models';
+import { ApiResponse, Page } from '../core/api.models';
 
 /** Mirrors backend leave module DTOs (Phase 8). */
 
@@ -89,8 +90,13 @@ export class LeaveService {
   // ------------------------------------------------------------ requests
 
   requests(status?: LeaveStatus): Observable<ApiResponse<LeaveRequest[]>> {
-    const params = status ? { status } : undefined;
-    return this.http.get<ApiResponse<LeaveRequest[]>>('/api/v1/leave/requests', { params });
+    const params: Record<string, string> = { size: '100' };
+    if (status) {
+      params['status'] = status;
+    }
+    return this.http
+      .get<ApiResponse<Page<LeaveRequest>>>('/api/v1/leave/requests', { params })
+      .pipe(map((r) => ({ ...r, data: r.data.content })));
   }
 
   createRequest(payload: {

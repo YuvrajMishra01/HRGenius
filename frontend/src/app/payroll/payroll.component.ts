@@ -12,6 +12,7 @@ import { MatTooltipModule } from '@angular/material/tooltip';
 import { forkJoin } from 'rxjs';
 
 import { AuthService } from '../core/auth.service';
+import { ReportService } from '../shared/report.service';
 import {
   PayrollRow,
   PayrollService,
@@ -43,6 +44,7 @@ import {
 export class PayrollComponent implements OnInit {
   private readonly api = inject(PayrollService);
   private readonly dialogs = inject(MatDialog);
+  private readonly reports = inject(ReportService);
   readonly auth = inject(AuthService);
 
   readonly canWrite = computed(() => {
@@ -89,6 +91,17 @@ export class PayrollComponent implements OnInit {
   selectPeriod(key: string): void {
     this.selected.set(key);
     this.loadPeriod(key);
+  }
+
+  /** Exports the currently selected period's payslips. */
+  export(format: 'csv' | 'pdf'): void {
+    const key = this.selected();
+    if (!key) return;
+    const [y, m] = key.split('-').map(Number);
+    this.reports.download(
+      `/api/v1/reports/payroll.${format}?year=${y}&month=${m}`,
+      `payroll-${y}-${String(m).padStart(2, '0')}.${format}`,
+    );
   }
 
   private loadPeriod(key: string): void {

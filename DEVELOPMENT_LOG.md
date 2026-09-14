@@ -796,3 +796,283 @@ trend, and performance health.
 (Phase 13 ✅), `DEVELOPMENT_LOG.md` (this entry).
 
 **Next:** Phase 14 — Cross-cutting search/filter/pagination hardening.
+
+## PHASE 14 — LIST HARDENING
+
+**Goal:** one consistent contract for every list endpoint — PageResponse envelope,
+`search` + `status` filters, clamped pagination, deterministic order, and 400 (never
+500) for bad input — without breaking the frontend that consumed raw arrays.
+
+**Design:**
+- `common.Lists`: shared policy helper — `cleanSearch` (trim, blank→null, cap 100),
+  `cleanPage` (negatives → 0), `cleanSize` (default 20, max 100), `containsTerm`
+  (case-insensitive contains predicate), and `page(rows, page, size)` (slice paging over
+  deterministic projections with honest totals).
+- Endpoint upgrades: jobs/candidates/applications/interviews (search+status+paging,
+  stable sort), leave/requests (search over employee/type/reason + status),
+  performance/reviews (status+search), onboardings (status+search), documents (search
+  over type/file name + paging, employeeId stays required), notifications (unread+
+  search+paging over the personal feed), departments/designations got new
+  `/page` admin views while the unpaged lists remain for dialogs and pickers.
+- New `GET /applications/counts`: per-status application totals for KPI strips — strips
+  no longer derive counts from paginated arrays.
+- Employees (Phase 3) already had real SQL paging + sort whitelist; adopted the shared
+  clamp policy and stays the reference implementation.
+- **Deliberately unpaged:** leave/types, employees/options, attendance today/month,
+  payroll per period, analytics — all bounded or reference data.
+
+**Frontend:** shared `Page<T>` model; every affected service now requests `size=100`
+(the clamp max) and unwraps `data.content`, so components keep their array semantics
+unchanged. Recruitment's pipeline KPI switched to `/applications/counts`. The
+RecruitmentService spec was extended for the envelope unwrap + counts endpoint.
+
+**Bugs the cycle caught** (ERROR → ROOT CAUSE → FIX → VERIFY)
+1. **Filter-after-page in notifications**: my first draft paged the DB query and then
+   filtered `unread`/`search` in Java — content shrank while totals described the wider
+   set. Fixed by filtering before paging (in-memory over the personal feed). The SQL-
+   paging alternative was rejected on purpose: binding a `Boolean` against the
+   NUMBER(1) READ_FLAG column is exactly the Oracle-mode hazard Phase 12 hit.
+2. **Grep-filtered compile output lied again** (Phase 13 lesson, twice this phase):
+   "clean" runs that were actually failing to find `mvnw` or missing imports. Rule:
+   `tail` the real output; verify the new suite actually ran.
+3. **JAVA_HOME drift between shells**: machine env points at a removed JDK dir and the
+   bash `mvnw` chokes on the backslash path. Fixed with `.freebuff/run-backend.cmd`
+   setting `JAVA_HOME=C:\Program Files\Java\jdk-21.0.10` explicitly; test commands use
+   the forward-slash inline env.
+4. **TS union-type inference**: `params = cond ? {a, size} : {size}` inferred an
+   `employeeId?: undefined` property that violates HttpClient's params record type.
+   Built the object imperatively with a `Record<string, string>` instead.
+5. **Silent kill of a running ng serve**: my second detached launcher failed on the
+   occupied port while the first watcher kept serving STALE code (logged error, no
+   rebuild). Rule: after contract changes, kill known PIDs first, restart once, verify
+   via `netstat` + fresh response payloads.
+6. Pre-existing gap surfaced: `MissingServletRequestParameterException` had no handler —
+   a missing required query param 500'd. Added 400 handlers for missing and type-
+   mismatched params (also improves bad-enum messages to name the parameter).
+
+**Verification:** backend **165/165** (6 new `ListHardeningApiTest` covering envelope,
+search/status, clamps, far-page, validation, counts, RBAC — assertions chosen to be
+order-tolerant since RecruitmentApiTest runs later), `ng build` clean, **30/30**
+frontend tests. Live: envelope + search + clamps + 400s + counts verified over HTTP;
+UI verified as admin (recruitment KPIs + tabs + tables, notifications page + badge,
+leave page strip) with clean network logs showing `size=100` requests.
+
+**Docs updated:** `API_DOCUMENTATION.md` (Phase 14 list contract + error contract),
+`ROADMAP.md` (Phase 14 ✅), `DEVELOPMENT_LOG.md` (this entry).
+
+**Next:** Phase 15 — Reports (CSV/PDF exports).
+
+## PHASE 15 — REPORTS (CSV/PDF EXPORTS)
+
+**Goal:** downloadable CSV and PDF exports for the four main HR lists (employees,
+payroll, attendance, leave), honouring each page's current filters, with the same read
+role matrix (ADMIN/HR/MANAGER).
+
+**Design:**
+- New `com.hrgenius.report` package: `CsvBuilder` (RFC 4180: CRLF, quote-doubling,
+  comma escaping; UTF-8 BOM added by the controller for Excel) and `ReportPdfBuilder`
+  (OpenPDF — the maintained LGPL/MPL fork of iText 4, added to the pom — A4 landscape,
+  title + timestamp + grey header row).
+- `ReportService` re-uses each module's own detail queries (`EmployeeSpecifications`,
+  `findForPeriodWithEmployee`, `findMonthWithDetails`, leave `findAllWithDetails`) so
+  exports always match what the UI shows; it only projects rows to strings.
+- `ReportController`: 8 endpoints under `/api/v1/reports` returning raw bytes with
+  `Content-Disposition: attachment` — deliberately outside the ApiResponse envelope so
+  browsers save a real file.
+- **CSV injection defence (OWASP):** any cell whose first character is `= + - @` gets a
+  `'` prefix, and raw CR/LF are flattened — a phone `+91-…` or a reason `=HYPERLINK…`
+  can never execute as a formula when opened in Excel/Sheets. Visible in output:
+  phones export as `'+91-9810011122`.
+- Frontend: shared `ReportService` (blob → object URL → anchor click → revoke, with a
+  snackbar on failure). Export CSV/PDF buttons on Employees (search + status), Payroll
+  (selected period), Attendance (viewed month range) and Leave (status tab).
+
+**Bugs the cycle caught** (ERROR → ROOT CAUSE → FIX → VERIFY)
+1. **Wrong enum nesting**: `Employee.EmployeeStatus` — the status enums are top-level
+   classes (`EmployeeStatus`), not nested. Compile fixed by importing directly.
+2. **BOM in the first CSV field**: the test compared the header line to the bare string,
+   but the BOM is part of `lines[0]` — asserted the BOM'd header instead.
+3. **PDF text is compressed**: OpenPDF Flate-decodes content streams, so grepping raw
+   bytes for "Employee Directory" fails. Tests assert structure (`%PDF-` magic, `%%EOF`)
+   instead — text presence belongs to a rendering test with a parser.
+4. **Order-tolerance again**: EmployeeApiTest creates its **own** EMP900 (my "seed-only
+   employees" assumption was wrong, caught only because the failure dumped the CSV),
+   onboarding creates EMP008, LeaveApiTest adds ~9 requests. Exports tests assert seed
+   *names* and floors, never totals or code prefixes.
+5. **Orphaned ng serve holding a dead log handle**: after a session restart the old
+   watcher served stale code and its log file could not even be replaced
+   ("Device or resource busy"), making new launches fail confusingly with "port in
+   use". Fix: kill node PIDs explicitly, delete the log, relaunch — then verify the
+   log mtime and a fresh payload, not just the port.
+
+**Verification:** backend **173/173** (8 new `ReportsApiTest`: CSV header/rows/encoding,
+search + status filters, PDF structure, payroll period + empty period, attendance
+window chosen to exclude the attendance suite's own writes, leave status filter,
+invalid-range 400, unknown-status 400, full read RBAC matrix), `ng build` clean,
+**30/30** frontend tests. Live: CSV rows/BOM/sanitisation, `%PDF-` magic, headers,
+payroll/attendance/leave payloads, EMPLOYEE 403, bad-range 400; UI: buttons on all four
+pages, employees CSV download observed over the network as 200.
+
+**Docs updated:** `API_DOCUMENTATION.md` (8-endpoint report contract + CSV/PDF rules),
+`ROADMAP.md` (Phase 15 ✅), `DEVELOPMENT_LOG.md` (this entry).
+
+**Next:** Phase 16 — optional AI module (resume skill extraction, match score), or
+harden what exists (real SQL paging for the slice-paged lists).
+
+## PHASE 16 — AI INSIGHTS (SKILL EXTRACTION & MATCH SCORING)
+
+**Goal:** resume skill extraction and job↔candidate match scoring — implemented as a
+**deterministic local engine** (the workspace is self-contained by design, like
+Oracle-on-H2): curated skill dictionary + word-boundary matching + a transparent
+score, behind a service boundary a real LLM provider could replace later.
+
+**Design:**
+- `ai.SkillDictionary`: ~28 canonical skills with lowercase aliases, stable order.
+- `ai.SkillExtractor`: case-insensitive, word-boundary-safe matching
+  (`(?<![a-z0-9+#])alias(?![a-z0-9+#])`), plus **span-based suppression** — an alias
+  match is dropped only when its span lies strictly inside a longer match (`sql` inside
+  `oracle sql`). PDF text via OpenPDF `PdfTextExtractor` (instance API, per-page
+  getTextFromPage); .txt/.md read as UTF-8; anything else → 400.
+- `ai.AiService.matchForJob`: required = extract(title + description); per candidate
+  score = floor(100 × matched/required), ties by fewer missing then name; candidates
+  without extractable skills are omitted; matched/missing echoed for auditability.
+- `ai.AiController`: POST `/ai/resume-skills` (pasted text), POST `/ai/resume-files`
+  (multipart, stateless — nothing persisted), GET `/ai/job-matches/{jobId}`;
+  ADMIN/HR/MANAGER (the recruitment read matrix).
+- Frontend: `ai.service.ts` + `JobMatchDialog` (required-skill chips, per-candidate
+  score bars, matched ✓ / missing ✗ chips) with an ✨ Insights button on every Jobs row
+  (visible to MANAGER too).
+
+**Bugs the cycle caught** (ERROR → ROOT CAUSE → FIX → VERIFY)
+1. **OpenPDF 1.3.43 API drift**: no `SimpleTextExtractionStrategy` in the parser
+   package, and `getTextFromPage(reader, page)` is (reader, int) mismatched — the real
+   API is `new PdfTextExtractor(reader).getTextFromPage(page)`. Discovered by listing
+   the jar contents when javap was unavailable.
+2. **Substring prune killed Java**: my first specificity rule dropped any skill whose
+   canonical name was a substring of another — so "JavaScript".contains("java")
+   deleted **Java** from every resume that also mentioned JavaScript. Replaced with
+   span-based suppression (drop a match only when its text span sits inside a longer
+   match). The failing test payload made the bug obvious.
+3. **Expectation drift on seed text**: I asserted "Java" as required for job 1, but its
+   text never says Java — required is exactly {Spring Boot, Microservices, Oracle SQL}
+   and Kavya scores 66, not 75. Rule: score only what the text actually says.
+4. **Stale ng serve served stale UI**: hot reload did not pick up new files (and a
+   missing `MatProgressSpinnerModule` import only surfaced in the watcher log, not in
+   `ng build`). Touch + explicit reload; and read `.freebuff/*-run.log` for the truth.
+
+**Verification:** backend **181/181** (8 new `AiApiTest`: exact seed-derived match
+payloads for both jobs, pasted-text extraction with boundary cases, a real in-memory
+PDF upload generated via the Phase 15 builder, unsupported-type 400, 404, extractor
+unit checks, full RBAC), `ng build` clean, **30/30** frontend tests. Live: job 1 →
+Kavya 66% with matched/missing lists, job 2 → Fatima 100%, resume-skills → 5 skills
+in dictionary order, 404/403 verified; UI: Insights button opens the dialog with
+required chips, score bar and 15 skill chips, console clean.
+
+**Docs updated:** `API_DOCUMENTATION.md` (AI endpoint contract + engine rules),
+`ROADMAP.md` (Phase 16 ✅ — roadmap complete), `DEVELOPMENT_LOG.md` (this entry).
+
+## FULL REGRESSION PASS (post-Phase 16)
+
+**Scope:** every backend suite, frontend build + tests, and a UI click-through of all
+12 pages × 4 roles over the live stack.
+
+**Suites:** backend **181/181**, `ng build` clean, frontend **30/30** — re-verified at
+the end after UI fixes.
+
+**ADMIN:** all 12 pages render with live data — dashboard KPIs, employees (7 rows,
+paginator "1–7 of 7", export buttons), departments (4), recruitment (2/4/4/2 tabs +
+Insights dialog: Kavya 66% with matched/missing chips), onboarding (Rohan IN_PROGRESS),
+attendance (today strip), payroll (August · 7 payslips · ₹4,06,000), performance (2
+reviews, avg 4/5), documents, notifications (seed row + badge), analytics (8 cards),
+leave (KPI strip).
+
+**HR:** dashboard + analytics + payroll run/export OK; recruitment write buttons visible
+and the Insights dialog works; **write-flow smoke test through the UI**: created a leave
+request for Anita via the dialog (employee → type → dates → reason → submit), the row
+appeared, the employee's notification badge went 0 → 1, mark-read hid the badge, and the
+request was then cancelled via the API (server side verified by search on reason).
+
+**MANAGER:** dashboard shows its ADMIN/HR-restricted state; employees + leave +
+recruitment lists render; write buttons correctly hidden (no Add employee / New type /
+New request / Post job / Upload); Insights visible (read matrix).
+
+**EMPLOYEE:** notifications (personal feed, event delivery from the HR smoke test),
+dashboard/analytics/attendance/recruitment/employees/documents show restricted or
+"Access Denied" states — correct per the RBAC matrix.
+
+**Bugs found and fixed**
+1. **Misleading offline claim on 403**: the employees page treated every load error as
+   "The backend didn't respond. Check that the API server is running." — shown to
+   EMPLOYEE whose directory access is deliberately 403. Added a `forbidden` state
+   (lock icon + "Directory is restricted", mirroring the dashboard's pattern).
+2. **Swallowed error detail**: leave and performance pages hardcoded "Could not load…"
+   instead of surfacing the server's message (attendance/recruitment/documents already
+   did). Now both show the backend message (e.g. "Access Denied"), consistent with the
+   rest of the app.
+
+Not-a-bug observations: empty type chips on Documents are correct (in-memory H2 restarts
+empty; on-disk files are orphans from a previous session — documents rows do not
+survive, by design). EMPLOYEE leave-page KPI strip 403s by matrix (summary is
+ADMIN/HR); page handles it with the table's restricted state.
+
+**Result:** regression pass complete. All suites green before and after the two UI
+fixes; both servers left running (backend :8080, frontend :4200).
+
+## PHASE 17 — SQL PAGING HARDENING (DB-SIDE FILTERS)
+
+Goal: the Phase 14 slice-paged endpoints that face unbounded growth — notifications
+and all four recruitment lists, plus leave (the fastest-growing table, many requests
+per employee per year) — move to real SQL paging so scale becomes a database concern
+instead of a JVM-heap one. Bounded lists (onboarding, performance, documents,
+departments/designations admin views) deliberately keep slice paging.
+
+**Backend:**
+- New `common.SqlPaging`: `likeEscape` (lower-case + `\\` `%` `_` escaping for
+  `LIKE :pattern ESCAPE '\'`) and the `Page → PageResponse` mapping.
+- **Notifications**: one native paged query (`SELECT * … WHERE user_id = :userId AND
+  (:unreadFlag IS NULL OR read_flag = :unreadFlag) AND (:pattern IS NULL OR …) ORDER BY
+  id DESC`) with a filter-exact count twin. `unread` binds as Integer `0` — never a
+  Boolean — because READ_FLAG is `NUMBER(1)` and the Phase 12 lesson is that Oracle-mode
+  rejects Boolean/NUMBER comparisons. First countQuery draft had a real Java bug: `'\'`
+  is an escape sequence compiling to `'`, silently corrupting the SQL — caught before
+  it ever ran.
+- **Recruitment**: all four lists now paged JPQL projections with explicit count
+  queries and typed binds. Jobs carry the per-job application count as a subselect and
+  order by `lower(title)`; candidates newest-first (`createdAt desc, id desc`) with
+  application counts via a LEFT JOIN; applications/interviews id-ascending. NULL-vacuum
+  fixes: nullable search fields (skills, remarks, interviewer name) wrap in `coalesce`
+  or a NULL LIKE excludes the row entirely even when another field matched.
+- **Leave**: `findPagedWithDetails` keeps the `join fetch` detail joins in the page
+  query (lazy-safe DTO mapping) with a separate count twin without fetch joins — Spring
+  cannot derive a correct count through fetch joins; the old `findAllWithDetails` stays
+  for the Phase 15 report exports.
+- New `zscale.ScalePagingApiTest` (4 tests) — package sorted to run LAST alphabetically
+  so it cannot disturb earlier suites' exact counts. Proves: honest totals at `size=1`
+  (impossible under slice paging — the clamp would cap them), 35-row filtered sets
+  counted exactly in SQL, delta math on candidates/applications/leave, DB-side status
+  composition, far-out pages (empty content, real total), literal `%` search matching
+  nothing (escaping), and the unread filter + mark-all integration through the real
+  event pipeline (submit + approve leave → exactly 2 notification events).
+
+**Frontend:** `NotificationService.list()` (fetch-100 + unwrap) replaced by
+`listPage(page, size, unreadOnly)`; the notifications page gained a true paginator
+(10/20/50), an All/Unread toggle driving the DB-side filter, an unread-aware empty
+state, and the badge now reads `/unread` after every page action instead of counting
+the visible page's rows (a single page can never speak for the whole feed).
+
+**Bugs caught along the way:** positional-`@Query` mixed with `countQuery =` fails
+compilation (`annotation values must be of the form name=value` — five repositories);
+my unread flag bound `1` (read) instead of `0` (unread) — inverted semantics caught by
+the mark-all test; a `Comparator` import deleted along with the old slice code; test
+URLs containing `%20` re-encoded to `%2520` by TestRestTemplate (fixed with a
+pre-built `URI`); a leave scale loop that walked off March (day 32) and would have
+blown the 12-day CASUAL balance (redistributed across types/months within limits);
+two wrong test expectations (candidate marker spacing, APPLIED-filtered baseline).
+
+**Verification:** backend **185/185** (181 + 4 new), `ng build` clean, **30/30**
+frontend tests. Live: clamp honesty (`size=1` → full total), DB-side search (`rao` →
+Kavya Rao), SQL unread filter (`unread=true` → 200 with empty slice after mark-all),
+LIKE-escape (`search=%` → 0), leave status+search compose. UI: notifications
+All/Unread toggle, DB-filtered empty state, paginator, mark-read re-render; recruitment
+tabs with correct counts and newest-first candidates; console clean. Docs updated
+(API contract + Phase 17 section, ROADMAP ✅, this entry).

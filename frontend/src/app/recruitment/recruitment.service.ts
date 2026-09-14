@@ -1,8 +1,9 @@
 import { HttpClient } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 import { Observable } from 'rxjs';
+import { map } from 'rxjs/operators';
 
-import { ApiResponse } from '../core/api.models';
+import { ApiResponse, Page } from '../core/api.models';
 
 import {
   ApplicationRequest,
@@ -25,7 +26,9 @@ export class RecruitmentService {
 
   // ------------------------------------------------------------- jobs
   jobs(): Observable<ApiResponse<Job[]>> {
-    return this.http.get<ApiResponse<Job[]>>('/api/v1/jobs');
+    return this.http
+      .get<ApiResponse<Page<Job>>>('/api/v1/jobs', { params: { size: '100' } })
+      .pipe(map((r) => ({ ...r, data: r.data.content })));
   }
 
   createJob(request: JobRequest): Observable<ApiResponse<Job>> {
@@ -42,7 +45,9 @@ export class RecruitmentService {
 
   // -------------------------------------------------------- candidates
   candidates(): Observable<ApiResponse<Candidate[]>> {
-    return this.http.get<ApiResponse<Candidate[]>>('/api/v1/candidates');
+    return this.http
+      .get<ApiResponse<Page<Candidate>>>('/api/v1/candidates', { params: { size: '100' } })
+      .pipe(map((r) => ({ ...r, data: r.data.content })));
   }
 
   createCandidate(request: CandidateRequest): Observable<ApiResponse<Candidate>> {
@@ -55,7 +60,14 @@ export class RecruitmentService {
 
   // ------------------------------------------------------ applications
   applications(): Observable<ApiResponse<JobApplication[]>> {
-    return this.http.get<ApiResponse<JobApplication[]>>('/api/v1/applications');
+    return this.http
+      .get<ApiResponse<Page<JobApplication>>>('/api/v1/applications', { params: { size: '100' } })
+      .pipe(map((r) => ({ ...r, data: r.data.content })));
+  }
+
+  /** KPI strip totals (Phase 14): authoritative counts independent of paging. */
+  applicationCounts(): Observable<ApiResponse<Record<string, number>>> {
+    return this.http.get<ApiResponse<Record<string, number>>>('/api/v1/applications/counts');
   }
 
   createApplication(request: ApplicationRequest): Observable<ApiResponse<JobApplication>> {
@@ -71,7 +83,9 @@ export class RecruitmentService {
 
   // -------------------------------------------------------- interviews
   interviews(): Observable<ApiResponse<Interview[]>> {
-    return this.http.get<ApiResponse<Interview[]>>('/api/v1/interviews');
+    return this.http
+      .get<ApiResponse<Page<Interview>>>('/api/v1/interviews', { params: { size: '100' } })
+      .pipe(map((r) => ({ ...r, data: r.data.content })));
   }
 
   createInterview(request: InterviewRequest): Observable<ApiResponse<Interview>> {

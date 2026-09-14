@@ -461,6 +461,133 @@ Read-only; every response uses the standard envelope.
   DRAFT's rating is reviewer notes and never enters average or distribution.
 - Leave demand is keyed by request start date within the current calendar year.
 
+## Phase 14 — Cross-cutting List Hardening ✅
+
+Every list endpoint now shares one contract (new **Phase 14 convention**):
+
+- **Envelope**: `PageResponse` — `{ content, page, size, totalElements, totalPages,
+  first, last }` inside the standard `ApiResponse.data`.
+- **Filters**: `search` (trimmed, blank → ignored, capped at 100 chars, case-insensitive
+  across each list's natural text columns) and `status` (typed enum; an unknown value is a
+  **400**, never a 500).
+- **Paging**: `page` is 0-based (negatives clamp to 0), `size` clamps to [1, 100] with
+  default 20. A far-out page returns empty `content` with `last: true` — never an error.
+- **Determinism**: every list is deterministically ordered (newest-first for feeds,
+  name/title asc for reference data, id desc/asc elsewhere), so pagination is stable.
+
+| Method | Path | Filters | Notes |
+|---|---|---|---|
+| GET | /jobs, /candidates, /applications, /interviews | search, status, page, size | KPI strips now read `GET /applications/counts` (per-status totals, independent of paging) |
+| GET | /leave/requests | status, search, page, size | search over employee name/code, type, reason |
+| GET | /performance/reviews | employeeId, status, search, page, size | |
+| GET | /onboardings | status, search, page, size | |
+| GET | /documents | employeeId (required), search, page, size | missing/malformed `employeeId` → 400 |
+| GET | /notifications | unread, search, page, size | personal feed; unread + search are SQL filters (Phase 17), totals are real `COUNT(*)` over the filtered set |
+| GET | /departments/page, /designations/page | search, page, size | new admin paged views; the unpaged `/departments` and `/designations` remain for dialogs/pickers |
+| GET | /employees | search, departmentId, status, employmentType, page, size, sortBy, sortDir | Phase 3 real SQL paging; sort whitelist; now also clamps via the shared policy |
+
+**Unpaged by design** (bounded or reference data): `/leave/types`, `/employees/options`,
+`/attendance/today`, `/attendance/month`, `/payroll/{year}/{month}`, and the analytics
+endpoints.
+
+**Error hardening:** unknown enum values (`?status=NOPE`) and malformed numeric/boolean
+params return 400 with `"Invalid value for parameter: <name>"`; missing required query
+params return 400 with `"Missing required parameter: <name>"` — previously both fell
+through to a 500.
+
+**Frontend contract:** services expose arrays as before; internally they request
+`size=100` (the clamp max) and unwrap `data.content`, so existing components needed no
+changes. The recruitment KPI strip switched to `/applications/counts` so it stays exact
+under any page size.
+
+## Phase 15 — Reports (CSV/PDF Exports) ✅
+
+File downloads for the four main HR lists. **ADMIN, HR, MANAGER** (the read matrix of
+the underlying lists). Responses are raw bytes — deliberately **outside** the standard
+ApiResponse envelope — with `Content-Disposition: attachment` and a UTF-8 filename.
+
+| Method | Path | Params | Notes |
+|---|---|---|---|
+| GET | /reports/employees.csv | search, status (optional) | same filters as the employees list; UTF-8 BOM for Excel |
+| GET | /reports/employees.pdf | search, status (optional) | A4 landscape table |
+| GET | /reports/payroll.csv | year, month (required) | one period's payslips; empty period → header-only file |
+| GET | /reports/payroll.pdf | year, month (required) | |
+| GET | /reports/attendance.csv | from, to (required, ISO dates) | `to` before `from` → 400 |
+| GET | /reports/attendance.pdf | from, to (required, ISO dates) | |
+| GET | /reports/leave.csv | status (optional) | unknown status → 400 (Phase 14 convention) |
+| GET | /reports/leave.pdf | status (optional) | |
+
+### Rules
+
+- **CSV**: RFC 4180 (CRLF, comma-escaping, quote-doubling), UTF-8 with BOM so Excel
+  detects encoding, and **formula-injection sanitisation** — a leading `= + - @` in any
+  cell (e.g. a phone number or a reason like `=HYPERLINK…`) is prefixed with `'` per the
+  OWASP guidance, so the export can never execute formulas when opened in a spreadsheet.
+- **PDF**: OpenPDF (maintained LGPL/MPL fork of iText 4), A4 landscape, title +
+  generation timestamp + grey header row; valid `%PDF-…%%EOF` documents.
+- Exports are point-in-time reads; they use the same repository queries as the UI lists
+  so numbers always match the screens.
+- Frontend: shared `ReportService` fetches the bytes as a blob and triggers a browser
+  download; export buttons on Employees, Payroll (selected period), Attendance (viewed
+  month) and Leave (selected status tab) pass the currently-applied filters.
+
+## Phase 16 — AI Insights (Skill Extraction & Match Scoring) ✅
+
+Deterministic, explainable recruitment insights — a curated skill dictionary with
+aliases, word-boundary matching, and a transparent score formula. No external AI
+service required (self-contained workspace by design); the engine sits behind two
+calls so a real LLM provider could replace it without touching the API. Reads only —
+**ADMIN, HR, MANAGER** (the recruitment read matrix).
+
+| Method | Path | Body/Params | Notes |
+|---|---|---|---|
+| POST | /ai/resume-skills | `{ "text": "..." }` | stateless extraction; nothing is persisted |
+| POST | /ai/resume-files | multipart `file` (.pdf/.txt) | PDF text extraction via OpenPDF; unsupported type → 400 |
+| GET | /ai/job-matches/{jobId} | — | required skills (from title+description) + ranked candidates |
+
+### Rules
+
+- **Dictionary**: ~28 canonical skills (Java, Spring Boot, Oracle SQL, Angular, React,
+  Docker, Kubernetes, Tally, …) each with lowercase aliases; matching is
+  case-insensitive on word boundaries (`java` never matches inside `javascript`).
+- **Suppression is span-based**: an alias match is dropped only when its span lies
+  strictly inside a longer match of another skill (`sql` inside `oracle sql`).
+  Substring pruning was tried and rejected — "JavaScript" contains "java" as a string.
+- **Score** = floor(100 × matched / required). `requiredSkills` come only from what the
+  job text actually says; `matchedSkills`/`missingSkills` are echoed per candidate so
+  every score is auditable. Ties break by fewer missing skills, then name. Candidates
+  with no extractable skills are omitted.
+
+## Phase 17 — SQL Paging Hardening (DB-Side Filters) ✅
+
+The Phase 14 slice-paged endpoints that face unbounded growth were moved to real
+SQL paging: the page window, filters, and totals are computed by the database,
+not by loading every row into memory. Scale-critical lists only — bounded data
+(onboarding: one row per hire; performance: one per review cycle; documents:
+per-employee) deliberately keeps the Phase 14 slice approach.
+
+| Endpoints | Mechanism | Notes |
+|---|---|---|
+| GET /notifications | native SQL paging | `unread` binds as `0` against `NUMBER(1)` READ_FLAG — never a Boolean (the Phase 12 Oracle-mode hazard); search is an escaped LIKE over title+message; ordering `id DESC` in SQL |
+| GET /jobs | paged JPQL projection | status + escaped search over title/location/department, per-job application count via subquery, `lower(title)` ordering |
+| GET /candidates | paged JPQL projection | status + search over name/email/skills (NULL-safe), newest-first with application counts, explicit count query |
+| GET /applications | paged JPQL projection | status + search over candidate/job/remarks, `id` ascending |
+| GET /interviews | paged JPQL projection | status + search over candidate/job/interviewer (NULL-safe), `id` ascending |
+| GET /leave/requests | paged JPQL fetch-join | status + search over employee/code/type/reason, detail joins kept for lazy-safe mapping; count twin without fetch joins |
+
+### Conventions (all new queries)
+
+- Typed binds only: numeric IDs/flags, enums, escaped VARCHAR patterns. No null-Boolean
+  flag binds, which Oracle (and H2 `MODE=Oracle`) reject against `NUMBER(1)` columns.
+- Search patterns are built by `common.SqlPaging.likeEscape`: lower-cased, `\` `%` `_`
+  escaped, used with `LIKE :pattern ESCAPE '\'` — a literal `%` from a client matches
+  nothing instead of everything.
+- Count queries are filter-exact (explicitly declared where Spring cannot derive a
+  correct one through `join fetch` or non-null default filters), so `totalElements`
+  always describes the whole filtered set at any page size.
+- Clamp policy unchanged (Phase 14): `page` 0-based negatives→0, `size` 1..100,
+  `search` trimmed and capped at 100 chars.
+
 ## JWT & Security Notes
 
 - Algorithm HS384; secret from `JWT_SECRET` env var (local dev default documented in `application.yml`).

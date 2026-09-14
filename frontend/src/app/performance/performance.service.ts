@@ -1,8 +1,9 @@
 import { HttpClient } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 import { Observable } from 'rxjs';
+import { map } from 'rxjs/operators';
 
-import { ApiResponse } from '../core/api.models';
+import { ApiResponse, Page } from '../core/api.models';
 
 /** Mirrors backend performance module DTOs (Phase 10). */
 
@@ -50,8 +51,13 @@ export class PerformanceService {
   private readonly http = inject(HttpClient);
 
   reviews(employeeId?: number): Observable<ApiResponse<PerformanceReview[]>> {
-    const params = employeeId ? { employeeId: String(employeeId) } : undefined;
-    return this.http.get<ApiResponse<PerformanceReview[]>>('/api/v1/performance/reviews', { params });
+    const params: Record<string, string> = { size: '100' };
+    if (employeeId != null) {
+      params['employeeId'] = String(employeeId);
+    }
+    return this.http
+      .get<ApiResponse<Page<PerformanceReview>>>('/api/v1/performance/reviews', { params })
+      .pipe(map((r) => ({ ...r, data: r.data.content })));
   }
 
   summary(): Observable<ApiResponse<PerformanceSummary>> {

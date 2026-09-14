@@ -3,6 +3,7 @@ package com.hrgenius.department;
 import java.util.List;
 
 import com.hrgenius.common.ApiResponse;
+import com.hrgenius.common.PageResponse;
 
 import jakarta.validation.Valid;
 
@@ -40,10 +41,21 @@ public class DepartmentController {
 
     // -------------------------------------------------------- departments
 
+    /** Unpaged list — feeds dialogs and read-only tables (stable contract). */
     @GetMapping("/departments")
     @PreAuthorize("hasAnyRole('ADMIN', 'HR', 'MANAGER')")
     public ResponseEntity<ApiResponse<List<DepartmentDto.DepartmentResponse>>> departments() {
         return ResponseEntity.ok(ApiResponse.of(departmentService.list()));
+    }
+
+    /** Admin table view with server-side search + pagination. */
+    @GetMapping("/departments/page")
+    @PreAuthorize("hasAnyRole('ADMIN', 'HR', 'MANAGER')")
+    public ResponseEntity<ApiResponse<PageResponse<DepartmentDto.DepartmentResponse>>> departmentsPaged(
+            @RequestParam(required = false) String search,
+            @RequestParam(required = false) Integer page,
+            @RequestParam(required = false) Integer size) {
+        return ResponseEntity.ok(ApiResponse.of(departmentService.listPaged(search, page, size)));
     }
 
     @GetMapping("/departments/{id}")
@@ -76,11 +88,22 @@ public class DepartmentController {
 
     // ------------------------------------------------------- designations
 
+    /** Unpaged list — feeds dialogs and the designation-by-department view. */
     @GetMapping("/designations")
     @PreAuthorize("hasAnyRole('ADMIN', 'HR', 'MANAGER')")
     public ResponseEntity<ApiResponse<List<DepartmentDto.DesignationResponse>>> designations(
             @RequestParam(required = false) Long departmentId) {
         return ResponseEntity.ok(ApiResponse.of(designationService.list(departmentId)));
+    }
+
+    /** Admin table view with server-side search + pagination. */
+    @GetMapping("/designations/page")
+    @PreAuthorize("hasAnyRole('ADMIN', 'HR', 'MANAGER')")
+    public ResponseEntity<ApiResponse<PageResponse<DepartmentDto.DesignationResponse>>> designationsPaged(
+            @RequestParam(required = false) String search,
+            @RequestParam(required = false) Integer page,
+            @RequestParam(required = false) Integer size) {
+        return ResponseEntity.ok(ApiResponse.of(designationService.listPaged(search, page, size)));
     }
 
     @PostMapping("/designations")

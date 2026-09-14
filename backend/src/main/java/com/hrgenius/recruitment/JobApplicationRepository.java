@@ -2,8 +2,11 @@ package com.hrgenius.recruitment;
 
 import java.util.List;
 
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 
 /** Application queries: duplicate check, pipeline chart, guard counts. */
 public interface JobApplicationRepository extends JpaRepository<JobApplication, Long> {
@@ -44,8 +47,12 @@ public interface JobApplicationRepository extends JpaRepository<JobApplication, 
             """)
     List<Object[]> funnelByJobRaw();
 
-    /** Rich application list with candidate + job + department resolved. */
-    @Query("""
+    /**
+     * Rich application list with candidate + job + department resolved —
+     * now DB-side paged (Phase 17) with typed binds (enum status, VARCHAR
+     * LIKE pattern escaped by SqlPaging).
+     */
+    @Query(value = """
             select a.id, c.id, c.name, c.email,
                    j.id, j.title, d.name,
                    a.applicationDate, a.status, a.remarks
@@ -53,6 +60,24 @@ public interface JobApplicationRepository extends JpaRepository<JobApplication, 
             join a.candidate c
             join a.job j
             left join j.department d
+            where (:status is null or a.status = :status)
+              and (:pattern is null
+                   or lower(c.name) like :pattern escape '\\'
+                   or lower(j.title) like :pattern escape '\\'
+                   or lower(coalesce(a.remarks, '')) like :pattern escape '\\')
+            order by a.id asc
+            """,
+            countQuery = """
+            select count(a) from JobApplication a
+            join a.candidate c
+            join a.job j
+            where (:status is null or a.status = :status)
+              and (:pattern is null
+                   or lower(c.name) like :pattern escape '\\'
+                   or lower(j.title) like :pattern escape '\\'
+                   or lower(coalesce(a.remarks, '')) like :pattern escape '\\')
             """)
-    List<Object[]> findAllProjected();
+    Page<Object[]> findPagedProjected(@Param("status") ApplicationStatus status,
+                                      @Param("pattern") String pattern,
+                                      Pageable pageable);
 }

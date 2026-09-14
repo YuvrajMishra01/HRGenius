@@ -4,16 +4,22 @@
       <h1>Leave Management</h1>
       <p class="sub">Requests, approvals, and yearly balances</p>
     </div>
-    @if (canWrite()) {
-      <div class="head-actions">
+    <div class="head-actions">
+      <button mat-stroked-button (click)="export('csv')" matTooltip="Download CSV">
+        <mat-icon>download</mat-icon> CSV
+      </button>
+      <button mat-stroked-button (click)="export('pdf')" matTooltip="Download PDF">
+        <mat-icon>picture_as_pdf</mat-icon> PDF
+      </button>
+      @if (canWrite()) {
         <button mat-stroked-button (click)="openTypeDialog(null)">
           <mat-icon>category</mat-icon> New type
         </button>
         <button mat-flat-button color="primary" (click)="openNewRequestDialog()">
           <mat-icon>add</mat-icon> New request
         </button>
-      </div>
-    }
+      }
+    </div>
   </div>
 
   @if (error(); as err) {

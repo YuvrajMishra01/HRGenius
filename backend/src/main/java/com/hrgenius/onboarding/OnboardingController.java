@@ -3,6 +3,7 @@ package com.hrgenius.onboarding;
 import java.util.List;
 
 import com.hrgenius.common.ApiResponse;
+import com.hrgenius.common.PageResponse;
 
 import jakarta.validation.Valid;
 
@@ -15,6 +16,7 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 /** Onboarding endpoints (Phase 6): reads ADMIN/HR/MANAGER, writes ADMIN/HR. */
@@ -30,8 +32,12 @@ public class OnboardingController {
 
     @GetMapping("/onboardings")
     @PreAuthorize("hasAnyRole('ADMIN', 'HR', 'MANAGER')")
-    public ResponseEntity<ApiResponse<List<OnboardingDto.OnboardingResponse>>> list() {
-        return ResponseEntity.ok(ApiResponse.of(onboardingService.list()));
+    public ResponseEntity<ApiResponse<PageResponse<OnboardingDto.OnboardingResponse>>> list(
+            @RequestParam(required = false) OnboardingStatus status,
+            @RequestParam(required = false) String search,
+            @RequestParam(required = false) Integer page,
+            @RequestParam(required = false) Integer size) {
+        return ResponseEntity.ok(ApiResponse.of(onboardingService.list(status, search, page, size)));
     }
 
     /** Convert a SELECTED application into an employee + onboarding record. */

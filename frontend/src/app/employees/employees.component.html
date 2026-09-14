@@ -3,12 +3,20 @@
     <h1>Employees</h1>
     <p class="subtitle">Directory with server-side search, filters and pagination</p>
   </div>
-  @if (canEdit()) {
-    <button mat-flat-button color="primary" (click)="openAdd()">
-      <mat-icon>person_add</mat-icon>
-      Add employee
+  <div class="head-actions">
+    <button mat-stroked-button (click)="export('csv')" matTooltip="Download CSV">
+      <mat-icon>download</mat-icon> CSV
     </button>
-  }
+    <button mat-stroked-button (click)="export('pdf')" matTooltip="Download PDF">
+      <mat-icon>picture_as_pdf</mat-icon> PDF
+    </button>
+    @if (canEdit()) {
+      <button mat-flat-button color="primary" (click)="openAdd()">
+        <mat-icon>person_add</mat-icon>
+        Add employee
+      </button>
+    }
+  </div>
 </div>
 
 <mat-card class="toolbar">
@@ -60,7 +68,15 @@
   <mat-progress-bar mode="indeterminate" aria-label="Loading employees" />
 }
 
-@if (loadError()) {
+@if (forbidden()) {
+  <mat-card class="state-card">
+    <mat-card-content class="state">
+      <mat-icon class="warn">lock</mat-icon>
+      <h3>Directory is restricted</h3>
+      <p>The employee directory is available to ADMIN, HR and MANAGER roles.</p>
+    </mat-card-content>
+  </mat-card>
+} @else if (loadError()) {
   <mat-card class="state-card">
     <mat-card-content class="state">
       <mat-icon class="warn">cloud_off</mat-icon>

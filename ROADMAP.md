@@ -18,9 +18,10 @@ Status legend: ✅ done · 🔄 in progress · ⬜ pending
 | 11 | Documents: upload/download/delete, metadata, validation | ✅ |
 | 12 | Notifications: events + unread badge | ✅ |
 | 13 | Analytics: real-data charts | ✅ |
-| 14 | Cross-cutting search/filter/pagination hardening | ⬜ |
-| 15 | Reports: CSV/PDF exports | ⬜ |
-| 16 | Optional AI module (resume skill extraction, match score) | ⬜ |
+| 14 | Cross-cutting search/filter/pagination hardening | ✅ |
+| 15 | Reports: CSV/PDF exports | ✅ |
+| 16 | Optional AI module (resume skill extraction, match score) | ✅ |
+| 17 | SQL paging hardening: DB-side filters + real paging for notifications, recruitment, leave | ✅ |
 
 ## Environment Decision Log
 

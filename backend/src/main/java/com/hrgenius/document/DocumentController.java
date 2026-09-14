@@ -3,9 +3,9 @@ package com.hrgenius.document;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.List;
 
 import com.hrgenius.common.ApiResponse;
+import com.hrgenius.common.PageResponse;
 
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
@@ -38,9 +38,12 @@ public class DocumentController {
 
     @GetMapping
     @PreAuthorize("hasAnyRole('ADMIN', 'HR', 'MANAGER')")
-    public ResponseEntity<ApiResponse<List<DocumentDto.DocumentResponse>>> list(
-            @RequestParam Long employeeId) {
-        return ResponseEntity.ok(ApiResponse.of(service.list(employeeId)));
+    public ResponseEntity<ApiResponse<PageResponse<DocumentDto.DocumentResponse>>> list(
+            @RequestParam Long employeeId,
+            @RequestParam(required = false) String search,
+            @RequestParam(required = false) Integer page,
+            @RequestParam(required = false) Integer size) {
+        return ResponseEntity.ok(ApiResponse.of(service.list(employeeId, search, page, size)));
     }
 
     @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)

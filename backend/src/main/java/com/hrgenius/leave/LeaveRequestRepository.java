@@ -3,6 +3,8 @@ package com.hrgenius.leave;
 import java.time.LocalDate;
 import java.util.List;
 
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -45,6 +47,41 @@ public interface LeaveRequestRepository extends JpaRepository<LeaveRequest, Long
             order by l.id desc
             """)
     List<LeaveRequest> findAllWithDetails();
+
+    /**
+     * DB-side paged rich list (Phase 17): status + search filters and the
+     * page window are computed in SQL. The count query deliberately repeats
+     * the filters without the fetch joins — Spring cannot derive a correct
+     * count through `join fetch`, and an extra join would skew the total.
+     * Typed binds only (enum + escaped VARCHAR pattern).
+     */
+    @Query(value = """
+            select l from LeaveRequest l
+            join fetch l.employee e
+            left join fetch e.department d
+            join fetch l.leaveType t
+            where (:status is null or l.status = :status)
+              and (:pattern is null
+                   or lower(concat(concat(e.firstName, ' '), e.lastName)) like :pattern escape '\\'
+                   or lower(e.employeeCode) like :pattern escape '\\'
+                   or lower(t.name) like :pattern escape '\\'
+                   or lower(coalesce(l.reason, '')) like :pattern escape '\\')
+            order by l.id desc
+            """,
+            countQuery = """
+            select count(l) from LeaveRequest l
+            join l.employee e
+            join l.leaveType t
+            where (:status is null or l.status = :status)
+              and (:pattern is null
+                   or lower(concat(concat(e.firstName, ' '), e.lastName)) like :pattern escape '\\'
+                   or lower(e.employeeCode) like :pattern escape '\\'
+                   or lower(t.name) like :pattern escape '\\'
+                   or lower(coalesce(l.reason, '')) like :pattern escape '\\')
+            """)
+    Page<LeaveRequest> findPagedWithDetails(@Param("status") LeaveRequest.LeaveStatus status,
+                                            @Param("pattern") String pattern,
+                                            Pageable pageable);
 
     /** Rich list filtered by status (approval queue). */
     @Query("""

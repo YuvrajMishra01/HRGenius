@@ -79,8 +79,9 @@ export class PerformanceComponent implements OnInit {
           this.summary.set(summary.data);
           this.loading.set(false);
         },
-        error: () => {
-          this.error.set('Could not load performance data');
+        error: (err) => {
+          this.error.set(
+            (err as { error?: { message?: string } })?.error?.message ?? 'Could not load performance data');
           this.loading.set(false);
         },
       });

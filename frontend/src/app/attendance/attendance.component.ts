@@ -10,8 +10,8 @@ import { MatInputModule } from '@angular/material/input';
 import { MatSelectModule } from '@angular/material/select';
 import { MatTableModule } from '@angular/material/table';
 import { MatTooltipModule } from '@angular/material/tooltip';
-
 import { AuthService } from '../core/auth.service';
+import { ReportService } from '../shared/report.service';
 import {
   AttendanceRecord,
   AttendanceService,
@@ -111,6 +111,7 @@ export class MarkAttendanceDialog {
 export class AttendanceComponent implements OnInit {
   private readonly service = inject(AttendanceService);
   private readonly dialog = inject(MatDialog);
+  private readonly reports = inject(ReportService);
   readonly auth = inject(AuthService);
 
   readonly canWrite = computed(
@@ -124,6 +125,18 @@ export class AttendanceComponent implements OnInit {
   /** Year/month being viewed. */
   readonly viewYear = signal(new Date().getFullYear());
   readonly viewMonth = signal(new Date().getMonth() + 1);
+
+  /** Exports the month currently being viewed (its full date range). */
+  export(format: 'csv' | 'pdf'): void {
+    const y = this.viewYear();
+    const m = this.viewMonth();
+    const from = `${y}-${String(m).padStart(2, '0')}-01`;
+    const to = `${y}-${String(m).padStart(2, '0')}-${new Date(y, m, 0).getDate()}`;
+    this.reports.download(
+      `/api/v1/reports/attendance.${format}?from=${from}&to=${to}`,
+      `attendance-${y}-${String(m).padStart(2, '0')}.${format}`,
+    );
+  }
   /** Check-in / check-out busy flags (prevents double clicks). */
   readonly busyEmployeeId = signal<number | null>(null);
 

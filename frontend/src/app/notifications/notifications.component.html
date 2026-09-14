@@ -16,13 +16,25 @@
   }
 
   <section class="content">
+    <div class="feed-controls">
+      <mat-button-toggle-group
+        class="feed-toggle"
+        [value]="unreadOnly() ? 'unread' : 'all'"
+        (change)="onFilterChange($event.value === 'unread')"
+        hideSingleSelectionIndicator
+      >
+        <mat-button-toggle value="all">All</mat-button-toggle>
+        <mat-button-toggle value="unread">Unread</mat-button-toggle>
+      </mat-button-toggle-group>
+    </div>
+
     @if (loading()) {
       <mat-card class="state-card"><mat-card-content>Loading notifications…</mat-card-content></mat-card>
     } @else if (notifications().length === 0) {
       <mat-card class="state-card">
         <mat-card-content>
           <mat-icon>notifications_off</mat-icon>
-          <p>No notifications yet.</p>
+          <p>{{ unreadOnly() ? 'No unread notifications.' : 'No notifications yet.' }}</p>
           <p class="hint">Events like leave approvals and onboarding updates will appear here.</p>
         </mat-card-content>
       </mat-card>
@@ -53,6 +65,16 @@
           </div>
         </article>
       }
+
+      <mat-paginator
+        [length]="total()"
+        [pageIndex]="page()"
+        [pageSize]="pageSize()"
+        [pageSizeOptions]="[10, 20, 50]"
+        (page)="onPage($event)"
+        showFirstLastButtons
+        aria-label="Select page of notifications"
+      />
     }
   </section>
 </main>
