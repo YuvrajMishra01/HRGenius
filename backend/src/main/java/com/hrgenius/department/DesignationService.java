@@ -7,6 +7,8 @@ import java.util.Map;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.hrgenius.audit.AuditActions;
+import com.hrgenius.audit.AuditService;
 import com.hrgenius.common.Lists;
 import com.hrgenius.common.PageResponse;
 import com.hrgenius.employee.EmployeeRepository;
@@ -27,6 +29,7 @@ public class DesignationService {
     private final DesignationRepository designationRepository;
     private final DepartmentRepository departmentRepository;
     private final EmployeeRepository employeeRepository;
+    private final AuditService audit;
 
     @Transactional(readOnly = true)
     public List<DepartmentDto.DesignationResponse> list(Long departmentId) {
@@ -66,6 +69,8 @@ public class DesignationService {
         designation.setDescription(request.description());
         designation.setDepartment(department);
         Designation saved = designationRepository.save(designation);
+        audit.record(audit.currentActor(), AuditActions.DESIGNATION_CREATED, "DESIGNATION", saved.getId(),
+                saved.getTitle(), "Created in " + department.getName());
         log.info("Designation created: {} ({})", saved.getTitle(),
                 department.getName());
         return toResponse(saved, 0);
@@ -87,6 +92,8 @@ public class DesignationService {
         designation.setDescription(request.description());
         designation.setDepartment(department);
         Designation saved = designationRepository.save(designation);
+        audit.record(audit.currentActor(), AuditActions.DESIGNATION_UPDATED, "DESIGNATION", saved.getId(),
+                saved.getTitle(), "Updated in " + department.getName());
         log.info("Designation updated: {} ({})", saved.getTitle(), department.getName());
         return toResponse(saved, designationRepository.countEmployeesWith(id));
     }
@@ -102,6 +109,8 @@ public class DesignationService {
                     "Designation is held by " + holders + " employee(s). Reassign them first.");
         }
         designationRepository.delete(designation);
+        audit.record(audit.currentActor(), AuditActions.DESIGNATION_DELETED, "DESIGNATION", id,
+                designation.getTitle(), "Designation deleted");
         log.info("Designation deleted: {}", designation.getTitle());
     }
 

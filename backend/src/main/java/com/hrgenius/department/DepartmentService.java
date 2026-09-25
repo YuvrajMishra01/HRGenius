@@ -8,6 +8,8 @@ import java.util.Map;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.hrgenius.audit.AuditActions;
+import com.hrgenius.audit.AuditService;
 import com.hrgenius.common.Lists;
 import com.hrgenius.common.PageResponse;
 import com.hrgenius.employee.Employee;
@@ -29,6 +31,7 @@ public class DepartmentService {
     private final DepartmentRepository departmentRepository;
     private final DesignationRepository designationRepository;
     private final EmployeeRepository employeeRepository;
+    private final AuditService audit;
 
     /** Unpaged list — feeds dialogs and read-only tables (stable contract). */
     @Transactional(readOnly = true)
@@ -67,6 +70,8 @@ public class DepartmentService {
         Department department = new Department();
         applyRequest(department, request);
         Department saved = departmentRepository.save(department);
+        audit.record(audit.currentActor(), AuditActions.DEPARTMENT_CREATED, "DEPARTMENT", saved.getId(),
+                saved.getName(), "Department created");
         log.info("Department created: {}", saved.getName());
         return toResponse(saved, 0);
     }
@@ -80,6 +85,8 @@ public class DepartmentService {
         }
         applyRequest(department, request);
         Department saved = departmentRepository.save(department);
+        audit.record(audit.currentActor(), AuditActions.DEPARTMENT_UPDATED, "DEPARTMENT", saved.getId(),
+                saved.getName(), "Department updated");
         log.info("Department updated: {}", saved.getName());
         return toResponse(saved, departmentRepository.countEmployeesIn(id));
     }
@@ -105,6 +112,8 @@ public class DepartmentService {
         }
 
         departmentRepository.delete(department);
+        audit.record(audit.currentActor(), AuditActions.DEPARTMENT_DELETED, "DEPARTMENT", id,
+                department.getName(), "Department deleted");
         log.info("Department deleted: {}", department.getName());
     }
 

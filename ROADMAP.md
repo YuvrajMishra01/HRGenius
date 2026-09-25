@@ -22,6 +22,8 @@ Status legend: ✅ done · 🔄 in progress · ⬜ pending
 | 15 | Reports: CSV/PDF exports | ✅ |
 | 16 | Optional AI module (resume skill extraction, match score) | ✅ |
 | 17 | SQL paging hardening: DB-side filters + real paging for notifications, recruitment, leave | ✅ |
+| 18 | HR-facing audit log: who-did-what trail with DB-side filters, ADMIN/HR only | ✅ |
+| 19 | Audit CSV export: Phase 15 export machinery, current filters respected, SQL-side row cap, ADMIN/HR only | ✅ |
 
 ## Environment Decision Log
 

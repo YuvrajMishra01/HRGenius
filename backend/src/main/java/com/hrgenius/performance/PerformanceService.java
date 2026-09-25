@@ -5,6 +5,8 @@ import java.math.RoundingMode;
 import java.util.Comparator;
 import java.util.List;
 
+import com.hrgenius.audit.AuditActions;
+import com.hrgenius.audit.AuditService;
 import com.hrgenius.common.Lists;
 import com.hrgenius.common.PageResponse;
 import com.hrgenius.employee.Employee;
@@ -33,13 +35,16 @@ public class PerformanceService {
     private final PerformanceReviewRepository reviewRepository;
     private final EmployeeRepository employeeRepository;
     private final NotificationService notifications;
+    private final AuditService audit;
 
     public PerformanceService(PerformanceReviewRepository reviewRepository,
                               EmployeeRepository employeeRepository,
-                              NotificationService notifications) {
+                              NotificationService notifications,
+                              AuditService audit) {
         this.reviewRepository = reviewRepository;
         this.employeeRepository = employeeRepository;
         this.notifications = notifications;
+        this.audit = audit;
     }
 
     // ------------------------------------------------------------ views
@@ -103,7 +108,11 @@ public class PerformanceService {
         review.setReviewPeriod(request.reviewPeriod().trim());
         review.setGoals(request.goals());
         review.setStatus(PerformanceReview.ReviewStatus.DRAFT);
-        return toResponse(reviewRepository.save(review));
+        PerformanceReview created = reviewRepository.save(review);
+        audit.record(audit.currentActor(), AuditActions.REVIEW_CREATED, "REVIEW", created.getId(),
+                fullName(employee) + " · " + created.getReviewPeriod(),
+                "Reviewer: " + fullName(reviewer));
+        return toResponse(created);
     }
 
     /** DRAFT-only content editing (goals, strengths, weaknesses, comments). */
@@ -115,7 +124,11 @@ public class PerformanceService {
         review.setStrengths(request.strengths());
         review.setWeaknesses(request.weaknesses());
         review.setComments(request.comments());
-        return toResponse(reviewRepository.save(review));
+        PerformanceReview updated = reviewRepository.save(review);
+        audit.record(audit.currentActor(), AuditActions.REVIEW_UPDATED, "REVIEW", id,
+                fullName(review.getEmployee()) + " · " + review.getReviewPeriod(),
+                "Draft content updated");
+        return toResponse(updated);
     }
 
     /** Rate + submit in one step; only a DRAFT can be submitted. */
@@ -131,6 +144,9 @@ public class PerformanceService {
                 "Performance review submitted",
                 "Your " + saved.getReviewPeriod() + " review was submitted with rating "
                         + saved.getRating() + "/5. Please acknowledge it.");
+        audit.record(audit.currentActor(), AuditActions.REVIEW_SUBMITTED, "REVIEW", id,
+                fullName(saved.getEmployee()) + " · " + saved.getReviewPeriod(),
+                "Rating " + saved.getRating() + "/5");
         return toResponse(saved);
     }
 
@@ -142,12 +158,15 @@ public class PerformanceService {
             throw new IllegalStateException("Only SUBMITTED reviews can be acknowledged");
         }
         review.setStatus(PerformanceReview.ReviewStatus.ACKNOWLEDGED);
-        PerformanceReview saved = reviewRepository.save(review);
-        notifications.notifyEmployee(saved.getReviewer(), Notification.NotificationType.PERFORMANCE,
+        PerformanceReview acknowledged = reviewRepository.save(review);
+        notifications.notifyEmployee(acknowledged.getReviewer(), Notification.NotificationType.PERFORMANCE,
                 "Review acknowledged",
-                saved.getEmployee().getFirstName() + " acknowledged the " + saved.getReviewPeriod()
+                acknowledged.getEmployee().getFirstName() + " acknowledged the " + acknowledged.getReviewPeriod()
                         + " review.");
-        return toResponse(saved);
+        audit.record(audit.currentActor(), AuditActions.REVIEW_ACKNOWLEDGED, "REVIEW", id,
+                fullName(acknowledged.getEmployee()) + " · " + acknowledged.getReviewPeriod(),
+                "Acknowledged by the reviewed employee");
+        return toResponse(acknowledged);
     }
 
     /** DRAFT reviews can be deleted; anything submitted keeps history. */
@@ -158,6 +177,9 @@ public class PerformanceService {
             throw new IllegalStateException("Only DRAFT reviews can be deleted");
         }
         reviewRepository.delete(review);
+        audit.record(audit.currentActor(), AuditActions.REVIEW_DELETED, "REVIEW", id,
+                fullName(review.getEmployee()) + " · " + review.getReviewPeriod(),
+                "Draft review deleted");
     }
 
     // ------------------------------------------------------------ helpers

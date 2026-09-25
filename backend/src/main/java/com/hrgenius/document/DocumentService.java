@@ -18,6 +18,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
+import com.hrgenius.audit.AuditActions;
+import com.hrgenius.audit.AuditService;
 import com.hrgenius.common.Lists;
 import com.hrgenius.common.PageResponse;
 import com.hrgenius.employee.Employee;
@@ -38,12 +40,14 @@ public class DocumentService {
 
     private final DocumentRepository repository;
     private final EmployeeRepository employees;
+    private final AuditService audit;
     private final Path storageDir;
 
     public DocumentService(DocumentRepository repository, EmployeeRepository employees,
-                           org.springframework.core.env.Environment env) {
+                           AuditService audit, org.springframework.core.env.Environment env) {
         this.repository = repository;
         this.employees = employees;
+        this.audit = audit;
         this.storageDir = Paths.get(env.getProperty("app.documents.storage-dir", "./uploads/documents"))
                 .toAbsolutePath().normalize();
     }
@@ -102,6 +106,9 @@ public class DocumentService {
             document.setFilePath(storedName);
             document.setFileSize(file.getSize());
             Document saved = repository.save(document);
+            audit.record(audit.currentActor(), AuditActions.DOCUMENT_UPLOADED, "DOCUMENT", saved.getId(),
+                    employee.getFirstName() + " " + employee.getLastName() + " — " + document.getDocumentType(),
+                    "\"" + original + "\" (" + file.getSize() + " bytes)");
             return toResponse(saved);
         } catch (IOException e) {
             throw new IllegalStateException("Could not store the uploaded file", e);
@@ -140,6 +147,10 @@ public class DocumentService {
         Document document = repository.findById(id)
                 .orElseThrow(() -> new EntityNotFoundException("Document not found: " + id));
         repository.delete(document);
+        audit.record(audit.currentActor(), AuditActions.DOCUMENT_DELETED, "DOCUMENT", id,
+                document.getEmployee().getFirstName() + " " + document.getEmployee().getLastName()
+                        + " — " + document.getDocumentType(),
+                "\"" + document.getFileName() + "\" deleted");
         try {
             Files.deleteIfExists(storageDir.resolve(document.getFilePath()).normalize());
         } catch (IOException e) {

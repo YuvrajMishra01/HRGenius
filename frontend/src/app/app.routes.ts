@@ -80,6 +80,10 @@ export const routes: Routes = [
           import('./analytics/analytics.component').then((m) => m.AnalyticsComponent),
       },
       {
+        path: 'audit',
+        loadComponent: () => import('./audit/audit.component').then((m) => m.AuditComponent),
+      },
+      {
         path: '**',
         redirectTo: 'dashboard',
       },

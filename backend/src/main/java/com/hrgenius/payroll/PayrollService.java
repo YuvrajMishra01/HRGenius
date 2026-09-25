@@ -7,6 +7,8 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
+import com.hrgenius.audit.AuditActions;
+import com.hrgenius.audit.AuditService;
 import com.hrgenius.employee.Employee;
 import com.hrgenius.employee.EmployeeRepository;
 import com.hrgenius.employee.EmployeeStatus;
@@ -37,13 +39,16 @@ public class PayrollService {
     private final PayrollRepository payrollRepository;
     private final EmployeeRepository employeeRepository;
     private final NotificationService notifications;
+    private final AuditService audit;
 
     public PayrollService(PayrollRepository payrollRepository,
                           EmployeeRepository employeeRepository,
-                          NotificationService notifications) {
+                          NotificationService notifications,
+                          AuditService audit) {
         this.payrollRepository = payrollRepository;
         this.employeeRepository = employeeRepository;
         this.notifications = notifications;
+        this.audit = audit;
     }
 
     // ------------------------------------------------------------ run
@@ -96,6 +101,9 @@ public class PayrollService {
         List<Object[]> totals = payrollRepository.totalsForPeriod(year, month);
         long periodCount = ((Number) totals.get(0)[0]).longValue();
         BigDecimal periodNet = (BigDecimal) totals.get(0)[1];
+        audit.record(audit.currentActor(), AuditActions.PAYROLL_RUN_EXECUTED, "PAYROLL", null,
+                year + "-" + String.format("%02d", month),
+                created + " payslip(s) created, " + skipped + " skipped");
         return new PayrollDto.RunResponse(year, month, created, skipped, periodCount, periodNet);
     }
 
@@ -112,7 +120,12 @@ public class PayrollService {
         payslip.setTax(request.tax());
         payslip.setNetSalary(netOf(payslip.getBasicSalary(), payslip.getAllowances(),
                 payslip.getDeductions(), payslip.getTax()));
-        return toRow(payrollRepository.save(payslip));
+        Payroll savedRow = payrollRepository.save(payslip);
+        audit.record(audit.currentActor(), AuditActions.PAYSLIP_UPDATED, "PAYSLIP", id,
+                fullName(payslip.getEmployee()) + " (" + payslip.getPayYear() + "-"
+                        + String.format("%02d", payslip.getPayMonth()) + ")",
+                "Components updated");
+        return toRow(savedRow);
     }
 
     @Transactional
@@ -122,7 +135,12 @@ public class PayrollService {
             throw new IllegalStateException("Only DRAFT payslips can be marked PROCESSED");
         }
         payslip.setStatus(Payroll.PayrollStatus.PROCESSED);
-        return toRow(payrollRepository.save(payslip));
+        Payroll processedRow = payrollRepository.save(payslip);
+        audit.record(audit.currentActor(), AuditActions.PAYSLIP_PROCESSED, "PAYSLIP", id,
+                fullName(payslip.getEmployee()) + " (" + payslip.getPayYear() + "-"
+                        + String.format("%02d", payslip.getPayMonth()) + ")",
+                "DRAFT → PROCESSED");
+        return toRow(processedRow);
     }
 
     @Transactional
@@ -137,6 +155,10 @@ public class PayrollService {
                 "Salary paid",
                 "Your " + payslip.getPayYear() + "-" + String.format("%02d", payslip.getPayMonth())
                         + " salary of " + payslip.getNetSalary() + " has been paid.");
+        audit.record(audit.currentActor(), AuditActions.PAYSLIP_PAID, "PAYSLIP", id,
+                fullName(payslip.getEmployee()) + " (" + payslip.getPayYear() + "-"
+                        + String.format("%02d", payslip.getPayMonth()) + ")",
+                "Net: " + payslip.getNetSalary());
         return toRow(saved);
     }
 
@@ -148,6 +170,10 @@ public class PayrollService {
             throw new IllegalStateException("PAID payslips are permanent and cannot be deleted");
         }
         payrollRepository.delete(payslip);
+        audit.record(audit.currentActor(), AuditActions.PAYSLIP_DELETED, "PAYSLIP", id,
+                fullName(payslip.getEmployee()) + " (" + payslip.getPayYear() + "-"
+                        + String.format("%02d", payslip.getPayMonth()) + ")",
+                "Undecided payslip deleted (" + payslip.getStatus() + ")");
     }
 
     // ------------------------------------------------------------ views

@@ -64,7 +64,7 @@ export class LayoutComponent implements OnInit, OnDestroy {
   }
 
   /** Phase gates which nav items are visible; bump as modules land. */
-  readonly currentPhase = 13;
+  readonly currentPhase = 19;
 
   readonly navItems: NavItem[] = [
     { label: 'Dashboard', icon: 'dashboard', route: '/dashboard', phase: 0 },
@@ -79,6 +79,7 @@ export class LayoutComponent implements OnInit, OnDestroy {
     { label: 'Documents', icon: 'folder_shared', route: '/documents', phase: 11 },
     { label: 'Notifications', icon: 'notifications', route: '/notifications', phase: 12 },
     { label: 'Analytics', icon: 'analytics', route: '/analytics', phase: 13 },
+    { label: 'Audit log', icon: 'history', route: '/audit', phase: 18 },
   ];
 
   get visibleNavItems(): NavItem[] {

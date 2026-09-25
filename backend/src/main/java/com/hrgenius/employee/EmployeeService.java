@@ -2,6 +2,8 @@ package com.hrgenius.employee;
 
 import java.util.List;
 
+import com.hrgenius.audit.AuditActions;
+import com.hrgenius.audit.AuditService;
 import com.hrgenius.common.PageResponse;
 
 import org.springframework.data.domain.Page;
@@ -38,6 +40,7 @@ public class EmployeeService {
     private final EmployeeRepository employeeRepository;
     private final DepartmentRepository departmentRepository;
     private final DesignationRepository designationRepository;
+    private final AuditService audit;
 
     @Transactional(readOnly = true)
     public PageResponse<EmployeeDto.Response> list(
@@ -75,6 +78,8 @@ public class EmployeeService {
         Employee employee = new Employee();
         applyRequest(employee, request);
         Employee saved = employeeRepository.save(employee);
+        audit.record(audit.currentActor(), AuditActions.EMPLOYEE_CREATED, "EMPLOYEE", saved.getId(),
+                label(saved), "Joined " + saved.getJoiningDate());
         log.info("Employee created: [{}] {}", saved.getEmployeeCode(), saved.getEmail());
         return toResponse(saved);
     }
@@ -92,6 +97,8 @@ public class EmployeeService {
 
         applyRequest(employee, request);
         Employee saved = employeeRepository.save(employee);
+        audit.record(audit.currentActor(), AuditActions.EMPLOYEE_UPDATED, "EMPLOYEE", saved.getId(),
+                label(saved), "Profile updated");
         log.info("Employee updated: [{}] {}", saved.getEmployeeCode(), saved.getEmail());
         return toResponse(saved);
     }
@@ -112,6 +119,8 @@ public class EmployeeService {
 
         employee.setStatus(EmployeeStatus.TERMINATED);
         employeeRepository.save(employee);
+        audit.record(audit.currentActor(), AuditActions.EMPLOYEE_TERMINATED, "EMPLOYEE", id,
+                label(employee), "Soft delete: status set to TERMINATED");
         log.info("Employee soft-deleted (TERMINATED): [{}]", employee.getEmployeeCode());
     }
 
@@ -181,6 +190,13 @@ public class EmployeeService {
         }
         return employeeRepository.findById(managerId)
                 .orElseThrow(() -> new EntityNotFoundException("Manager not found: " + managerId));
+    }
+
+    private static String label(Employee e) {
+        String last = e.getLastName();
+        return last == null || last.isBlank()
+                ? e.getFirstName() + " (" + e.getEmployeeCode() + ")"
+                : e.getFirstName() + " " + last + " (" + e.getEmployeeCode() + ")";
     }
 
     private Sort buildSort(String sortBy, String sortDir) {

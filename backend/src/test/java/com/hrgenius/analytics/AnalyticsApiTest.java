@@ -5,6 +5,10 @@ import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestMethodOrder;
 
+import java.time.LocalDate;
+import java.time.temporal.ChronoUnit;
+import java.util.List;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.web.client.TestRestTemplate;
@@ -59,7 +63,12 @@ class AnalyticsApiTest {
         assertThat(body)
                 .contains("\"active\":7")
                 .contains("\"terminated\":0")
-                .contains("\"avgTenureYears\":3.6")
+                // Tenure is calendar-dependent (avg drifts as today moves past
+                // the static seed joining dates), so the expectation is derived
+                // from the seed dates with the same semantics as the service:
+                // full months between joining and today (floored at 0), averaged
+                // over 7 employees and rounded to one decimal.
+                .contains("\"avgTenureYears\":" + expectedAvgTenure())
                 .contains("\"name\":\"Engineering\",\"count\":4")
                 .contains("\"type\":\"FULL_TIME\",\"count\":6")
                 .contains("\"type\":\"INTERN\",\"count\":1")
@@ -70,6 +79,27 @@ class AnalyticsApiTest {
         // Engineering is the largest department — assert it leads the list.
         assertThat(body.indexOf("\"name\":\"Engineering\""))
                 .isLessThan(body.indexOf("\"name\":\"Finance\""));
+    }
+
+    /**
+     * Seed joining dates (V2__seed_data.sql) for the 7 ACTIVE employees —
+     * EMP007 joins CURRENT_DATE - 10. Mirrors AnalyticsService.months-based
+     * tenure so the assertion stays green as the calendar advances.
+     */
+    private static double expectedAvgTenure() {
+        LocalDate today = LocalDate.now();
+        List<LocalDate> seedDates = List.of(
+                LocalDate.of(2020, 11, 23),
+                LocalDate.of(2021, 3, 15),
+                LocalDate.of(2022, 1, 3),
+                LocalDate.of(2022, 9, 19),
+                LocalDate.of(2023, 7, 10),
+                LocalDate.of(2024, 2, 5),
+                today.minusDays(10));
+        double avg = seedDates.stream()
+                .mapToLong(d -> Math.max(0, ChronoUnit.MONTHS.between(d, today)))
+                .average().orElse(0) / 12.0;
+        return Math.round(avg * 10.0) / 10.0;
     }
 
     // --------------------------------------------------------------- funnel

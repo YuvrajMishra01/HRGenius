@@ -13,6 +13,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import com.hrgenius.audit.AuditActions;
+import com.hrgenius.audit.AuditService;
 import com.hrgenius.employee.Employee;
 import com.hrgenius.employee.EmployeeRepository;
 
@@ -37,11 +39,14 @@ public class AttendanceService {
 
     private final AttendanceRepository attendanceRepository;
     private final EmployeeRepository employeeRepository;
+    private final AuditService audit;
 
     public AttendanceService(AttendanceRepository attendanceRepository,
-                             EmployeeRepository employeeRepository) {
+                             EmployeeRepository employeeRepository,
+                             AuditService audit) {
         this.attendanceRepository = attendanceRepository;
         this.employeeRepository = employeeRepository;
+        this.audit = audit;
     }
 
     // -------------------------------------------------------------- views
@@ -88,7 +93,11 @@ public class AttendanceService {
         attendance.setAttendanceDate(day);
         attendance.setCheckIn(OffsetDateTime.now());
         attendance.setStatus(Attendance.AttendanceStatus.PRESENT);
-        return toRecord(attendanceRepository.save(attendance));
+        Attendance savedCheckIn = attendanceRepository.save(attendance);
+        audit.record(audit.currentActor(), AuditActions.ATTENDANCE_MARKED, "ATTENDANCE", employeeId,
+                savedCheckIn.getEmployee().getFirstName() + " " + savedCheckIn.getEmployee().getLastName(),
+                "Check-in at " + savedCheckIn.getCheckIn());
+        return toRecord(savedCheckIn);
     }
 
     @Transactional
@@ -101,7 +110,11 @@ public class AttendanceService {
         }
         attendance.setCheckOut(OffsetDateTime.now());
         attendance.setWorkingHours(computeWorkingHours(attendance));
-        return toRecord(attendanceRepository.save(attendance));
+        Attendance savedCheckOut = attendanceRepository.save(attendance);
+        audit.record(audit.currentActor(), AuditActions.ATTENDANCE_MARKED, "ATTENDANCE", employeeId,
+                attendance.getEmployee().getFirstName() + " " + attendance.getEmployee().getLastName(),
+                "Check-out at " + savedCheckOut.getCheckOut());
+        return toRecord(savedCheckOut);
     }
 
     // ------------------------------------------------------ manual marking
@@ -128,7 +141,11 @@ public class AttendanceService {
             attendance.setCheckOut(null);
             attendance.setWorkingHours(null);
         }
-        return toRecord(attendanceRepository.save(attendance));
+        Attendance savedMark = attendanceRepository.save(attendance);
+        audit.record(audit.currentActor(), AuditActions.ATTENDANCE_MARKED, "ATTENDANCE", request.employeeId(),
+                employee.getFirstName() + " " + employee.getLastName(),
+                request.date() + " marked " + savedMark.getStatus());
+        return toRecord(savedMark);
     }
 
     // ------------------------------------------------------------- helpers

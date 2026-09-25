@@ -7,6 +7,8 @@ import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 
+import com.hrgenius.audit.AuditActions;
+import com.hrgenius.audit.AuditService;
 import com.hrgenius.common.Lists;
 import com.hrgenius.common.PageResponse;
 import com.hrgenius.employee.Employee;
@@ -42,17 +44,20 @@ public class OnboardingService {
     private final JobApplicationRepository applicationRepository;
     private final CandidateRepository candidateRepository;
     private final NotificationService notifications;
+    private final AuditService audit;
 
     public OnboardingService(OnboardingRepository onboardingRepository,
                              EmployeeRepository employeeRepository,
                              JobApplicationRepository applicationRepository,
                              CandidateRepository candidateRepository,
-                             NotificationService notifications) {
+                             NotificationService notifications,
+                             AuditService audit) {
         this.onboardingRepository = onboardingRepository;
         this.employeeRepository = employeeRepository;
         this.applicationRepository = applicationRepository;
         this.candidateRepository = candidateRepository;
         this.notifications = notifications;
+        this.audit = audit;
     }
 
     @Transactional(readOnly = true)
@@ -104,7 +109,11 @@ public class OnboardingService {
         notifications.notifyEmployee(employee, Notification.NotificationType.ONBOARDING,
                 "Welcome to HRGenius",
                 "Your onboarding has started. Joining date: " + joiningDate + ".");
-        return createRecord(employee, application, joiningDate);
+        OnboardingDto.OnboardingResponse record = createRecord(employee, application, joiningDate);
+        audit.record(audit.currentActor(), AuditActions.ONBOARDING_FROM_APPLICATION, "ONBOARDING", record.id(),
+                candidate.getName() + " → " + application.getJob().getTitle(),
+                "Employee " + employee.getEmployeeCode() + " created; joining " + joiningDate);
+        return record;
     }
 
     /** Onboard an existing employee (no recruitment origin) — one record per employee. */
@@ -119,7 +128,11 @@ public class OnboardingService {
         notifications.notifyEmployee(employee, Notification.NotificationType.ONBOARDING,
                 "Onboarding started",
                 "An onboarding checklist was opened for you. Joining date: " + joiningDate + ".");
-        return createRecord(employee, null, joiningDate);
+        OnboardingDto.OnboardingResponse record = createRecord(employee, null, joiningDate);
+        audit.record(audit.currentActor(), AuditActions.ONBOARDING_STARTED, "ONBOARDING", record.id(),
+                employee.getFirstName() + " " + employee.getLastName() + " (" + employee.getEmployeeCode() + ")",
+                "Joining " + joiningDate);
+        return record;
     }
 
     /** Toggle one checklist item; completion % and status are derived. */
@@ -147,6 +160,10 @@ public class OnboardingService {
         onboarding.setStatus(done == 0 ? OnboardingStatus.PENDING
                 : done == updated.size() ? OnboardingStatus.COMPLETED
                 : OnboardingStatus.IN_PROGRESS);
+        audit.record(audit.currentActor(), AuditActions.ONBOARDING_CHECKLIST_UPDATED, "ONBOARDING", id,
+                onboarding.getEmployee().getFirstName() + " " + onboarding.getEmployee().getLastName(),
+                "Item " + (request.itemIndex() + 1) + " → " + (request.done() ? "done" : "undone")
+                        + "; completion " + onboarding.getCompletionPercentage() + "%");
         return toResponse(onboarding);
     }
 

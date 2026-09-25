@@ -9,6 +9,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import com.hrgenius.audit.AuditActions;
+import com.hrgenius.audit.AuditService;
 import com.hrgenius.auth.User;
 import com.hrgenius.auth.UserRepository;
 import com.hrgenius.common.Lists;
@@ -50,17 +52,20 @@ public class LeaveService {
     private final EmployeeRepository employeeRepository;
     private final UserRepository userRepository;
     private final NotificationService notifications;
+    private final AuditService audit;
 
     public LeaveService(LeaveRequestRepository requestRepository,
                         LeaveTypeRepository typeRepository,
                         EmployeeRepository employeeRepository,
                         UserRepository userRepository,
-                        NotificationService notifications) {
+                        NotificationService notifications,
+                        AuditService audit) {
         this.requestRepository = requestRepository;
         this.typeRepository = typeRepository;
         this.employeeRepository = employeeRepository;
         this.userRepository = userRepository;
         this.notifications = notifications;
+        this.audit = audit;
     }
 
     // ------------------------------------------------------------ types
@@ -80,7 +85,10 @@ public class LeaveService {
         }
         LeaveType type = new LeaveType();
         applyType(type, request);
-        return toTypeResponse(typeRepository.save(type));
+        LeaveType saved = typeRepository.save(type);
+        audit.record(audit.currentActor(), AuditActions.LEAVE_TYPE_CREATED, "LEAVE_TYPE", saved.getId(),
+                saved.getName(), "Yearly limit: " + saved.getYearlyLimit() + " days");
+        return toTypeResponse(saved);
     }
 
     @Transactional
@@ -93,7 +101,10 @@ public class LeaveService {
                     throw new IllegalStateException("Leave type already exists: " + request.name());
                 });
         applyType(type, request);
-        return toTypeResponse(typeRepository.save(type));
+        LeaveType saved = typeRepository.save(type);
+        audit.record(audit.currentActor(), AuditActions.LEAVE_TYPE_UPDATED, "LEAVE_TYPE", saved.getId(),
+                saved.getName(), "Yearly limit: " + saved.getYearlyLimit() + " days");
+        return toTypeResponse(saved);
     }
 
     @Transactional
@@ -104,6 +115,8 @@ public class LeaveService {
             throw new IllegalStateException("Cannot delete a leave type that has requests");
         }
         typeRepository.delete(type);
+        audit.record(audit.currentActor(), AuditActions.LEAVE_TYPE_DELETED, "LEAVE_TYPE", id,
+                type.getName(), "Leave type deleted");
     }
 
     // ------------------------------------------------------------ requests
@@ -159,6 +172,9 @@ public class LeaveService {
                 "Leave request submitted",
                 "Your " + type.getName() + " request for " + saved.getStartDate() + " to "
                         + saved.getEndDate() + " is pending approval.");
+        audit.record(audit.currentActor(), AuditActions.LEAVE_REQUEST_SUBMITTED, "LEAVE_REQUEST", saved.getId(),
+                fullName(employee) + " (" + employee.getEmployeeCode() + ")",
+                type.getName() + ": " + saved.getStartDate() + " → " + saved.getEndDate());
         return toResponse(saved);
     }
 
@@ -188,6 +204,11 @@ public class LeaveService {
                 "Leave request " + target.name().toLowerCase(),
                 "Your " + entity.getLeaveType().getName() + " request for " + saved.getStartDate()
                         + " to " + saved.getEndDate() + " was " + target.name().toLowerCase() + ".");
+        audit.record(audit.currentActor(), target == LeaveRequest.LeaveStatus.APPROVED
+                        ? AuditActions.LEAVE_REQUEST_APPROVED : AuditActions.LEAVE_REQUEST_REJECTED,
+                "LEAVE_REQUEST", saved.getId(),
+                fullName(entity.getEmployee()) + " (" + entity.getEmployee().getEmployeeCode() + ")",
+                entity.getLeaveType().getName() + ": " + saved.getStartDate() + " → " + saved.getEndDate());
         return toResponse(saved);
     }
 
@@ -202,6 +223,9 @@ public class LeaveService {
         entity.setStatus(LeaveRequest.LeaveStatus.CANCELLED);
         entity.setApprovedBy(null);
         requestRepository.save(entity);
+        audit.record(audit.currentActor(), AuditActions.LEAVE_REQUEST_CANCELLED, "LEAVE_REQUEST", id,
+                fullName(entity.getEmployee()) + " (" + entity.getEmployee().getEmployeeCode() + ")",
+                entity.getLeaveType().getName() + ": " + entity.getStartDate() + " → " + entity.getEndDate());
     }
 
     /** Hard delete for decided requests only (audit-safe). */
@@ -213,6 +237,9 @@ public class LeaveService {
             throw new IllegalStateException("Cancel the pending request instead of deleting it");
         }
         requestRepository.delete(entity);
+        audit.record(audit.currentActor(), AuditActions.LEAVE_REQUEST_DELETED, "LEAVE_REQUEST", id,
+                fullName(entity.getEmployee()) + " (" + entity.getEmployee().getEmployeeCode() + ")",
+                "Decided request purged (" + entity.getStatus() + ")");
     }
 
     // ------------------------------------------------------------ balances & summary

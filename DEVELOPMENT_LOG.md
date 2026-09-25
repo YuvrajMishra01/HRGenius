@@ -1076,3 +1076,94 @@ LIKE-escape (`search=%` → 0), leave status+search compose. UI: notifications
 All/Unread toggle, DB-filtered empty state, paginator, mark-read re-render; recruitment
 tabs with correct counts and newest-first candidates; console clean. Docs updated
 (API contract + Phase 17 section, ROADMAP ✅, this entry).
+
+## Phase 18 — HR-Facing Audit Log (2026-09-14)
+
+**Goal:** who-did-what across every HR workflow, HR/ADMIN only, DB-side from day one.
+
+**Design:** followed the notification-pipeline pattern — each service records its
+own audit rows via `AuditService.record(...)` inside the caller's transaction, so
+an entry commits exactly when the action commits. `record()` is failure-neutral
+(never throws, never alters the caller's result). Actor is denormalized
+(id/email/name/role at write time) so the trail survives user changes without
+joins. The AI module is read-only and emits nothing; login/logout are excluded
+on purpose (auth lifecycle, not HR workflow state).
+
+**Built:** Flyway V5 (`AUDIT_LOG` + 4 indexes: created/action/entity/actor),
+`com.hrgenius.audit` package (entity, DTO, repository with paged query + exact
+count twin, `AuditActions` catalog of 44 actions, service, controller with
+`/audit` + `/audit/entity-types`), wiring into all 10 state-changing services,
+frontend `audit` feature (service, timeline page with search/entity/action/date
+filters + paginator + loading/forbidden/error/empty states, route, nav item).
+
+**Bugs caught:** JPQL `ESCAPE '\'` is two chars — "Escape character literals must
+have exactly a single character" (native SQL wants `'\'`, JPQL wants `'\'`);
+5-test context failure because AttendanceApiTest legitimately generates audit rows
+before my suite runs (fixed with per-action baselines instead of a grand total);
+onboarding's `createRecord` returns a DTO, not an entity (wrong `getId()`); my own
+test expected the marker inside audit details when the audited fields never
+contain it; search covered actor email but not actor name — "Priya" found nothing
+in live UI verification (most natural HR search!); matDatepicker emits raw strings
+while typing → `date.getFullYear is not a function` in the console (defensive
+`iso()` that forwards only complete valid dates, plus M/D/YYYY parsing).
+
+**Verification:** backend **190/190** (185 + 5 new audit tests: RBAC matrix,
+recording with actor attribution + newest-first + details, filters/search/escape/
+date-range/AND-composition, honest SQL paging with stable exact totals across
+pages and far-out pages, facet endpoint), `ng build` clean, **40/40** frontend
+tests (10 new). Live: 401/403/403/200/200 RBAC, HR create → update → admin delete
+all attributed correctly, facets, inclusive date bounds, literal `%` → 0, typed
+dates filter via the UI, calendar picker works. Preview: timeline renders with
+kind-colored icons, actor + role chips, "1 – 2 of 2", empty state with tailored
+message, console clean.
+
+## Phase 19 — Audit CSV Export (2026-09-25)
+
+**Goal:** download the Phase 18 trail as CSV, respecting the filters currently
+applied in the UI, reusing the Phase 15 export infrastructure.
+
+**Design decisions:**
+
+- Reused `CsvBuilder` (RFC 4180 + formula-injection defence), the BOM +
+  `Content-Disposition` conventions and the raw-byte response style verbatim;
+  but the endpoint lives in a new `AuditExportController` under `/api/v1/audit`,
+  NOT under `/reports` — ReportController's guard is ADMIN/HR/MANAGER and
+  folding audit data into it would either widen that guard or need a special
+  case. A separate controller keeps the stricter audit policy honest
+  (manager export → 403, proven live and in tests).
+- The row cap rides along as a SQL LIMIT (unpaged `@Query` + a `PageRequest.of(0,
+  limit)` Pageable → `fetch first ? rows only` in the SQL log), so the database
+  — not the JVM — enforces it; default and ceiling 10 000, `limit<=0` → default.
+- Export filters share one param-mapper with the list endpoint on BOTH sides
+  (backend normalization duplicated into `forExport`, frontend `filterParams`
+  with paging omitted), so feed and export cannot drift apart.
+- Frontend reuses the shared `ReportService` blob downloader; the button sits
+  next to Refresh with a "current filters" tooltip.
+
+**Bugs caught:** a JPQL `ESCAPE '\\'` edit was backslashed wrong when first
+pasted; my str_replace tooling twice left placeholder text in method bodies and
+the BOM literal once lost its escape and ate a newline (all caught by re-read
+and fixed before compile). A test compared a `HttpStatus` enum against `.value()`
+ints (compiles fine, fails fast). A stale ng-serve overlay claimed
+`entityTypes` had vanished from AuditService after the surgery — the file was
+correct and `ng build` green; a dev-server restart cleared it.
+
+**Unrelated but blocking:** the full-suite run exposed a pre-existing calendar
+time-bomb in `AnalyticsApiTest` — `avgTenureYears` was asserted as a hardcoded
+`3.6` computed from static seed joining dates, so it drifted to `3.7` as the
+calendar advanced (reproduced in isolation, zero relation to the export).
+Fixed by deriving the expectation from the seed dates (V2: six fixed dates +
+EMP007's `CURRENT_DATE - 10`) with the same months-based semantics as the
+service, so the test tracks the calendar instead of fighting it.
+
+**Verification:** backend **192/192** (7 audit tests incl. 2 new export tests:
+RBAC matrix incl. manager-403/anonymous-401, header + BOM + disposition,
+row-for-row parity with the JSON feed and newest-first top row, action/search/
+`%`-escape filter parity, SQL-side `limit=2` returning the two newest rows,
+`limit=0`/oversized-limit clamping, malformed date → 400), frontend **43/43**
+(3 new: export URL from shared mapper without paging, bare-URL case, component
+forwards live filter state and hands the URL to the downloader), `ng build`
+clean. Live: 200 `text/csv;charset=UTF-8` with attachment disposition, feed/CSV
+count parity, action filter, no-match → 0, `search=Smoke` → 2, `limit=1` → 1,
+manager 403, anonymous 401; UI button fires `GET /audit/export.csv → 200` and
+the blob download completes; console clean.

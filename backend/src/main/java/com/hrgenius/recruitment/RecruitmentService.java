@@ -6,6 +6,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
+import com.hrgenius.audit.AuditActions;
+import com.hrgenius.audit.AuditService;
 import com.hrgenius.common.Lists;
 import com.hrgenius.common.PageResponse;
 import com.hrgenius.common.SqlPaging;
@@ -45,19 +47,22 @@ public class RecruitmentService {
     private final InterviewRepository interviewRepository;
     private final DepartmentRepository departmentRepository;
     private final EmployeeRepository employeeRepository;
+    private final AuditService audit;
 
     public RecruitmentService(JobRepository jobRepository,
                               CandidateRepository candidateRepository,
                               JobApplicationRepository applicationRepository,
                               InterviewRepository interviewRepository,
                               DepartmentRepository departmentRepository,
-                              EmployeeRepository employeeRepository) {
+                              EmployeeRepository employeeRepository,
+                              AuditService audit) {
         this.jobRepository = jobRepository;
         this.candidateRepository = candidateRepository;
         this.applicationRepository = applicationRepository;
         this.interviewRepository = interviewRepository;
         this.departmentRepository = departmentRepository;
         this.employeeRepository = employeeRepository;
+        this.audit = audit;
     }
 
     // ============================================================== jobs
@@ -103,6 +108,8 @@ public class RecruitmentService {
                 .orElseThrow(() -> new EntityNotFoundException("Department not found: " + request.departmentId()));
         Job job = new Job();
         applyJobFields(job, request, department);
+        audit.record(audit.currentActor(), AuditActions.JOB_CREATED, "JOB", job.getId(),
+                job.getTitle(), job.getStatus() + " in " + department.getName());
         return toJobResponse(job, 0L);
     }
 
@@ -113,6 +120,8 @@ public class RecruitmentService {
         Department department = departmentRepository.findById(request.departmentId())
                 .orElseThrow(() -> new EntityNotFoundException("Department not found: " + request.departmentId()));
         applyJobFields(job, request, department);
+        audit.record(audit.currentActor(), AuditActions.JOB_UPDATED, "JOB", job.getId(),
+                job.getTitle(), "Job updated (" + job.getStatus() + ")");
         return toJobResponse(job, countsFor(job.getId()));
     }
 
@@ -125,6 +134,8 @@ public class RecruitmentService {
             throw new IllegalStateException("Job has applications — close it instead of deleting");
         }
         jobRepository.delete(job);
+        audit.record(audit.currentActor(), AuditActions.JOB_DELETED, "JOB", id,
+                job.getTitle(), "Job deleted");
     }
 
     // ======================================================== candidates
@@ -155,7 +166,10 @@ public class RecruitmentService {
         Candidate candidate = new Candidate();
         applyCandidateFields(candidate, request);
         candidate.setStatus(CandidateStatus.NEW);
-        return toCandidateResponse(candidateRepository.save(candidate), 0L);
+        Candidate savedCandidate = candidateRepository.save(candidate);
+        audit.record(audit.currentActor(), AuditActions.CANDIDATE_CREATED, "CANDIDATE", savedCandidate.getId(),
+                savedCandidate.getName(), savedCandidate.getEmail());
+        return toCandidateResponse(savedCandidate, 0L);
     }
 
     @Transactional
@@ -168,6 +182,8 @@ public class RecruitmentService {
                     throw new IllegalStateException("A candidate with this email already exists");
                 });
         applyCandidateFields(candidate, request);
+        audit.record(audit.currentActor(), AuditActions.CANDIDATE_UPDATED, "CANDIDATE", candidate.getId(),
+                candidate.getName(), "Candidate profile updated");
         return toCandidateResponse(candidate, countsForCandidate(id));
     }
 
@@ -190,6 +206,8 @@ public class RecruitmentService {
             throw new IllegalStateException("Candidate has applications — reject them instead of deleting");
         }
         candidateRepository.delete(candidate);
+        audit.record(audit.currentActor(), AuditActions.CANDIDATE_DELETED, "CANDIDATE", id,
+                candidate.getName(), "Candidate deleted");
     }
 
     // ====================================================== applications
@@ -230,6 +248,8 @@ public class RecruitmentService {
         application.setApplicationDate(LocalDate.now());
         application.setRemarks(request.remarks());
         applicationRepository.save(application);
+        audit.record(audit.currentActor(), AuditActions.APPLICATION_CREATED, "APPLICATION", application.getId(),
+                candidate.getName() + " → " + job.getTitle(), "Application submitted");
         return toApplicationResponseProjection(List.of(applicationRepository.findById(application.getId()).orElseThrow())).get(0);
     }
 
@@ -266,6 +286,9 @@ public class RecruitmentService {
             default -> { /* APPLIED: no candidate-status change */ }
         }
         candidateRepository.save(candidate);
+        audit.record(audit.currentActor(), AuditActions.APPLICATION_MOVED, "APPLICATION", application.getId(),
+                application.getCandidate().getName() + " → " + application.getJob().getTitle(),
+                current + " → " + target);
         return toApplicationResponseProjection(List.of(applicationRepository.findById(id).orElseThrow())).get(0);
     }
 
@@ -327,6 +350,9 @@ public class RecruitmentService {
             applicationRepository.save(application);
             syncCandidate(application.getCandidate(), ApplicationStatus.INTERVIEW);
         }
+        audit.record(audit.currentActor(), AuditActions.INTERVIEW_SCHEDULED, "INTERVIEW", interview.getId(),
+                application.getCandidate().getName() + " → " + application.getJob().getTitle(),
+                interview.getInterviewDate() + " (" + interview.getMode() + ")");
         return toInterviewResponseProjection(List.of(interviewRepository.findById(interview.getId()).orElseThrow())).get(0);
     }
 
@@ -349,6 +375,8 @@ public class RecruitmentService {
         if (request.interviewerId() != null) {
             interview.setInterviewer(resolveInterviewer(request.interviewerId()));
         }
+        audit.record(audit.currentActor(), AuditActions.INTERVIEW_RESCHEDULED, "INTERVIEW", id,
+                interview.getApplication().getCandidate().getName(), "Rescheduled to " + interview.getInterviewDate());
         return toInterviewResponseProjection(List.of(interview)).get(0);
     }
 
@@ -363,6 +391,9 @@ public class RecruitmentService {
         interview.setStatus(Interview.InterviewStatus.COMPLETED);
         interview.setFeedback(request.feedback());
         interview.setResult(request.result());
+        audit.record(audit.currentActor(), AuditActions.INTERVIEW_COMPLETED, "INTERVIEW", id,
+                interview.getApplication().getCandidate().getName(),
+                "Result: " + interview.getResult());
         return toInterviewResponseProjection(List.of(interview)).get(0);
     }
 
@@ -374,6 +405,8 @@ public class RecruitmentService {
             throw new IllegalStateException("Only SCHEDULED interviews can be cancelled");
         }
         interview.setStatus(Interview.InterviewStatus.CANCELLED);
+        audit.record(audit.currentActor(), AuditActions.INTERVIEW_CANCELLED, "INTERVIEW", id,
+                interview.getApplication().getCandidate().getName(), "Interview cancelled");
         return toInterviewResponseProjection(List.of(interview)).get(0);
     }
 

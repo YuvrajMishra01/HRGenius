@@ -582,11 +582,68 @@ per-employee) deliberately keeps the Phase 14 slice approach.
 - Search patterns are built by `common.SqlPaging.likeEscape`: lower-cased, `\` `%` `_`
   escaped, used with `LIKE :pattern ESCAPE '\'` — a literal `%` from a client matches
   nothing instead of everything.
+
+## Phase 18 — HR-Facing Audit Log ✅
+
+One immutable row per important state-changing HR action, recorded by the same
+service that performs the action (the notification-pipeline pattern): the audit
+row commits exactly when the action commits and never describes rolled-back work.
+Recording is failure-neutral — it never throws and never alters the caller's
+result. 44 action types across employees, departments/designations, recruitment,
+onboarding, attendance, leave, payroll, performance, and documents (the AI module
+is read-only, so it emits nothing).
+
+### Data model (Flyway V5)
+
+`AUDIT_LOG` — actor is **denormalized** (ACTOR_ID/EMAIL/NAME/ROLE copied at write
+time) so the trail stays readable even if a user is later renamed or removed; no
+join back to USERS for display. ACTION/ENTITY_TYPE are VARCHAR2 facets,
+ENTITY_ID/ENTITY_LABEL identify the target, DETAILS carries a structured
+one-liner (e.g. `PENDING → APPROVED`, `Yearly limit: 25 days`), CREATED_AT is
+DB-defaulted. Indexes: `IX_AUDIT_CREATED (CREATED_AT)`, `IX_AUDIT_ACTION`,
+`IX_AUDIT_ENTITY (ENTITY_TYPE, ENTITY_ID)`, `IX_AUDIT_ACTOR (ACTOR_ID)`.
+
+### Endpoints (ADMIN/HR only — deliberately no MANAGER)
+
+| Endpoint | Params | Notes |
+|---|---|---|
+| GET /audit | action, entityType, actorId, from, to (inclusive dates), search, page, size | real SQL paging with a filter-exact count twin; escaped search over entity label, details, actor email, and actor name; far-out pages return empty content, never an error |
+| GET /audit/entity-types | — | distinct ENTITY_TYPE values, feeds the filter dropdown |
+
+### Conventions carried forward
+
+- Typed binds only (never a Boolean — the Phase 12 Oracle-mode hazard).
+- Search is LIKE-escaped (`SqlPaging.likeEscape` + `ESCAPE '\'`): a literal `%`
+  matches nothing.
+- `size` clamps to 1–100, `page` clamps ≥ 0 (Phase 14 policy).
 - Count queries are filter-exact (explicitly declared where Spring cannot derive a
   correct one through `join fetch` or non-null default filters), so `totalElements`
   always describes the whole filtered set at any page size.
 - Clamp policy unchanged (Phase 14): `page` 0-based negatives→0, `size` 1..100,
   `search` trimmed and capped at 100 chars.
+
+## Phase 19 — Audit CSV Export ✅
+
+The Phase 18 trail as a downloadable CSV, built on the Phase 15 report machinery:
+same `CsvBuilder` (RFC 4180 quoting, CRLF, OWASP formula-injection defence),
+UTF-8 BOM, `Content-Disposition` attachment and raw-byte (envelope-less)
+response style as the other exports. It deliberately lives under `/audit` rather
+than `/reports` — the reports guard is ADMIN/HR/MANAGER and must NOT widen to
+HR audit data, so the stricter policy keeps its own endpoint.
+
+### Endpoints (ADMIN/HR only — deliberately no MANAGER)
+
+| Endpoint | Params | Notes |
+|---|---|---|
+| GET /audit/export.csv | action, entityType, actorId, from, to, search, limit | exactly the list-endpoint filters — what you see is what you export; newest first; `limit` caps rows SQL-side (unpaged query + LIMIT window), default and ceiling 10 000, `limit<=0` → default; header `ID,Timestamp,Actor,Actor Email,Role,Action,Entity Type,Entity ID,Entity Label,Details`; malformed dates → 400 |
+
+### Conventions carried forward
+
+- Export filters share one param-mapper with the list endpoint on both sides
+  (backend normalization, frontend `filterParams` with paging omitted), so feed
+  and export cannot drift apart.
+- The frontend button reuses the shared `ReportService` blob downloader — same
+  save-file UX as the other CSV/PDF exports.
 
 ## JWT & Security Notes
 

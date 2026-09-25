@@ -1,0 +1,140 @@
+<main class="audit-page">
+  <header class="page-head">
+    <div>
+      <h1>Audit log</h1>
+      <p>Who changed what, across every HR workflow — newest first</p>
+    </div>
+    <button mat-icon-button matTooltip="Refresh" (click)="reload()">
+      <mat-icon>refresh</mat-icon>
+    </button>
+    <button mat-icon-button matTooltip="Export as CSV (current filters)" (click)="exportCsv()">
+      <mat-icon>download</mat-icon>
+    </button>
+  </header>
+
+  <mat-card class="toolbar">
+    <mat-card-content>
+      <mat-form-field appearance="outline" class="search-field">
+        <mat-label>Search label, details or actor</mat-label>
+        <input matInput [ngModel]="search()" (ngModelChange)="onSearchInput($event)" placeholder="e.g. approve or hr&#64;hrgenius.local" />
+        <mat-icon matPrefix>search</mat-icon>
+      </mat-form-field>
+
+      <mat-form-field appearance="outline">
+        <mat-label>Entity</mat-label>
+        <mat-select [ngModel]="entityType()" (ngModelChange)="entityType.set($event); onFilterChange()">
+          <mat-option value="">All entities</mat-option>
+          @for (t of entityTypes(); track t) {
+            <mat-option [value]="t">{{ actionTitle(t) }}</mat-option>
+          }
+        </mat-select>
+      </mat-form-field>
+
+      <mat-form-field appearance="outline">
+        <mat-label>Action</mat-label>
+        <mat-select [ngModel]="action()" (ngModelChange)="action.set($event); onFilterChange()">
+          <mat-option value="">All actions</mat-option>
+          @for (a of actions; track a) {
+            <mat-option [value]="a">{{ actionTitle(a) }}</mat-option>
+          }
+        </mat-select>
+      </mat-form-field>
+
+      <mat-form-field appearance="outline">
+        <mat-label>From</mat-label>
+        <input matInput [matDatepicker]="fromPicker" [ngModel]="fromDate()" (ngModelChange)="fromDate.set($event); onFilterChange()" />
+        <mat-datepicker-toggle matIconSuffix [for]="fromPicker" />
+        <mat-datepicker #fromPicker />
+      </mat-form-field>
+
+      <mat-form-field appearance="outline">
+        <mat-label>To</mat-label>
+        <input matInput [matDatepicker]="toPicker" [ngModel]="toDate()" (ngModelChange)="toDate.set($event); onFilterChange()" />
+        <mat-datepicker-toggle matIconSuffix [for]="toPicker" />
+        <mat-datepicker #toPicker />
+      </mat-form-field>
+
+      @if (hasFilters) {
+        <button mat-stroked-button (click)="clearFilters()" matTooltip="Clear all filters">
+          <mat-icon>filter_alt_off</mat-icon> Clear
+        </button>
+      }
+    </mat-card-content>
+  </mat-card>
+
+  @if (loading()) {
+    <mat-card class="state-card">
+      <mat-card-content class="state">
+        <mat-spinner diameter="36" />
+        <p>Loading audit trail…</p>
+      </mat-card-content>
+    </mat-card>
+  } @else if (forbidden()) {
+    <mat-card class="state-card">
+      <mat-card-content class="state">
+        <mat-icon class="warn">lock</mat-icon>
+        <h3>Audit log is restricted</h3>
+        <p>The audit trail is available to ADMIN and HR roles only.</p>
+      </mat-card-content>
+    </mat-card>
+  } @else if (loadError(); as error) {
+    <mat-card class="state-card">
+      <mat-card-content class="state">
+        <mat-icon class="warn">cloud_off</mat-icon>
+        <h3>Could not load the audit log</h3>
+        <p>{{ error }}</p>
+        <button mat-stroked-button (click)="reload()">Try again</button>
+      </mat-card-content>
+    </mat-card>
+  } @else if (entries().length === 0) {
+    <mat-card class="state-card">
+      <mat-card-content class="state">
+        <mat-icon>history</mat-icon>
+        <h3>{{ hasFilters ? 'No audit entries match these filters' : 'No audit entries yet' }}</h3>
+        <p>{{ hasFilters ? 'Try widening or clearing the filters above.' : 'Actions like approvals, payroll runs and uploads will appear here as they happen.' }}</p>
+      </mat-card-content>
+    </mat-card>
+  } @else {
+    <mat-card class="trail-card">
+      <mat-card-content class="trail">
+        @for (e of entries(); track e.id) {
+          <div class="entry">
+            <div class="entry-icon" [class]="'kind-' + e.entityType.toLowerCase()">
+              <mat-icon>{{ actionIcon(e.action) }}</mat-icon>
+            </div>
+            <div class="entry-body">
+              <div class="entry-top">
+                <span class="action">{{ actionTitle(e.action) }}</span>
+                @if (e.entityLabel) {
+                  <span class="target">{{ e.entityLabel }}</span>
+                }
+              </div>
+              @if (e.details) {
+                <div class="entry-details">{{ e.details }}</div>
+              }
+              <div class="entry-meta">
+                @if (e.actorName || e.actorEmail) {
+                  <mat-icon inline>person</mat-icon>
+                  <span class="actor">{{ e.actorName || e.actorEmail }}</span>
+                  @if (e.actorRole) {
+                    <span class="role-chip">{{ e.actorRole }}</span>
+                  }
+                }
+                <span class="dot">·</span>
+                <span class="when">{{ e.createdAt | date: 'MMM d, y, HH:mm' }}</span>
+              </div>
+            </div>
+          </div>
+        }
+      </mat-card-content>
+      <mat-paginator
+        [length]="total()"
+        [pageIndex]="page()"
+        [pageSize]="pageSize()"
+        [pageSizeOptions]="[15, 30, 50, 100]"
+        (page)="onPage($event)"
+        aria-label="Audit log pages"
+      />
+    </mat-card>
+  }
+</main>

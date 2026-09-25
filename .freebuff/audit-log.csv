@@ -1,0 +1,3 @@
+﻿ID,Timestamp,Actor,Actor Email,Role,Action,Entity Type,Entity ID,Entity Label,Details
+2,2026-09-25T20:27:38.225753,Priya Sharma,hr@hrgenius.local,HR,LEAVE_TYPE_DELETED,LEAVE_TYPE,4,Smoke Check,Leave type deleted
+1,2026-09-25T20:27:38.189224,Priya Sharma,hr@hrgenius.local,HR,LEAVE_TYPE_CREATED,LEAVE_TYPE,4,Smoke Check,Yearly limit: 1 days
