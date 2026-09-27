@@ -18,9 +18,9 @@
   display: flex;
   align-items: center;
   gap: 8px;
-  background: #fdecea;
-  color: #b71c1c;
-  border: 1px solid #f5c6cb;
+  background: var(--danger-soft);
+  color: var(--danger);
+  border: 1px solid color-mix(in srgb, var(--danger) 35%, transparent);
   border-radius: 8px;
   padding: 10px 14px;
   margin-bottom: 12px;

@@ -18,7 +18,7 @@
 
   p {
     margin: 0;
-    color: #607d8b;
+    color: var(--text-3);
     font-size: 13px;
   }
 }
@@ -27,8 +27,8 @@
   display: flex;
   gap: 8px;
   align-items: center;
-  background: #fdecea;
-  color: #b71c1c;
+  background: var(--danger-soft);
+  color: var(--danger);
   border-radius: 6px;
   padding: 8px 12px;
   font-size: 13px;
@@ -57,7 +57,7 @@
     align-items: center;
     gap: 6px;
     padding: 36px 16px;
-    color: #78909c;
+    color: var(--text-2);
 
     mat-icon {
       font-size: 34px;
@@ -72,7 +72,7 @@
 
     .hint {
       font-size: 12.5px;
-      color: #90a4ae;
+      color: var(--text-3);
     }
   }
 }
@@ -82,13 +82,13 @@
   gap: 14px;
   align-items: flex-start;
   background: #fff;
-  border: 1px solid #eceff1;
+  border: 1px solid var(--border);
   border-radius: 10px;
   padding: 14px 16px;
 
   &.unread {
-    border-color: #b3d4f5;
-    background: #f4f9fe;
+    border-color: var(--primary);
+    background: var(--primary-soft);
   }
 
   &.busy {
@@ -111,12 +111,12 @@
       height: 21px;
     }
 
-    &.leave { background: #fff3e0; color: #e65100; }
-    &.onboarding { background: #e8f5e9; color: #2e7d32; }
-    &.payroll { background: #e8eaf6; color: #283593; }
-    &.performance { background: #e0f2f1; color: #00695c; }
-    &.recruitment { background: #ede7f6; color: #4527a0; }
-    &.system { background: #eceff1; color: #546e7a; }
+    &.leave { background: var(--warning-soft); color: var(--warning); }
+    &.onboarding { background: var(--success-soft); color: var(--success); }
+    &.payroll { background: var(--primary-soft); color: var(--primary); }
+    &.performance { background: var(--success-soft); color: var(--success); }
+    &.recruitment { background: var(--accent-soft, var(--primary-soft)); color: var(--accent); }
+    &.system { background: var(--border); color: var(--text-2); }
   }
 
   .body {
@@ -133,20 +133,20 @@
   .title {
     font-weight: 600;
     font-size: 14.5px;
-    color: #263238;
+    color: var(--text);
   }
 
   .dot {
     width: 8px;
     height: 8px;
     border-radius: 50%;
-    background: #1e88e5;
+    background: var(--primary);
     flex: none;
   }
 
   .message {
     margin: 3px 0 0;
-    color: #546e7a;
+    color: var(--text-2);
     font-size: 13.5px;
     line-height: 1.45;
   }
@@ -154,7 +154,7 @@
   .when {
     display: block;
     margin-top: 5px;
-    color: #90a4ae;
+    color: var(--text-3);
     font-size: 12px;
   }
 

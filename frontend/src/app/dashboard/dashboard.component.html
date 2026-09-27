@@ -42,7 +42,7 @@
     @for (card of kpiCards(); track card.label) {
       <mat-card class="kpi-card">
         <mat-card-content>
-          <div class="kpi-icon" [style.background]="card.accent + '1a'" [style.color]="card.accent">
+          <div class="kpi-icon {{ card.accent }}">
             <mat-icon>{{ card.icon }}</mat-icon>
           </div>
           <div class="kpi-meta">

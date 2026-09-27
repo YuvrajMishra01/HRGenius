@@ -4,7 +4,7 @@ import { CanActivateFn, Router } from '@angular/router';
 import { AuthService } from './auth.service';
 
 /**
- * Blocks unauthenticated access to the app shell and redirects to /login,
+ * Blocks unauthenticated access to the /app shell and redirects to /login,
  * remembering the originally requested URL (?returnUrl=...) for post-login
  * navigation. This is UX only — the backend enforces real authorization.
  */
@@ -24,5 +24,5 @@ export const guestGuard: CanActivateFn = () => {
   const auth = inject(AuthService);
   const router = inject(Router);
 
-  return auth.isAuthenticated() ? router.parseUrl('/dashboard') : true;
+  return auth.isAuthenticated() ? router.parseUrl('/app/dashboard') : true;
 };

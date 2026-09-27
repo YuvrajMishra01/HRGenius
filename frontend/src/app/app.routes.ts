@@ -4,13 +4,14 @@ import { LayoutComponent } from './layout/layout.component';
 import { authGuard, guestGuard } from './core/guards';
 
 export const routes: Routes = [
+  { path: '', loadComponent: () => import('./public/landing.component').then((m) => m.LandingComponent) },
   {
     path: 'login',
     canActivate: [guestGuard],
     loadComponent: () => import('./auth/login.component').then((m) => m.LoginComponent),
   },
   {
-    path: '',
+    path: 'app',
     component: LayoutComponent,
     canActivate: [authGuard],
     children: [
@@ -51,13 +52,11 @@ export const routes: Routes = [
       },
       {
         path: 'leave',
-        loadComponent: () =>
-          import('./leave/leave.component').then((m) => m.LeaveComponent),
+        loadComponent: () => import('./leave/leave.component').then((m) => m.LeaveComponent),
       },
       {
         path: 'payroll',
-        loadComponent: () =>
-          import('./payroll/payroll.component').then((m) => m.PayrollComponent),
+        loadComponent: () => import('./payroll/payroll.component').then((m) => m.PayrollComponent),
       },
       {
         path: 'performance',
@@ -88,5 +87,9 @@ export const routes: Routes = [
         redirectTo: 'dashboard',
       },
     ],
+  },
+  {
+    path: '**',
+    redirectTo: '',
   },
 ];

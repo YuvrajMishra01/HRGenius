@@ -1,25 +1,32 @@
-import { Component, OnDestroy, OnInit, computed, inject, signal } from '@angular/core';
-import { MatButtonModule } from '@angular/material/button';
-import { MatBadgeModule } from '@angular/material/badge';
+import {
+  Component,
+  OnDestroy,
+  OnInit,
+  computed,
+  inject,
+  signal,
+  viewChild,
+} from '@angular/core';
+import { NavigationEnd, Router, RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
+import { toSignal } from '@angular/core/rxjs-interop';
+import { filter } from 'rxjs';
 import { MatIconModule } from '@angular/material/icon';
-import { MatListModule } from '@angular/material/list';
-import { MatMenuModule } from '@angular/material/menu';
-import { MatSidenavModule } from '@angular/material/sidenav';
-import { MatToolbarModule } from '@angular/material/toolbar';
+import { MatButtonModule } from '@angular/material/button';
 import { MatTooltipModule } from '@angular/material/tooltip';
-import { RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
 
 import { AuthService } from '../core/auth.service';
+import { ThemeService } from '../core/theme.service';
 import { NotificationService } from '../notifications/notification.service';
+import { NAV_ITEMS, NavItem } from './navigation';
+import { CommandPaletteComponent } from './command-palette.component';
+import { AvatarComponent } from '../shared/avatar.component';
 
-export interface NavItem {
-  label: string;
-  icon: string;
-  route: string;
-  /** Phases not yet implemented are hidden from the sidebar. */
-  phase: number;
-}
-
+/**
+ * HRGenius application shell: role-aware sidebar, sticky header with
+ * breadcrumb, theme toggle, notification bell and the Ctrl+K command
+ * palette. On mobile the sidebar becomes an off-canvas drawer with a
+ * backdrop; navigation closes it.
+ */
 @Component({
   selector: 'app-layout',
   standalone: true,
@@ -27,33 +34,97 @@ export interface NavItem {
     RouterOutlet,
     RouterLink,
     RouterLinkActive,
-    MatSidenavModule,
-    MatToolbarModule,
-    MatListModule,
     MatIconModule,
     MatButtonModule,
-    MatMenuModule,
-    MatBadgeModule,
     MatTooltipModule,
+    CommandPaletteComponent,
+    AvatarComponent,
   ],
   templateUrl: './layout.component.html',
   styleUrl: './layout.component.scss',
 })
 export class LayoutComponent implements OnInit, OnDestroy {
   readonly auth = inject(AuthService);
+  readonly theme = inject(ThemeService);
+  private readonly router = inject(Router);
   private readonly notificationApi = inject(NotificationService);
+
+  readonly NAV_GROUPS: Array<NavItem['group']> = [
+    'Overview',
+    'People',
+    'Recruitment',
+    'Workforce',
+    'System',
+  ];
+
+  /** Items visible for the signed-in user's role (UX layer only). */
+  readonly navForRole = computed(() => {
+    const role = this.auth.user()?.role;
+    return NAV_ITEMS.filter((item) => !role || item.roles.includes(role));
+  });
+
+  itemsIn(group: NavItem['group']): NavItem[] {
+    return this.navForRole().filter((item) => item.group === group);
+  }
 
   /** Toolbar badge; the notifications page writes the same shared signal. */
   readonly unreadCount = computed(() => this.notificationApi.badge());
+
+  /** Breadcrumb label for the current module, e.g. ['Employees']. */
+  readonly crumbs = signal<string[]>([]);
+
+  readonly sidebarOpen = signal(false);
+
+  readonly menuOpen = signal(false);
+
+  readonly palette = viewChild(CommandPaletteComponent);
+
   private pollTimer: ReturnType<typeof setInterval> | null = null;
 
   ngOnInit(): void {
     this.pollBadge();
     this.pollTimer = setInterval(() => this.pollBadge(), 30000);
+    this.updateCrumbs();
+    this.router.events.pipe(filter((e) => e instanceof NavigationEnd)).subscribe(() => {
+      this.updateCrumbs();
+      this.sidebarOpen.set(false); // mobile: close after selecting
+    });
+    window.addEventListener('keydown', this.onKeydown);
+    // Re-apply the theme class (index.html normally does this pre-boot).
+    if (this.theme.theme() === 'dark') {
+      this.theme.set('dark');
+    }
   }
 
   ngOnDestroy(): void {
-    if (this.pollTimer) clearInterval(this.pollTimer);
+    if (this.pollTimer) {
+      clearInterval(this.pollTimer);
+    }
+    window.removeEventListener('keydown', this.onKeydown);
+  }
+
+  onKeydown = (event: KeyboardEvent): void => {
+    if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 'k') {
+      event.preventDefault();
+      this.openPalette();
+    }
+  };
+
+  openPalette(): void {
+    this.palette()?.open();
+  }
+
+  toggleSidebar(): void {
+    this.sidebarOpen.update((open) => !open);
+  }
+
+  closeSidebar(): void {
+    this.sidebarOpen.set(false);
+  }
+
+  private updateCrumbs(): void {
+    const item = NAV_ITEMS.find((i) => this.router.url.startsWith(i.route));
+    this.crumbs.set(item ? [item.label] : []);
   }
 
   private pollBadge(): void {
@@ -61,28 +132,5 @@ export class LayoutComponent implements OnInit, OnDestroy {
       next: (res) => this.notificationApi.badge.set(res.data.unread),
       error: () => undefined,
     });
-  }
-
-  /** Phase gates which nav items are visible; bump as modules land. */
-  readonly currentPhase = 19;
-
-  readonly navItems: NavItem[] = [
-    { label: 'Dashboard', icon: 'dashboard', route: '/dashboard', phase: 0 },
-    { label: 'Employees', icon: 'people', route: '/employees', phase: 3 },
-    { label: 'Departments', icon: 'account_tree', route: '/departments', phase: 4 },
-    { label: 'Recruitment', icon: 'work', route: '/recruitment', phase: 5 },
-    { label: 'Onboarding', icon: 'badge', route: '/onboarding', phase: 6 },
-    { label: 'Attendance', icon: 'fact_check', route: '/attendance', phase: 7 },
-    { label: 'Leave', icon: 'event_busy', route: '/leave', phase: 8 },
-    { label: 'Payroll', icon: 'payments', route: '/payroll', phase: 9 },
-    { label: 'Performance', icon: 'trending_up', route: '/performance', phase: 10 },
-    { label: 'Documents', icon: 'folder_shared', route: '/documents', phase: 11 },
-    { label: 'Notifications', icon: 'notifications', route: '/notifications', phase: 12 },
-    { label: 'Analytics', icon: 'analytics', route: '/analytics', phase: 13 },
-    { label: 'Audit log', icon: 'history', route: '/audit', phase: 18 },
-  ];
-
-  get visibleNavItems(): NavItem[] {
-    return this.navItems.filter((item) => item.phase <= this.currentPhase);
   }
 }

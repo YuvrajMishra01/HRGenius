@@ -16,7 +16,8 @@ interface KpiCard {
   icon: string;
   label: string;
   value: number;
-  accent: string;
+  /** Tone class from the design system (tone-primary, tone-success, …). */
+  accent: 'tone-primary' | 'tone-success' | 'tone-info' | 'tone-warning' | 'tone-accent' | 'tone-danger';
 }
 
 /**
@@ -76,12 +77,12 @@ export class DashboardComponent implements OnInit {
       return [];
     }
     return [
-      { icon: 'people', label: 'Total Employees', value: k.totalEmployees, accent: '#3f51b5' },
-      { icon: 'verified', label: 'Active Employees', value: k.activeEmployees, accent: '#2e7d32' },
-      { icon: 'fiber_new', label: 'New Hires (30d)', value: k.newHiresLast30Days, accent: '#00838f' },
-      { icon: 'work', label: 'Open Positions', value: k.openPositions, accent: '#ef6c00' },
-      { icon: 'person_search', label: 'Candidates', value: k.totalCandidates, accent: '#6a1b9a' },
-      { icon: 'event_busy', label: 'Pending Leaves', value: k.pendingLeaveRequests, accent: '#c62828' },
+      { icon: 'people', label: 'Total Employees', value: k.totalEmployees, accent: 'tone-primary' },
+      { icon: 'verified', label: 'Active Employees', value: k.activeEmployees, accent: 'tone-success' },
+      { icon: 'fiber_new', label: 'New Hires (30d)', value: k.newHiresLast30Days, accent: 'tone-accent' },
+      { icon: 'work', label: 'Open Positions', value: k.openPositions, accent: 'tone-warning' },
+      { icon: 'person_search', label: 'Candidates', value: k.totalCandidates, accent: 'tone-accent' },
+      { icon: 'event_busy', label: 'Pending Leaves', value: k.pendingLeaveRequests, accent: 'tone-danger' },
     ];
   });
 

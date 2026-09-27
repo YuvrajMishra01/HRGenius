@@ -1541,3 +1541,43 @@ Backend regression: AuthApiTest 11/11 (incl. `logoutInvalidatesTokenImmediately`
 + SecurityApiTest 10/10 (incl. anonymous logout → 401). Live HTTP: unauth
 logout 401, Bearer logout 200 "Logged out", same token reused afterwards →
 401 (version-bump invalidation intact).
+
+---
+
+## Phase 25 — Frontend UI redesign (2026-09-27)
+
+**Scope.** Visual/UX transformation of the Angular frontend onto a centralized
+design system. Zero backend, API-contract, auth, or business-logic changes:
+every service, guard, interceptor, dialog flow, and server-side pagination
+works exactly as before.
+
+**Design system** (`styles.scss`): CSS-variable tokens for surfaces, text,
+borders, brand and semantic colors, shadows, radii — light and dark themes
+(`color-scheme` + `.dark` overrides; Material 3 reads the same scheme).
+Shared classes: buttons, cards, badges (status color language), tables, form
+fields, skeletons, state cards, page scaffold, grids. Material widgets re-skinned
+to match via M3 system-variable overrides. Inter as the UI font. All 13 page
+stylesheets mapped from hardcoded light-only hex/rgba colors to tokens.
+
+**Shell** (`layout/`): custom sidebar with grouped, role-aware navigation
+(`navigation.ts` mirrors the backend's @PreAuthorize roles per module; EMPLOYEE
+sees only Notifications — matching what the API actually grants), sticky header
+with breadcrumb, Ctrl+K command palette (nav filter + live debounced employee
+search through the existing /employees endpoint, skipped for EMPLOYEE to avoid
+a guaranteed 403), theme toggle with localStorage persistence and no-flash
+bootstrap in index.html, notification bell, user menu, mobile off-canvas
+sidebar with backdrop. Shared `AvatarComponent` (initials, deterministic hue).
+
+**Public site** (`public/landing.component.*`): premium landing page — hero,
+static demo dashboard preview, stats strip, feature grid, role cards, factual
+security section, CTA, footer. Routes: `/` public landing, `/login` redesigned
+split-screen auth (form logic unchanged), `/app/*` authenticated shell.
+
+**Verification.** Frontend 49/49 (43 prior + theme spec + updated guard target
+for /app). ng build PASS (component-style budget raised 4kB→16kB/32kB for the
+landing stylesheet; initial budget untouched). Live QA: admin login → shell,
+dark mode (persisted), palette (13 nav items, employee search → navigate),
+all 13 module pages render non-blank, employee avatars in directory, mobile
+390×844 off-canvas open/backdrop/close, EMPLOYEE role sees only permitted nav,
+logout clears session → /login. Only console noise is a pre-existing dev-mode
+NG0912 dialog-ID collision warning.

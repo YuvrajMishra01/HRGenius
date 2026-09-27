@@ -13,7 +13,7 @@
 
   .subtitle {
     margin: 2px 0 0;
-    color: rgba(0, 0, 0, 0.55);
+    color: var(--text-2);
     font-size: 13.5px;
   }
 }
@@ -37,7 +37,7 @@
 
 .table-card {
   mat-paginator {
-    border-top: 1px solid rgba(0, 0, 0, 0.06);
+    border-top: 1px solid var(--border);
   }
 }
 
@@ -50,6 +50,16 @@ table.mat-table {
   font-size: 13px;
 }
 
+.cell-with-avatar {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+
+  .cell-name {
+    min-width: 0;
+  }
+}
+
 .cell-name {
   display: flex;
   flex-direction: column;
@@ -60,7 +70,7 @@ table.mat-table {
 
   .name-sub {
     font-size: 12px;
-    color: rgba(0, 0, 0, 0.5);
+    color: var(--text-3);
   }
 }
 
@@ -73,23 +83,23 @@ table.mat-table {
   padding: 3px 10px;
 
   &.active {
-    background: #e8f5e9;
-    color: #2e7d32;
+    background: var(--success-soft);
+    color: var(--success);
   }
 
   &.on-leave {
-    background: #fff3e0;
-    color: #ef6c00;
+    background: var(--warning-soft);
+    color: var(--warning);
   }
 
   &.resigned {
-    background: #e3f2fd;
-    color: #1565c0;
+    background: var(--info-soft);
+    color: var(--info);
   }
 
   &.terminated {
-    background: #ffebee;
-    color: #c62828;
+    background: var(--danger-soft);
+    color: var(--danger);
   }
 }
 
@@ -112,7 +122,7 @@ table.mat-table {
 .no-data {
   text-align: center;
   padding: 28px 0;
-  color: rgba(0, 0, 0, 0.5);
+  color: var(--text-3);
 }
 
 .state-card {
@@ -131,7 +141,7 @@ table.mat-table {
       font-size: 40px;
       width: 40px;
       height: 40px;
-      color: #ef6c00;
+      color: var(--warning);
     }
 
     h3 {
@@ -140,7 +150,7 @@ table.mat-table {
 
     p {
       margin: 0;
-      color: rgba(0, 0, 0, 0.6);
+      color: var(--text-2);
     }
   }
 }

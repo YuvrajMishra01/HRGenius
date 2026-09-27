@@ -21,7 +21,7 @@
 
   p {
     margin: 0;
-    color: #607d8b;
+    color: var(--text-3);
     font-size: 13px;
   }
 }
@@ -30,8 +30,8 @@
   display: flex;
   align-items: center;
   gap: 8px;
-  background: #fdecea;
-  color: #b71c1c;
+  background: var(--danger-soft);
+  color: var(--danger);
   border-radius: 6px;
   padding: 10px 14px;
   font-size: 13px;
@@ -61,16 +61,16 @@
       align-items: center;
       gap: 5px;
       font-size: 12px;
-      color: #546e7a;
-      background: #eceff1;
+      color: var(--text-2);
+      background: var(--surface-3);
       border-radius: 999px;
       padding: 4px 12px;
       opacity: 0.6;
 
       &.active {
         opacity: 1;
-        background: #e3f2fd;
-        color: #1565c0;
+        background: var(--info-soft);
+        color: var(--info);
       }
     }
   }
@@ -81,17 +81,17 @@
     font-size: 40px;
     width: 40px;
     height: 40px;
-    color: #b0bec5;
+    color: var(--text-3);
   }
 
   p {
     margin: 8px 0 0;
-    color: #546e7a;
+    color: var(--text-2);
   }
 
   .hint {
     font-size: 12px;
-    color: #90a4ae;
+    color: var(--text-3);
   }
 
   mat-card-content {
@@ -114,15 +114,15 @@
     letter-spacing: 0.06em;
     color: #78909c;
     padding: 12px 16px;
-    border-bottom: 1px solid #eceff1;
-    background: #fafafa;
+    border-bottom: 1px solid var(--surface-3);
+    background: var(--surface-2);
   }
 
   td {
     padding: 12px 16px;
-    border-bottom: 1px solid #f4f6f7;
+    border-bottom: 1px solid var(--border);
     font-size: 13px;
-    color: #37474f;
+    color: var(--text);
   }
 
   tr:last-child td {
@@ -135,20 +135,20 @@
     gap: 10px;
 
     .file-icon {
-      color: #546e7a;
+      color: var(--text-2);
     }
 
     .file-name {
       font-weight: 500;
-      color: #263238;
+      color: var(--text);
       word-break: break-all;
     }
   }
 
   .type-pill {
     display: inline-block;
-    background: #e8f5e9;
-    color: #2e7d32;
+    background: var(--success-soft);
+    color: var(--success);
     border-radius: 999px;
     padding: 2px 10px;
     font-size: 11px;
@@ -161,7 +161,7 @@
     white-space: nowrap;
 
     button.warn {
-      color: #c62828;
+      color: var(--danger);
     }
   }
 }

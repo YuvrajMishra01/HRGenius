@@ -1,54 +1,155 @@
-<mat-sidenav-container class="shell">
-  <mat-sidenav mode="side" opened class="shell-sidenav">
-    <div class="brand">
-      <mat-icon>workspace_premium</mat-icon>
-      <span>HRGenius</span>
-    </div>
-    <mat-nav-list>
-      @for (item of visibleNavItems; track item.route) {
-        <a mat-list-item [routerLink]="item.route" routerLinkActive="active-link">
-          <mat-icon matListItemIcon>{{ item.icon }}</mat-icon>
-          <span matListItemTitle>{{ item.label }}</span>
-        </a>
+<div class="shell">
+  <!-- Mobile backdrop -->
+  @if (sidebarOpen()) {
+    <div class="backdrop" (click)="closeSidebar()" aria-hidden="true"></div>
+  }
+
+  <!-- Sidebar -->
+  <aside class="sidebar" [class.open]="sidebarOpen()" aria-label="Primary navigation">
+    <a class="brand" routerLink="/app/dashboard">
+      <span class="brand-mark" aria-hidden="true">
+        <mat-icon>workspace_premium</mat-icon>
+      </span>
+      <span class="brand-text">
+        <span class="brand-name">HRGenius</span>
+        <span class="brand-sub">HR Management</span>
+      </span>
+    </a>
+
+    <nav class="nav">
+      @for (group of NAV_GROUPS; track group) {
+        @if (itemsIn(group).length > 0) {
+          <div class="nav-group">
+            <div class="nav-group-title">{{ group }}</div>
+            @for (item of itemsIn(group); track item.route) {
+              <a
+                class="nav-item"
+                [routerLink]="item.route"
+                routerLinkActive="active"
+                (click)="closeSidebar()"
+              >
+                <mat-icon class="nav-icon">{{ item.icon }}</mat-icon>
+                <span class="nav-label">{{ item.label }}</span>
+              </a>
+            }
+          </div>
+        }
       }
-    </mat-nav-list>
-    <div class="sidebar-footer">v0.2 · Phase 19 — Audit CSV Export</div>
-  </mat-sidenav>
+    </nav>
 
-  <mat-sidenav-content>
-    <mat-toolbar class="shell-toolbar">
-      <span>Human Resource Management System</span>
-      <span class="spacer"></span>
+    @if (auth.user(); as user) {
+      <div class="sidebar-foot">
+        <div class="user-card">
+          <app-avatar [name]="user.fullName" [size]="34" />
+          <div class="user-meta">
+            <span class="user-name">{{ user.fullName }}</span>
+            <span class="user-role">{{ user.role }}</span>
+          </div>
+          <button
+            class="icon-btn"
+            type="button"
+            aria-label="Sign out"
+            matTooltip="Sign out"
+            (click)="auth.logout()"
+          >
+            <mat-icon>logout</mat-icon>
+          </button>
+        </div>
+      </div>
+    }
+  </aside>
 
-      @if (auth.user(); as user) {
-        <a mat-icon-button routerLink="/notifications" class="bell"
-           [matTooltip]="unreadCount() > 0 ? unreadCount() + ' unread notification(s)' : 'Notifications'">
-          <mat-icon [matBadge]="unreadCount() || null" matBadgeColor="warn" matBadgeSize="small">notifications</mat-icon>
-        </a>
+  <!-- Workspace -->
+  <div class="workspace">
+    <header class="topbar">
+      <button
+        class="icon-btn hamburger"
+        type="button"
+        aria-label="Open navigation menu"
+        (click)="toggleSidebar()"
+      >
+        <mat-icon>menu</mat-icon>
+      </button>
+
+      <div class="crumbs" aria-label="Breadcrumb">
+        <span class="crumb-root">HRGenius</span>
+        @if (crumbs().length > 0) {
+          <span class="crumb-sep">/</span>
+          <span class="crumb-current">{{ crumbs()[0] }}</span>
+        }
+      </div>
+
+      <div class="topbar-actions">
         <button
-          mat-button
-          class="user-chip"
-          [matMenuTriggerFor]="accountMenu"
-          [matTooltip]="user.email"
+          class="search-trigger"
+          type="button"
+          (click)="openPalette()"
+          aria-label="Search (Ctrl+K)"
         >
-          <mat-icon>account_circle</mat-icon>
-          <span class="user-name">{{ user.fullName }}</span>
-          <span class="user-role">{{ user.role }}</span>
-          <mat-icon iconPositionEnd>arrow_drop_down</mat-icon>
+          <mat-icon>search</mat-icon>
+          <span class="search-hint">Search…</span>
+          <kbd>Ctrl K</kbd>
         </button>
 
-        <mat-menu #accountMenu="matMenu">
-          <button mat-menu-item (click)="auth.logout()">
-            <mat-icon>logout</mat-icon>
-            <span>Sign out</span>
+        <button
+          class="icon-btn"
+          type="button"
+          (click)="theme.toggle()"
+          [attr.aria-label]="theme.label()"
+          [matTooltip]="theme.label()"
+        >
+          <mat-icon>{{ theme.theme() === 'dark' ? 'light_mode' : 'dark_mode' }}</mat-icon>
+        </button>
+
+        <a
+          class="icon-btn"
+          routerLink="/app/notifications"
+          [attr.aria-label]="unreadCount() > 0 ? unreadCount() + ' unread notifications' : 'Notifications'"
+          matTooltip="Notifications"
+        >
+          <mat-icon>notifications</mat-icon>
+          @if (unreadCount() > 0) {
+            <span class="dot-badge">{{ unreadCount() > 9 ? '9+' : unreadCount() }}</span>
+          }
+        </a>
+
+        @if (auth.user(); as user) {
+          <button
+            class="user-chip"
+            type="button"
+            (click)="menuOpen.set(!menuOpen())"
+            aria-haspopup="menu"
+            [attr.aria-expanded]="menuOpen()"
+            matTooltip="{{ user.fullName }} · {{ user.email }}"
+          >
+            <app-avatar [name]="user.fullName" [size]="30" />
+            <span class="chip-name">{{ user.fullName }}</span>
+            <mat-icon class="chip-caret">expand_more</mat-icon>
           </button>
-        </mat-menu>
-      }
-    </mat-toolbar>
+
+          @if (menuOpen()) {
+            <div class="menu-backdrop" (click)="menuOpen.set(false)" aria-hidden="true"></div>
+            <div class="user-menu" role="menu">
+              <div class="menu-head">
+                <div class="menu-name">{{ user.fullName }}</div>
+                <div class="menu-email">{{ user.email }}</div>
+              </div>
+              <a class="menu-item" role="menuitem" routerLink="/app/notifications" (click)="menuOpen.set(false)">
+                <mat-icon>notifications</mat-icon> Notifications
+              </a>
+              <button class="menu-item danger" role="menuitem" type="button" (click)="auth.logout(); menuOpen.set(false)">
+                <mat-icon>logout</mat-icon> Sign out
+              </button>
+            </div>
+          }
+        }
+      </div>
+    </header>
 
     <main class="content">
-      <router-outlet></router-outlet>
-      <div class="route-anim-wrapper"></div>
+      <router-outlet />
     </main>
-  </mat-sidenav-content>
-</mat-sidenav-container>
+  </div>
+</div>
+
+<app-command-palette />

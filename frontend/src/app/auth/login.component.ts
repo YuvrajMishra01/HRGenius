@@ -9,10 +9,12 @@ import { MatInputModule } from '@angular/material/input';
 import { finalize } from 'rxjs';
 
 import { AuthService } from '../core/auth.service';
+import { ThemeService } from '../core/theme.service';
 
 /**
- * Login page (Phase 1). Authenticated users never see it (guestGuard);
+ * Login page (split-screen). Authenticated users never see it (guestGuard);
  * after success we return to `?returnUrl=` when it is a safe internal URL.
+ * Auth behavior (form → POST /auth/login → store session) is unchanged.
  */
 @Component({
   selector: 'app-login',
@@ -33,6 +35,7 @@ export class LoginComponent {
   private readonly auth = inject(AuthService);
   private readonly router = inject(Router);
   private readonly route = inject(ActivatedRoute);
+  readonly theme = inject(ThemeService);
 
   readonly loading = signal(false);
   readonly serverError = signal<string | null>(null);
@@ -62,7 +65,7 @@ export class LoginComponent {
 
   private navigateAfterLogin(): void {
     const requested = this.route.snapshot.queryParamMap.get('returnUrl');
-    const safe = requested && requested.startsWith('/') && !requested.startsWith('//') ? requested : '/dashboard';
+    const safe = requested && requested.startsWith('/') && !requested.startsWith('//') ? requested : '/app/dashboard';
     this.router.navigateByUrl(safe);
   }
 }

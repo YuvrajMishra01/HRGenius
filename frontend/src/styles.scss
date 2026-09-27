@@ -1,39 +1,843 @@
-
-// Include theming for Angular Material with `mat.theme()`.
-// This Sass mixin will define CSS variables that are used for styling Angular Material
-// components according to the Material 3 design spec.
-// Learn more about theming and how to use it for your application's
-// custom components at https://material.angular.dev/guide/theming
+// ============================================================================
+// HRGenius design system — single source of truth for the whole application.
+// Components consume these tokens; do NOT hard-code colors in page styles.
+// ============================================================================
 @use '@angular/material' as mat;
 
 html {
   @include mat.theme((
     color: (
-      primary: mat.$azure-palette,
+      primary: mat.$violet-palette,
       tertiary: mat.$blue-palette,
     ),
-    typography: Roboto,
+    typography: Inter,
     density: 0,
   ));
 }
 
-body {
-  // Default the application to a light color theme. This can be changed to
-  // `dark` to enable the dark color theme, or to `light dark` to defer to the
-  // user's system settings.
+// ---------------------------------------------------------------------------
+// Design tokens (light theme defaults; dark overrides below)
+// ---------------------------------------------------------------------------
+:root {
   color-scheme: light;
 
-  // Set a default background, font and text colors for the application using
-  // Angular Material's system-level CSS variables. Learn more about these
-  // variables at https://material.angular.dev/guide/system-variables
-  background-color: var(--mat-sys-surface);
-  color: var(--mat-sys-on-surface);
-  font: var(--mat-sys-body-medium);
+  // Surfaces & text
+  --bg: #f5f6fa;
+  --surface: #ffffff;
+  --surface-2: #f8f9fc;
+  --surface-3: #eef0f6;
+  --border: #e6e8f0;
+  --border-strong: #d6d9e4;
+  --text: #171c26;
+  --text-2: #525a6b;
+  --text-3: #8a91a3;
+  --on-primary: #ffffff;
 
-  // Reset the user agent margin.
+  // Brand & semantic accents
+  --primary: #4f46e5;
+  --primary-hover: #4338ca;
+  --primary-soft: #eef0fe;
+  --accent: #7c3aed;
+  --success: #15803d;
+  --success-soft: #e7f6ec;
+  --warning: #b45309;
+  --warning-soft: #fdf1df;
+  --danger: #dc2626;
+  --danger-soft: #fdeaea;
+  --info: #0369a1;
+  --info-soft: #e3f2fb;
+
+  // Elevation & geometry
+  --ring: rgba(79, 70, 229, 0.35);
+  --shadow-sm: 0 1px 2px rgba(23, 28, 38, 0.06);
+  --shadow-md: 0 4px 14px rgba(23, 28, 38, 0.08);
+  --shadow-lg: 0 18px 44px rgba(23, 28, 38, 0.16);
+  --radius: 12px;
+  --radius-sm: 8px;
+  --sidebar-w: 232px;
+
+  --focus-ring: 0 0 0 2px var(--surface), 0 0 0 4px var(--ring);
+}
+
+.dark {
+  color-scheme: dark;
+
+  --bg: #0c0f14;
+  --surface: #11161d;
+  --surface-2: #171d26;
+  --surface-3: #1f2733;
+  --border: #232c38;
+  --border-strong: #303a49;
+  --text: #f2f4f8;
+  --text-2: #a7b0c0;
+  --text-3: #6b7689;
+  --on-primary: #ffffff;
+
+  --primary: #818cf8;
+  --primary-hover: #a5b0fa;
+  --primary-soft: rgba(129, 140, 248, 0.14);
+  --accent: #a78bfa;
+  --success: #4ade80;
+  --success-soft: rgba(74, 222, 128, 0.12);
+  --warning: #fbbf24;
+  --warning-soft: rgba(251, 191, 36, 0.12);
+  --danger: #f87171;
+  --danger-soft: rgba(248, 113, 113, 0.12);
+  --info: #38bdf8;
+  --info-soft: rgba(56, 189, 248, 0.12);
+
+  --ring: rgba(129, 140, 248, 0.4);
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.4);
+  --shadow-md: 0 4px 14px rgba(0, 0, 0, 0.45);
+  --shadow-lg: 0 18px 44px rgba(0, 0, 0, 0.55);
+}
+
+// ---------------------------------------------------------------------------
+// Base
+// ---------------------------------------------------------------------------
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  height: 100%;
+}
+
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--text);
+  font-family: 'Inter', -apple-system, 'Segoe UI', Roboto, sans-serif;
+  font-size: 14px;
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+}
+
+h1, h2, h3, h4 {
+  color: var(--text);
+  font-weight: 650;
+  letter-spacing: -0.015em;
   margin: 0;
 }
-/* You can add global styles to this file, and also import other style files */
 
-html, body { height: 100%; }
-body { margin: 0; font-family: Roboto, "Helvetica Neue", sans-serif; }
+a {
+  color: var(--primary);
+  text-decoration: none;
+}
+
+::selection {
+  background: var(--primary-soft);
+}
+
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--border-strong);
+  border-radius: 8px;
+  border: 2px solid transparent;
+  background-clip: content-box;
+
+  &:hover {
+    background: var(--text-3);
+    background-clip: content-box;
+  }
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+:focus-visible {
+  outline: none;
+  box-shadow: var(--focus-ring);
+  border-radius: 6px;
+}
+
+// ---------------------------------------------------------------------------
+// Typography scale
+// ----------------------------------------------------------------------------
+.page-title {
+  font-size: 26px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+}
+
+.page-subtitle {
+  margin: 2px 0 0;
+  color: var(--text-2);
+  font-size: 13.5px;
+}
+
+.section-title {
+  font-size: 16px;
+  font-weight: 650;
+}
+
+.mono {
+  font-family: ui-monospace, 'Cascadia Mono', monospace;
+  font-size: 12.5px;
+  color: var(--text-2);
+  font-variant-numeric: tabular-nums;
+}
+
+.muted {
+  color: var(--text-2);
+}
+
+// ---------------------------------------------------------------------------
+// Buttons (bridge class over Material; also used by custom components)
+// ---------------------------------------------------------------------------
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  border: 1px solid transparent;
+  border-radius: 10px;
+  padding: 9px 16px;
+  font: 600 13.5px 'Inter', sans-serif;
+  letter-spacing: 0.01em;
+  cursor: pointer;
+  transition: background 0.16s ease, border-color 0.16s ease, color 0.16s ease,
+    box-shadow 0.16s ease, transform 0.16s ease;
+
+  &:disabled {
+    opacity: 0.55;
+    cursor: not-allowed;
+  }
+
+  .material-icons {
+    font-size: 18px;
+  }
+}
+
+.btn-primary {
+  background: var(--primary);
+  color: var(--on-primary);
+  box-shadow: var(--shadow-sm);
+
+  &:hover:not(:disabled) {
+    background: var(--primary-hover);
+    box-shadow: var(--shadow-md);
+    transform: translateY(-1px);
+  }
+}
+
+.btn-outline {
+  background: var(--surface);
+  border-color: var(--border-strong);
+  color: var(--text);
+
+  &:hover:not(:disabled) {
+    background: var(--surface-2);
+    border-color: var(--text-3);
+  }
+}
+
+.btn-ghost {
+  background: transparent;
+  color: var(--text-2);
+
+  &:hover:not(:disabled) {
+    background: var(--surface-3);
+    color: var(--text);
+  }
+}
+
+.btn-danger {
+  background: var(--danger);
+  color: #fff;
+
+  &:hover:not(:disabled) {
+    filter: brightness(1.08);
+  }
+}
+
+.btn-sm {
+  padding: 6px 12px;
+  font-size: 12.5px;
+  border-radius: 8px;
+}
+
+// Icon button (custom shell controls)
+.icon-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 38px;
+  height: 38px;
+  border: none;
+  border-radius: 10px;
+  background: transparent;
+  color: var(--text-2);
+  cursor: pointer;
+  position: relative;
+  transition: background 0.15s ease, color 0.15s ease;
+
+  &:hover {
+    background: var(--surface-3);
+    color: var(--text);
+  }
+
+  .material-icons {
+    font-size: 21px;
+  }
+
+  .dot-badge {
+    position: absolute;
+    top: 7px;
+    right: 8px;
+    min-width: 16px;
+    height: 16px;
+    padding: 0 4px;
+    border-radius: 999px;
+    background: var(--danger);
+    color: #fff;
+    font-size: 10px;
+    font-weight: 700;
+    line-height: 16px;
+    text-align: center;
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Cards
+// ---------------------------------------------------------------------------
+.card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-sm);
+}
+
+// ---------------------------------------------------------------------------
+// Status badges — consistent color language across every module
+// ---------------------------------------------------------------------------
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 2.5px 9px;
+  border-radius: 999px;
+  font-size: 11.5px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  white-space: nowrap;
+  border: 1px solid transparent;
+}
+
+.badge::before {
+  content: '';
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: currentColor;
+}
+
+.badge-neutral {
+  background: var(--surface-3);
+  color: var(--text-2);
+}
+
+.badge-success {
+  background: var(--success-soft);
+  color: var(--success);
+}
+
+.badge-warning {
+  background: var(--warning-soft);
+  color: var(--warning);
+}
+
+.badge-danger {
+  background: var(--danger-soft);
+  color: var(--danger);
+}
+
+.badge-info {
+  background: var(--info-soft);
+  color: var(--info);
+}
+
+.badge-primary {
+  background: var(--primary-soft);
+  color: var(--primary);
+}
+
+// Semantic aliases used by existing page markup
+.status-active,
+.status-approved,
+.status-present,
+.status-completed,
+.status-selected,
+.status-paid,
+.status-interviewed {
+  background: var(--success-soft);
+  color: var(--success);
+}
+
+.status-pending,
+.status-half-day,
+.status-in-progress,
+.status-shortlisted {
+  background: var(--warning-soft);
+  color: var(--warning);
+}
+
+.status-on-leave,
+.status-interviewing,
+.status-holiday {
+  background: var(--info-soft);
+  color: var(--info);
+}
+
+.status-terminated,
+.status-rejected,
+.status-absent,
+.status-resigned,
+.status-cancelled,
+.status-failed {
+  background: var(--danger-soft);
+  color: var(--danger);
+}
+
+.status-draft,
+.status-open,
+.status-applied,
+.status-screening {
+  background: var(--primary-soft);
+  color: var(--primary);
+}
+
+.status-closed {
+  background: var(--surface-3);
+  color: var(--text-2);
+}
+
+// ---------------------------------------------------------------------------
+// Tables
+// ---------------------------------------------------------------------------
+.table-wrap {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-sm);
+  overflow-x: auto;
+}
+
+table.data-table,
+table.mat-mdc-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13.5px;
+
+  th {
+    text-align: left;
+    padding: 11px 16px;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--text-3);
+    background: var(--surface-2);
+    border-bottom: 1px solid var(--border);
+    white-space: nowrap;
+  }
+
+  td {
+    padding: 12px 16px;
+    border-bottom: 1px solid var(--border);
+    color: var(--text);
+    vertical-align: middle;
+  }
+
+  tbody tr {
+    transition: background 0.12s ease;
+
+    &:hover {
+      background: var(--surface-2);
+    }
+
+    &:last-child td {
+      border-bottom: none;
+    }
+  }
+}
+
+.cell-name {
+  display: flex;
+  flex-direction: column;
+  line-height: 1.35;
+
+  .name-text {
+    font-weight: 600;
+  }
+
+  .name-sub {
+    font-size: 12px;
+    color: var(--text-3);
+  }
+}
+
+.actions-col {
+  text-align: right;
+  white-space: nowrap;
+
+  .mat-mdc-icon-button,
+  button {
+    color: var(--text-2);
+
+    &:hover {
+      color: var(--primary);
+    }
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Forms
+// ---------------------------------------------------------------------------
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+
+  label {
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--text-2);
+
+    .req {
+      color: var(--danger);
+    }
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Skeletons
+// ---------------------------------------------------------------------------
+.skeleton {
+  position: relative;
+  overflow: hidden;
+  background: var(--surface-3);
+  border-radius: 6px;
+
+  &::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    transform: translateX(-100%);
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.35), transparent);
+    animation: shimmer 1.4s infinite;
+  }
+}
+
+@keyframes shimmer {
+  100% {
+    transform: translateX(100%);
+  }
+}
+
+// ---------------------------------------------------------------------------
+// States (empty / error / restricted)
+// ---------------------------------------------------------------------------
+.state-card {
+  background: var(--surface);
+  border: 1px dashed var(--border-strong);
+  border-radius: var(--radius);
+  padding: 44px 20px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  text-align: center;
+
+  .material-icons {
+    font-size: 34px;
+    width: 34px;
+    height: 34px;
+    color: var(--text-3);
+  }
+
+  h3 {
+    margin: 0;
+    font-size: 16px;
+  }
+
+  p {
+    margin: 0;
+    max-width: 460px;
+    color: var(--text-2);
+    font-size: 13.5px;
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Page scaffold shared by every module
+// ---------------------------------------------------------------------------
+.page {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding: 24px 28px 48px;
+  max-width: 1440px;
+  margin: 0 auto;
+  width: 100%;
+
+  @media (max-width: 767px) {
+    padding: 16px 14px 40px;
+  }
+}
+
+.page-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.head-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+// ---------------------------------------------------------------------------
+// Grids
+// ---------------------------------------------------------------------------
+.grid-2 {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+
+  @media (max-width: 1023px) {
+    grid-template-columns: 1fr;
+  }
+}
+
+.grid-3 {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 16px;
+
+  @media (max-width: 1023px) {
+    grid-template-columns: 1fr;
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Angular Material overrides — align Material widgets with the design tokens.
+// Material 3 reads --mat-sys-* variables that react to color-scheme, so the
+// dark class flips most widgets automatically; these rules enforce HRGenius
+// geometry and brand color where M3 defaults would differ.
+// ---------------------------------------------------------------------------
+.mat-mdc-card {
+  --mdc-elevated-card-container-color: var(--surface);
+  --mdc-outlined-card-container-color: var(--surface);
+  --mdc-elevated-card-container-shape: var(--radius);
+  --mdc-outlined-card-container-shape: var(--radius);
+  border-radius: var(--radius) !important;
+  box-shadow: var(--shadow-sm) !important;
+  border: 1px solid var(--border) !important;
+  background: var(--surface) !important;
+  color: var(--text) !important;
+}
+
+.mat-mdc-card-title {
+  color: var(--text) !important;
+  font-weight: 650 !important;
+}
+
+.mat-mdc-card-subtitle {
+  color: var(--text-2) !important;
+}
+
+.mat-mdc-raised-button.mat-mdc-button-base,
+.mat-mdc-unelevated-button.mat-mdc-button-base,
+.mat-mdc-outlined-button.mat-mdc-button-base {
+  border-radius: 10px !important;
+  font-weight: 600 !important;
+  letter-spacing: 0.01em;
+}
+
+.mat-mdc-unelevated-button.mat-primary,
+.mat-mdc-raised-button.mat-primary {
+  --mdc-filled-button-container-color: var(--primary);
+  --mdc-filled-button-label-text-color: var(--on-primary);
+}
+
+.mat-mdc-outlined-button:not(.mat-warn) {
+  --mdc-outlined-button-label-text-color: var(--text);
+}
+
+.mat-mdc-unelevated-button.mat-warn {
+  --mdc-filled-button-container-color: var(--danger);
+  --mdc-filled-button-label-text-color: #fff;
+}
+
+.mat-mdc-form-field {
+  --mdc-outlined-text-field-outline-color: var(--border-strong);
+  --mdc-outlined-text-field-hover-outline-color: var(--text-3);
+  --mdc-outlined-text-field-focus-outline-color: var(--primary);
+  --mat-form-field-outline-color: var(--border-strong);
+}
+
+.mat-mdc-input-element,
+.mat-mdc-form-field-label,
+.mat-mdc-select-value,
+.mat-mdc-select-placeholder {
+  color: var(--text);
+}
+
+.mat-mdc-select-panel,
+.mat-mdc-menu-panel {
+  background: var(--surface) !important;
+  border: 1px solid var(--border);
+  border-radius: 12px !important;
+  box-shadow: var(--shadow-lg) !important;
+}
+
+.mat-mdc-option {
+  --mdc-list-list-item-label-text-color: var(--text);
+  --mdc-list-list-item-hover-state-layer-background-color: var(--surface-2);
+}
+
+.mat-mdc-option.mdc-list-item--selected {
+  --mdc-list-list-item-label-text-color: var(--primary);
+}
+
+.mat-mdc-menu-item {
+  --mdc-menu-item-label-text-color: var(--text);
+}
+
+.mat-mdc-tab-group,
+.mat-mdc-tab-header {
+  --mdc-tab-indicator-active-indicator-color: var(--primary);
+  --mat-tab-header-active-label-text-color: var(--primary);
+  --mat-tab-header-inactive-label-text-color: var(--text-2);
+}
+
+.mat-mdc-paginator {
+  background: transparent !important;
+  color: var(--text-2);
+}
+
+.mat-mdc-table {
+  --mdc-table-row-item-label-text-color: var(--text);
+}
+
+.mat-sort-header-arrow {
+  color: var(--primary) !important;
+}
+
+.mat-mdc-checkbox {
+  --mdc-checkbox-selected-icon-color: var(--primary);
+  --mdc-checkbox-selected-focus-icon-color: var(--primary);
+  --mdc-checkbox-selected-hover-icon-color: var(--primary);
+  --mdc-checkbox-selected-pressed-icon-color: var(--primary);
+}
+
+.mat-mdc-chip {
+  --mdc-chip-elevated-container-color: var(--surface-3);
+  --mdc-chip-label-text-color: var(--text-2);
+}
+
+.mat-mdc-tooltip {
+  background: var(--text);
+  color: var(--bg);
+}
+
+.mat-mdc-snack-bar-container {
+  --mdc-snackbar-container-color: var(--text);
+  --mdc-snackbar-supporting-text-color: var(--bg);
+  --mat-snack-bar-button-color: var(--primary);
+}
+
+.mat-datepicker-content {
+  background: var(--surface) !important;
+  border: 1px solid var(--border);
+  border-radius: 12px !important;
+}
+
+.mat-calendar {
+  background: var(--surface);
+  color: var(--text);
+}
+
+.mat-badge-content {
+  background: var(--danger);
+  color: #fff;
+}
+
+.mat-progress-bar {
+  --mdc-linear-progress-active-indicator-color: var(--primary);
+  --mdc-linear-progress-track-color: var(--surface-3);
+  border-radius: 999px;
+}
+
+.mat-mdc-progress-spinner {
+  --mdc-circular-progress-active-indicator-color: var(--primary);
+}
+
+// Material dialogs — dark-theme safety (overlay containers live at body level,
+// outside component view encapsulation).
+body .cdk-overlay-container {
+  .mat-mdc-dialog-surface {
+    background: var(--surface) !important;
+    border: 1px solid var(--border);
+    border-radius: 16px !important;
+    box-shadow: var(--shadow-lg) !important;
+    color: var(--text);
+  }
+
+  .mat-mdc-dialog-title {
+    color: var(--text);
+    font-weight: 650;
+  }
+
+  .mat-mdc-dialog-content {
+    color: var(--text-2);
+  }
+
+  .mat-mdc-select-panel,
+  .mat-mdc-menu-panel {
+    background: var(--surface) !important;
+  }
+
+  .mat-mdc-option .mdc-list-item__primary-text,
+  .mat-mdc-menu-item .mat-mdc-menu-item-text,
+  .mdc-text-field .mdc-text-field__input,
+  .mat-mdc-form-field-label {
+    color: var(--text);
+  }
+
+  .mat-mdc-form-field .mat-mdc-text-field-wrapper,
+  .mat-mdc-form-field .mat-mdc-form-field-flex {
+    background: var(--surface);
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Motion
+// ---------------------------------------------------------------------------
+@media (prefers-reduced-motion: no-preference) {
+  .fade-up {
+    animation: fadeUp 0.24s ease both;
+  }
+}
+
+@keyframes fadeUp {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}

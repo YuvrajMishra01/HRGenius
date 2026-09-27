@@ -19,7 +19,7 @@
 
   .sub {
     margin: 4px 0 0;
-    color: rgba(0, 0, 0, 0.6);
+    color: var(--text-2);
     font-size: 14px;
   }
 }
@@ -36,13 +36,13 @@ h2 {
   align-items: center;
   justify-content: center;
   background: #fff;
-  border: 1px solid rgba(0, 0, 0, 0.08);
+  border: 1px solid var(--border);
   border-radius: 12px;
   padding: 28px;
-  color: rgba(0, 0, 0, 0.6);
+  color: var(--text-2);
   margin-bottom: 16px;
 
-  &.error { color: #b71c1c; }
+  &.error { color: var(--danger); }
 
   .spin { animation: spin 1.2s linear infinite; }
 }
@@ -64,20 +64,20 @@ h2 {
 
   .kpi {
     background: #fff;
-    border: 1px solid rgba(0, 0, 0, 0.08);
+    border: 1px solid var(--border);
     border-radius: 12px;
     padding: 12px 16px;
     display: flex;
     flex-direction: column;
 
     .num { font-size: 22px; font-weight: 600; }
-    .lbl { font-size: 12.5px; color: rgba(0, 0, 0, 0.6); }
+    .lbl { font-size: 12.5px; color: var(--text-2); }
   }
 }
 
 .table-card {
   background: #fff;
-  border: 1px solid rgba(0, 0, 0, 0.08);
+  border: 1px solid var(--border);
   border-radius: 12px;
   overflow: hidden;
 
@@ -88,14 +88,14 @@ h2 {
     th, td {
       text-align: left;
       padding: 10px 14px;
-      border-bottom: 1px solid rgba(0, 0, 0, 0.06);
+      border-bottom: 1px solid var(--border);
       font-size: 14px;
     }
 
     th {
-      background: #fafafa;
+      background: var(--surface-2);
       font-weight: 500;
-      color: rgba(0, 0, 0, 0.6);
+      color: var(--text-2);
       font-size: 12.5px;
     }
 
@@ -103,7 +103,7 @@ h2 {
 
     .empty {
       text-align: center;
-      color: rgba(0, 0, 0, 0.5);
+      color: var(--text-3);
       padding: 18px;
     }
   }
@@ -117,12 +117,12 @@ h2 {
 .secondary {
   display: block;
   font-size: 12px;
-  color: rgba(0, 0, 0, 0.55);
+  color: var(--text-2);
 }
 
 .done {
   font-size: 13px;
-  color: #2e7d32;
+  color: var(--success);
 }
 
 .chip {
@@ -149,7 +149,7 @@ h2 {
 .grid-wrap {
   overflow-x: auto;
   background: #fff;
-  border: 1px solid rgba(0, 0, 0, 0.08);
+  border: 1px solid var(--border);
   border-radius: 12px;
 }
 
@@ -158,7 +158,7 @@ h2 {
   min-width: 100%;
 
   th, td {
-    border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+    border-bottom: 1px solid var(--border);
     padding: 6px 4px;
     font-size: 12.5px;
     text-align: center;
@@ -168,9 +168,9 @@ h2 {
   thead th {
     position: sticky;
     top: 0;
-    background: #fafafa;
+    background: var(--surface-2);
     font-weight: 500;
-    color: rgba(0, 0, 0, 0.6);
+    color: var(--text-2);
     z-index: 1;
   }
 
@@ -192,20 +192,20 @@ h2 {
     padding: 8px 10px;
 
     .pct { font-weight: 600; display: block; }
-    .pct.low { color: #c62828; }
-    .mini { font-size: 11px; color: rgba(0, 0, 0, 0.5); }
+    .pct.low { color: var(--danger); }
+    .mini { font-size: 11px; color: var(--text-3); }
   }
 
-  .weekend { background: #fafafa; }
+  .weekend { background: var(--surface-2); }
 
   .today-col {
-    outline: 2px solid #1565c0;
+    outline: 2px solid var(--info);
     outline-offset: -2px;
   }
 
   td.clickable { cursor: pointer; }
 
-  td.clickable:hover .cell { outline: 1.5px solid #1565c0; }
+  td.clickable:hover .cell { outline: 1.5px solid var(--info); }
 }
 
 .cell {
@@ -218,11 +218,11 @@ h2 {
   font-size: 11.5px;
   font-weight: 600;
 
-  &.cell-present { background: #e8f5e9; color: #2e7d32; }
-  &.cell-half { background: #fff3e0; color: #e65100; }
-  &.cell-absent { background: #ffebee; color: #c62828; }
-  &.cell-leave { background: #e3f2fd; color: #1565c0; }
-  &.cell-holiday { background: #ede7f6; color: #5e35b1; }
+  &.cell-present { background: var(--success-soft); color: var(--success); }
+  &.cell-half { background: var(--warning-soft); color: var(--warning); }
+  &.cell-absent { background: var(--danger-soft); color: var(--danger); }
+  &.cell-leave { background: var(--info-soft); color: var(--info); }
+  &.cell-holiday { background: var(--primary-soft); color: var(--accent); }
   &.cell-empty { background: transparent; }
 }
 
@@ -232,9 +232,9 @@ h2 {
   align-items: center;
   margin-top: 10px;
   font-size: 12.5px;
-  color: rgba(0, 0, 0, 0.6);
+  color: var(--text-2);
 
   .cell { width: 20px; height: 20px; margin-left: 10px; }
   .cell:first-child { margin-left: 0; }
-  .hint { color: rgba(0, 0, 0, 0.45); }
+  .hint { color: var(--text-3); }
 }

@@ -19,7 +19,7 @@
 
     p {
       margin: 0;
-      color: var(--mat-sys-on-surface-variant, #64748b);
+      color: var(--text-2);
       font-size: 13.5px;
     }
   }
@@ -50,7 +50,7 @@
       text-align: center;
 
       .warn {
-        color: #b45309;
+        color: var(--warning);
       }
 
       h3 {
@@ -62,7 +62,7 @@
       p {
         margin: 0;
         max-width: 460px;
-        color: var(--mat-sys-on-surface-variant, #64748b);
+        color: var(--text-2);
         font-size: 13.5px;
       }
     }
@@ -79,7 +79,7 @@
       display: flex;
       gap: 14px;
       padding: 12px 8px;
-      border-bottom: 1px solid var(--mat-sys-outline-variant, #e2e8f0);
+      border-bottom: 1px solid var(--border);
 
       &:last-child {
         border-bottom: none;
@@ -93,8 +93,8 @@
         height: 38px;
         border-radius: 50%;
         flex-shrink: 0;
-        background: #eef2f7;
-        color: #475569;
+        background: var(--surface-3);
+        color: var(--text-2);
 
         mat-icon {
           font-size: 20px;
@@ -103,46 +103,46 @@
         }
 
         &.kind-employee {
-          background: #e0f2fe;
-          color: #0369a1;
+          background: var(--info-soft);
+          color: var(--info);
         }
         &.kind-department,
         &.kind-designation {
-          background: #ede9fe;
-          color: #6d28d9;
+          background: var(--primary-soft);
+          color: var(--accent);
         }
         &.kind-job,
         &.kind-application,
         &.kind-candidate,
         &.kind-interview {
-          background: #e0e7ff;
-          color: #4338ca;
+          background: var(--primary-soft);
+          color: var(--primary);
         }
         &.kind-onboarding {
-          background: #ccfbf1;
-          color: #0f766e;
+          background: var(--success-soft);
+          color: var(--success);
         }
         &.kind-attendance {
-          background: #dcfce7;
-          color: #15803d;
+          background: var(--success-soft);
+          color: var(--success);
         }
         &.kind-leave_request,
         &.kind-leave_type {
-          background: #fee2e2;
-          color: #b91c1c;
+          background: var(--danger-soft);
+          color: var(--danger);
         }
         &.kind-payroll,
         &.kind-payslip {
-          background: #fef3c7;
-          color: #b45309;
+          background: var(--warning-soft);
+          color: var(--warning);
         }
         &.kind-review {
-          background: #fce7f3;
-          color: #be185d;
+          background: var(--primary-soft);
+          color: var(--accent);
         }
         &.kind-document {
-          background: #f1f5f9;
-          color: #475569;
+          background: var(--surface-3);
+          color: var(--text-2);
         }
       }
 
@@ -162,14 +162,14 @@
           }
 
           .target {
-            color: var(--mat-sys-on-surface-variant, #475569);
+            color: var(--text-2);
             font-size: 13.5px;
           }
         }
 
         .entry-details {
           margin-top: 2px;
-          color: var(--mat-sys-on-surface-variant, #64748b);
+          color: var(--text-2);
           font-size: 13px;
           overflow-wrap: anywhere;
         }
@@ -180,7 +180,7 @@
           flex-wrap: wrap;
           gap: 6px;
           margin-top: 4px;
-          color: var(--mat-sys-on-surface-variant, #64748b);
+          color: var(--text-2);
           font-size: 12.5px;
 
           mat-icon {
@@ -192,7 +192,7 @@
           .role-chip {
             padding: 1px 8px;
             border-radius: 999px;
-            background: #eef2f7;
+            background: var(--surface-3);
             font-size: 11px;
             font-weight: 600;
             letter-spacing: 0.03em;

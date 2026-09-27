@@ -1,0 +1,258 @@
+<!-- ======================= NAVBAR ======================= -->
+<header class="nav">
+  <div class="nav-inner">
+    <a class="nav-brand" routerLink="/">
+      <span class="brand-mark" aria-hidden="true"><mat-icon>workspace_premium</mat-icon></span>
+      <span>HRGenius</span>
+    </a>
+
+    <nav class="nav-links" aria-label="Marketing sections">
+      <a href="#features">Features</a>
+      <a href="#roles">HR Management</a>
+      <a href="#preview">Analytics</a>
+      <a href="#security">Security</a>
+    </nav>
+
+    <div class="nav-actions">
+      <button class="icon-btn" type="button" (click)="theme.toggle()" [attr.aria-label]="theme.label()">
+        <mat-icon>{{ theme.theme() === 'dark' ? 'light_mode' : 'dark_mode' }}</mat-icon>
+      </button>
+      <a class="btn btn-primary btn-sm" routerLink="/login">Sign In</a>
+    </div>
+  </div>
+</header>
+
+<main>
+  <!-- ======================= HERO ======================= -->
+  <section class="hero">
+    <div class="hero-inner">
+      <div class="hero-copy">
+        <span class="hero-eyebrow">HR MANAGEMENT, SIMPLIFIED</span>
+        <h1 class="hero-title">
+          Empower your<br />
+          <span class="accent">people.</span> Run HR smarter.
+        </h1>
+        <p class="hero-sub">
+          Manage employees, recruitment, attendance, leave, payroll, performance and
+          documents from one unified HR workspace.
+        </p>
+        <div class="hero-cta">
+          <button class="btn btn-primary btn-lg" type="button" (click)="openApp()">Open HRGenius</button>
+          <a class="btn btn-outline btn-lg" href="#preview">Explore platform</a>
+        </div>
+        <div class="hero-note">
+          <mat-icon>verified_user</mat-icon>
+          JWT authentication · Role-based access · Audit trail
+        </div>
+      </div>
+
+      <!-- =================== DASHBOARD PREVIEW =================== -->
+      <div class="preview-shell" id="preview">
+        <div class="preview-chrome">
+          <span class="dot"></span><span class="dot"></span><span class="dot"></span>
+          <span class="chrome-url">hrgenius.app/app/dashboard</span>
+        </div>
+        <div class="preview" aria-hidden="true">
+          <div class="pv-topbar">
+            <span class="pv-brand">HRGenius</span>
+            <span class="pv-search">
+              <mat-icon>search</mat-icon> Search employees…
+            </span>
+            <span class="pv-actions">
+              <span class="pv-btn primary"><mat-icon>person_add</mat-icon> Add Employee</span>
+              <span class="pv-avatar">AR</span>
+            </span>
+          </div>
+          <div class="pv-body">
+            <div class="pv-side">
+              <span class="pv-side-item active"><mat-icon>dashboard</mat-icon> Dashboard</span>
+              <span class="pv-side-item"><mat-icon>people</mat-icon> Employees</span>
+              <span class="pv-side-item"><mat-icon>work</mat-icon> Recruitment</span>
+              <span class="pv-side-item"><mat-icon>fact_check</mat-icon> Attendance</span>
+              <span class="pv-side-item"><mat-icon>event_busy</mat-icon> Leave</span>
+              <span class="pv-side-item"><mat-icon>payments</mat-icon> Payroll</span>
+              <span class="pv-side-item"><mat-icon>trending_up</mat-icon> Performance</span>
+              <span class="pv-side-item"><mat-icon>insights</mat-icon> Analytics</span>
+            </div>
+            <div class="pv-main">
+              <div class="pv-greeting">
+                <strong>Welcome back</strong>
+                <span>Here's what's happening across HR today.</span>
+              </div>
+              <div class="pv-kpis">
+                @for (kpi of kpis; track kpi.label) {
+                  <div class="pv-kpi">
+                    <span class="pv-kpi-value">{{ kpi.label === 'Payroll (net)' ? '₹18.4L' : (kpi.value | number) }}</span>
+                    <span class="pv-kpi-label">{{ kpi.label }}</span>
+                    <span class="pv-kpi-delta {{ kpi.tone }}">{{ kpi.delta }}</span>
+                  </div>
+                }
+              </div>
+              <div class="pv-panels">
+                <div class="pv-panel">
+                  <span class="pv-panel-title">Attendance trend</span>
+                  <div class="pv-chart" role="img" aria-label="Demo attendance trend">
+                    @for (v of [42, 58, 47, 66, 59, 74, 68, 82, 77, 88, 84, 93]; track $index) {
+                      <span class="pv-bar" [style.height.%]="v"></span>
+                    }
+                  </div>
+                </div>
+                <div class="pv-panel">
+                  <span class="pv-panel-title">Recent activities</span>
+                  @for (a of activities; track a.title) {
+                    <div class="pv-row">
+                      <span class="pv-row-icon"><mat-icon>{{ a.icon }}</mat-icon></span>
+                      <span class="pv-row-main">
+                        <span class="pv-row-title">{{ a.title }}</span>
+                        <span class="pv-row-sub">{{ a.detail }}</span>
+                      </span>
+                    </div>
+                  }
+                </div>
+                <div class="pv-panel">
+                  <span class="pv-panel-title">Upcoming interviews</span>
+                  @for (iv of interviews; track iv.name) {
+                    <div class="pv-interview">
+                      <span class="pv-interview-time">{{ iv.time }}</span>
+                      <span class="pv-interview-main">
+                        <span class="pv-row-title">{{ iv.name }}</span>
+                        <span class="pv-row-sub">{{ iv.role }} · {{ iv.mode }}</span>
+                      </span>
+                    </div>
+                  }
+                  <div class="pv-pipeline">
+                    @for (p of pipeline; track p.label) {
+                      <span class="pv-pipe">
+                        <span class="pv-pipe-label">{{ p.label }}</span>
+                        <span class="pv-pipe-track"><span class="pv-pipe-fill" [style.width.%]="p.value"></span></span>
+                        <span class="pv-pipe-value">{{ p.value }}</span>
+                      </span>
+                    }
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ======================= KPI STRIP ======================= -->
+  <section class="strip">
+    <div class="strip-inner">
+      @for (s of stats; track s.label) {
+        <div class="strip-item">
+          <span class="strip-value">{{ s.value }}</span>
+          <span class="strip-label">{{ s.label }}</span>
+        </div>
+      }
+    </div>
+  </section>
+
+  <!-- ======================= FEATURES ======================= -->
+  <section class="section" id="features">
+    <div class="section-inner">
+      <h2 class="section-title">Everything HR needs<br /><span class="accent">in one workspace.</span></h2>
+      <p class="section-sub">Twelve integrated modules cover the full employee lifecycle — no spreadsheets required.</p>
+      <div class="feature-grid">
+        @for (f of features; track f.title) {
+          <div class="feature-card">
+            <span class="feature-icon"><mat-icon>{{ f.icon }}</mat-icon></span>
+            <h3>{{ f.title }}</h3>
+            <p>{{ f.description }}</p>
+          </div>
+        }
+      </div>
+    </div>
+  </section>
+
+  <!-- ======================= ROLES ======================= -->
+  <section class="section alt" id="roles">
+    <div class="section-inner">
+      <h2 class="section-title">The right access<br /><span class="accent">for every role.</span></h2>
+      <p class="section-sub">Role-based authorization is enforced by the API — the interface simply follows.</p>
+      <div class="role-grid">
+        @for (r of roles; track r.role) {
+          <div class="role-card">
+            <span class="role-icon {{ r.tone }}"><mat-icon>{{ r.icon }}</mat-icon></span>
+            <h3>{{ r.title }}</h3>
+            <p>{{ r.description }}</p>
+          </div>
+        }
+      </div>
+    </div>
+  </section>
+
+  <!-- ======================= SECURITY ======================= -->
+  <section class="section" id="security">
+    <div class="section-inner security-inner">
+      <div class="security-copy">
+        <h2 class="section-title">Secure HR operations.<br /><span class="accent">Traceable actions.</span></h2>
+        <p class="section-sub">
+          Every request is authenticated; every state change is attributable.
+        </p>
+        <div class="security-list">
+          @for (item of security; track item.label) {
+            <div class="security-item">
+              <span class="security-check"><mat-icon>check_circle</mat-icon></span>
+              <div>
+                <div class="security-label">{{ item.label }}</div>
+                <div class="security-desc">{{ item.desc }}</div>
+              </div>
+            </div>
+          }
+        </div>
+      </div>
+      <div class="security-visual" aria-hidden="true">
+        <div class="sec-card">
+          <span class="sec-card-title"><mat-icon>key</mat-icon> Authenticated request</span>
+          <div class="sec-code">
+            <span class="tok-c">Authorization:</span> Bearer eyJhbGciOiJIUzM4NCJ9…<br />
+            <span class="tok-c">Status:</span> <span class="ok">200 OK</span>
+          </div>
+        </div>
+        <div class="sec-card">
+          <span class="sec-card-title"><mat-icon>history</mat-icon> Audit trail</span>
+          <div class="sec-line"><span class="ok">✓</span> LEAVE_REQUEST_APPROVED · HR</div>
+          <div class="sec-line"><span class="ok">✓</span> EMPLOYEE_CREATED · ADMIN</div>
+          <div class="sec-line"><span class="ok">✓</span> PAYROLL_RUN_EXECUTED · ADMIN</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ======================= CTA ======================= -->
+  <section class="cta">
+    <div class="cta-inner">
+      <h2>Ready when your people are.</h2>
+      <p>Sign in and run your HR operations with confidence.</p>
+      <button class="btn btn-primary btn-lg" type="button" (click)="openApp()">Open HRGenius</button>
+    </div>
+  </section>
+</main>
+
+<!-- ======================= FOOTER ======================= -->
+<footer class="footer">
+  <div class="footer-inner">
+    <div class="footer-brand">
+      <span class="brand-mark" aria-hidden="true"><mat-icon>workspace_premium</mat-icon></span>
+      <div>
+        <div class="footer-name">HRGenius</div>
+        <div class="footer-tag">Modern Human Resource Management System</div>
+      </div>
+    </div>
+    <div class="footer-links">
+      <a routerLink="/app/dashboard">Dashboard</a>
+      <a routerLink="/app/employees">Employees</a>
+      <a routerLink="/app/recruitment">Recruitment</a>
+      <a routerLink="/app/payroll">Payroll</a>
+      <a routerLink="/app/analytics">Analytics</a>
+    </div>
+    <div class="footer-meta">
+      <span>© {{ year }} HRGenius</span>  <a class="to-top" href="#top" (click)="$event.preventDefault(); scrollTop()">
+        Back to top <mat-icon>arrow_upward</mat-icon>
+  </a>
+    </div>
+  </div>
+</footer>

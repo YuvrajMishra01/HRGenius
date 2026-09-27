@@ -27,6 +27,7 @@ import {
 import { EmployeesService, EmployeeQuery } from './employees.service';
 import { EmployeeDialogComponent, EmployeeDialogData } from './employee-dialog.component';
 import { ReportService } from '../shared/report.service';
+import { AvatarComponent } from '../shared/avatar.component';
 
 /**
  * Employee directory (Phase 3): server-side search, filters, sorting and
@@ -51,6 +52,7 @@ import { ReportService } from '../shared/report.service';
     MatProgressBarModule,
     MatChipsModule,
     MatTooltipModule,
+    AvatarComponent,
   ],
   templateUrl: './employees.component.html',
   styleUrl: './employees.component.scss',

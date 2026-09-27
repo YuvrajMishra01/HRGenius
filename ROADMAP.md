@@ -29,6 +29,7 @@ Status legend: ✅ done · 🔄 in progress · ⬜ pending
 | 22 | Security, authorization & RBAC hardening: full boundary test suite (anonymous sweep, JWT failure modes, RBAC matrix, IDOR), client-error 400/415 handling, loopback-only H2 console | ✅ |
 | 23 | Oracle compatibility verification: static dialect audit, Oracle-grammar migration fix (V3/V7), clean-schema chain replay, full smoke — real-Oracle execution blocked (no Oracle/Docker on machine) | ✅* |
 | 24 | Login rate limiting & brute-force protection: per-email failed-attempt tracking, configurable temporary lockout, atomic counting, generic responses, storm-proven | ✅ |
+| 25 | Frontend UI redesign: token-based design system (light/dark), custom app shell (role-aware sidebar, sticky header, Ctrl+K palette, mobile off-canvas), landing page, split-screen login, all modules restyled on existing services/RBAC | ✅ |
 
 ## Environment Decision Log
 

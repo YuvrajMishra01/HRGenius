@@ -48,11 +48,11 @@ describe('guestGuard', () => {
     expect(result).toBeTrue();
   });
 
-  it('redirects logged-in users to /dashboard', () => {
+  it('redirects logged-in users to /app/dashboard', () => {
     seedSession(false);
     TestBed.configureTestingModule({ providers: [provideHttpClient(), provideHttpClientTesting(), provideRouter([])] });
     const result = TestBed.runInInjectionContext(() => guestGuard(route, state('/login')));
     expect(result).toBeInstanceOf(UrlTree);
-    expect((result as UrlTree).toString()).toBe('/dashboard');
+    expect((result as UrlTree).toString()).toBe('/app/dashboard');
   });
 });
