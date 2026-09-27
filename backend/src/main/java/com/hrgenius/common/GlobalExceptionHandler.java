@@ -6,12 +6,15 @@ import java.util.Map;
 import lombok.extern.slf4j.Slf4j;
 
 import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.orm.ObjectOptimisticLockingFailureException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.core.AuthenticationException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
+import org.springframework.http.converter.HttpMessageNotReadableException;
+import org.springframework.web.HttpMediaTypeNotSupportedException;
 import org.springframework.web.bind.MissingServletRequestParameterException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
@@ -50,6 +53,17 @@ public class GlobalExceptionHandler {
         return build(HttpStatus.CONFLICT, message, req, Map.of());
     }
 
+    /**
+     * Phase 21: a concurrent request changed the same row between our read and
+     * write (optimistic @Version guard). Retry-able client conflict, never a 500.
+     */
+    @ExceptionHandler(ObjectOptimisticLockingFailureException.class)
+    public ResponseEntity<ApiError> handleOptimisticLock(ObjectOptimisticLockingFailureException ex,
+                                                         HttpServletRequest req) {
+        return build(HttpStatus.CONFLICT, "The record was modified concurrently — reload and retry",
+                req, Map.of());
+    }
+
     @ExceptionHandler({AccessDeniedException.class, AuthenticationException.class})
     public ResponseEntity<ApiError> handleSecurity(Exception ex, HttpServletRequest req) {
         HttpStatus status = ex instanceof AccessDeniedException
@@ -72,6 +86,26 @@ public class GlobalExceptionHandler {
                                                        HttpServletRequest req) {
         return build(HttpStatus.BAD_REQUEST,
                 "Missing required parameter: " + ex.getParameterName(), req, Map.of());
+    }
+
+    /**
+     * Phase 22: unreadable request bodies (malformed JSON) are client errors —
+     * 400 without echoing parser internals, never a 500.
+     */
+    @ExceptionHandler(org.springframework.http.converter.HttpMessageNotReadableException.class)
+    public ResponseEntity<ApiError> handleUnreadableBody(HttpMessageNotReadableException ex,
+                                                         HttpServletRequest req) {
+        return build(HttpStatus.BAD_REQUEST, "Malformed request body", req, Map.of());
+    }
+
+    /**
+     * Phase 22: an unsupported Content-Type on a JSON endpoint is a client
+     * error — 415 with the standard envelope, never a 500.
+     */
+    @ExceptionHandler(org.springframework.web.HttpMediaTypeNotSupportedException.class)
+    public ResponseEntity<ApiError> handleUnsupportedMediaType(
+            org.springframework.web.HttpMediaTypeNotSupportedException ex, HttpServletRequest req) {
+        return build(HttpStatus.UNSUPPORTED_MEDIA_TYPE, "Unsupported Content-Type", req, Map.of());
     }
 
     @ExceptionHandler(IllegalArgumentException.class)

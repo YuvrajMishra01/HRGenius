@@ -237,9 +237,15 @@ class LeaveApiTest {
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
         String body = response.getBody();
 
-        // Employee 5: seed APPROVED CASUAL 2 days (start d-20, same year in test runs)
+        // Employee 5: the seed's only APPROVED row is CASUAL starting d-20 —
+        // a calendar-relative date. In January runs it can fall in the previous
+        // year, so the used-days expectation is derived the same way the
+        // service counts (start date inside the requested year).
+        LocalDate seedApprovedStart = LocalDate.now().minusDays(20);
+        double casualUsed = seedApprovedStart.getYear() == LocalDate.now().getYear() ? 2.0 : 0.0;
         assertThat(body).contains("\"year\":" + LocalDate.now().getYear());
-        assertThat(body).contains("\"usedDays\":2.0,\"remainingDays\":10.0");   // CASUAL 12
+        assertThat(body).contains("\"usedDays\":" + casualUsed
+                + ",\"remainingDays\":" + (12 - casualUsed));                        // CASUAL 12
         assertThat(body).contains("\"usedDays\":0.0,\"remainingDays\":10.0");   // SICK 10
         assertThat(body).contains("\"usedDays\":0.0,\"remainingDays\":15.0");   // EARNED 15
     }
@@ -253,10 +259,20 @@ class LeaveApiTest {
 
         // Still PENDING: seed ids 1 & 2 (mine were approved/rejected/cancelled)
         assertThat(body).contains("\"pendingCount\":2");
-        // APPROVED this year: seed (emp 5) + order 20 → 2; REJECTED: seed only
-        // (order 22's rejection is deleted in order 31) → decided 3 → rate 2/3 = 66.7%
-        assertThat(body).contains("\"approvedThisYear\":2");
-        assertThat(body).contains("\"approvalRate\":66.7");
+        // The seed's decided rows start at d-20 (APPROVED) and d-40 (REJECTED) —
+        // calendar-relative. Derive the in-year counts exactly as the (now
+        // window-consistent) summary does: the order-20 approval is future-dated
+        // and always lands in-year; rate = approved / (approved + rejected in year).
+        LocalDate today = LocalDate.now();
+        LocalDate yearStart = LocalDate.of(today.getYear(), 1, 1);
+        boolean approvedSeedInYear = !today.minusDays(20).isBefore(yearStart);
+        boolean rejectedSeedInYear = !today.minusDays(40).isBefore(yearStart);
+        long approvedThisYear = (approvedSeedInYear ? 1 : 0) + 1;
+        long decidedThisYear = approvedThisYear + (rejectedSeedInYear ? 1 : 0);
+        double rate = decidedThisYear == 0 ? 0.0
+                : Math.round(approvedThisYear * 1000.0 / decidedThisYear) / 10.0;
+        assertThat(body).contains("\"approvedThisYear\":" + approvedThisYear);
+        assertThat(body).contains("\"approvalRate\":" + rate);
     }
 
     // ----------------------------------------------------------------- RBAC

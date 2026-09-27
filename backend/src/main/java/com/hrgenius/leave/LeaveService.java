@@ -141,7 +141,10 @@ public class LeaveService {
         if (request.endDate().isBefore(request.startDate())) {
             throw new IllegalArgumentException("End date cannot be before start date");
         }
-        Employee employee = employeeRepository.findById(request.employeeId())
+        // Phase 21: lock the employee row for the duration of the overlap +
+        // balance checks — two concurrent submissions cannot both pass the
+        // same read-only check and both insert.
+        Employee employee = employeeRepository.findByIdForUpdate(request.employeeId())
                 .orElseThrow(() -> new EntityNotFoundException("Employee not found: " + request.employeeId()));
         LeaveType type = typeRepository.findById(request.leaveTypeId())
                 .orElseThrow(() -> new EntityNotFoundException("Leave type not found: " + request.leaveTypeId()));
@@ -262,15 +265,24 @@ public class LeaveService {
                 employee.getEmployeeCode(), year, balances);
     }
 
+    /**
+     * KPI strip. Pending is a live backlog (all time). The approval rate is
+     * computed over decisions **within the same year window as the approved
+     * count** — mixing a year-scoped numerator with an all-time denominator
+     * produced a nonsense rate once earlier years accumulate decisions.
+     */
     @Transactional(readOnly = true)
     public LeaveDto.LeaveSummary summary() {
         int year = LocalDate.now().getYear();
+        LocalDate yearStart = LocalDate.of(year, 1, 1);
+        LocalDate yearEnd = LocalDate.of(year, 12, 31);
         long pending = requestRepository.countByStatus(LeaveRequest.LeaveStatus.PENDING);
-        long approved = requestRepository.countByStatusBetweenStartDates(LeaveRequest.LeaveStatus.APPROVED,
-                LocalDate.of(year, 1, 1), LocalDate.of(year, 12, 31));
+        long approved = requestRepository.countByStatusBetweenStartDates(
+                LeaveRequest.LeaveStatus.APPROVED, yearStart, yearEnd);
         long rejected = requestRepository.countByStatus(LeaveRequest.LeaveStatus.REJECTED);
-        long decided = requestRepository.countByStatusIn(List.of(
-                LeaveRequest.LeaveStatus.APPROVED, LeaveRequest.LeaveStatus.REJECTED));
+        long decided = requestRepository.countByStatusInBetweenStartDates(
+                List.of(LeaveRequest.LeaveStatus.APPROVED, LeaveRequest.LeaveStatus.REJECTED),
+                yearStart, yearEnd);
         BigDecimal rate = decided == 0 ? BigDecimal.ZERO.setScale(1, RoundingMode.HALF_UP)
                 : BigDecimal.valueOf(approved * 100.0 / decided).setScale(1, RoundingMode.HALF_UP);
         return new LeaveDto.LeaveSummary(pending, approved, rejected, rate);

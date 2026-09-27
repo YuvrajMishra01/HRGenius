@@ -2,14 +2,18 @@ package com.hrgenius.employee;
 
 import java.time.LocalDate;
 import java.util.List;
+import java.util.Optional;
 
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
+import org.springframework.data.jpa.repository.Lock;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
+
+import jakarta.persistence.LockModeType;
 
 /**
  * Employee queries. Aggregations are computed in the database (GROUP BY),
@@ -33,6 +37,16 @@ public interface EmployeeRepository
     boolean existsByEmailIgnoreCaseAndIdNot(String email, Long id);
 
     boolean existsByManagerId(Long managerId);
+
+    /**
+     * Pessimistic write lock on the employee row (Phase 21): serializes
+     * per-employee business flows (leave overlap/balance checks, attendance
+     * upserts) across concurrent requests. SELECT ... FOR UPDATE behaves
+     * identically on Oracle and H2.
+     */
+    @Lock(LockModeType.PESSIMISTIC_WRITE)
+    @Query("select e from Employee e where e.id = :id")
+    Optional<Employee> findByIdForUpdate(@Param("id") Long id);
 
     /** All employees ordered by first name (manager pickers, assignment UIs). */
     List<Employee> findAllByOrderByFirstNameAsc();

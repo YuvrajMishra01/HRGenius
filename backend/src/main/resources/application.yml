@@ -30,6 +30,14 @@ app:
     # shared/production environment; this default is for local development only.
     secret: ${JWT_SECRET:change-me-local-dev-secret-key-at-least-32-bytes-long!!}
     expiration-minutes: 60
+  login-protection:
+    # Brute-force protection (Phase 24): after max-failed-attempts failed
+    # logins for one email, further attempts are rejected for lockout-duration
+    # — with the same generic error as any other failure. In-memory per-email
+    # state; a restart clears it (documented trade-off).
+    enabled: true
+    max-failed-attempts: 5
+    lockout-duration: 10m
   documents:
     storage-dir: ${DOCS_STORAGE_DIR:./uploads/documents}
 

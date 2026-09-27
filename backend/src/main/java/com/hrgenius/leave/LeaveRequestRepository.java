@@ -127,6 +127,17 @@ public interface LeaveRequestRepository extends JpaRepository<LeaveRequest, Long
                                         @Param("yearStart") LocalDate yearStart,
                                         @Param("yearEnd") LocalDate yearEnd);
 
+    /** Requests with any of the given statuses whose start date falls inside one calendar year. */
+    @Query("""
+            select count(l) from LeaveRequest l
+            where l.status in :statuses
+              and l.startDate >= :yearStart and l.startDate <= :yearEnd
+            """)
+    long countByStatusInBetweenStartDates(
+            @Param("statuses") java.util.Collection<LeaveRequest.LeaveStatus> statuses,
+            @Param("yearStart") LocalDate yearStart,
+            @Param("yearEnd") LocalDate yearEnd);
+
     /** Analytics: request count per leave type within one year, busiest first. */
     @Query("""
             select t.name, count(l)

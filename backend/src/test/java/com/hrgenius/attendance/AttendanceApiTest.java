@@ -138,6 +138,25 @@ class AttendanceApiTest {
         assertThat(response.getBody()).contains("\"errors\"");
     }
 
+    @Test
+    @Order(13)
+    void markFutureDateIs400() {
+        // Attendance is a record of work done — future marking must be rejected,
+        // not silently stored where it would pollute month views and later
+        // payroll runs.
+        ResponseEntity<String> response = exchange(HttpMethod.POST, "/api/v1/attendance/mark", hrHeaders(),
+                new AttendanceDto.MarkRequest(3L, LocalDate.now().plusDays(1),
+                        Attendance.AttendanceStatus.PRESENT));
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.BAD_REQUEST);
+        assertThat(response.getBody()).contains("future date");
+
+        // The guard short-circuits before any write: Vikram (3) still has no
+        // attendance record at all today (nothing was created by either call).
+        ResponseEntity<String> today = exchange(HttpMethod.GET, "/api/v1/attendance/today",
+                adminHeaders(), null);
+        assertThat(today.getBody()).doesNotContain("Vikram Singh");
+    }
+
     // ---------------------------------------------------------------- views
 
     @Test
@@ -161,7 +180,9 @@ class AttendanceApiTest {
         String body = response.getBody();
 
         // At this point in the class sequence only the 7 seed employees exist.
-        assertThat(body).contains("\"month\":9");
+        // (Month number derived, not hardcoded — the suite must also pass when
+        // the calendar rolls into a different month.)
+        assertThat(body).contains("\"month\":" + LocalDate.now().getMonthValue());
         assertThat(body).contains("Rohan Kulkarni");   // row exists (no records yet)
         assertThat(body).contains("Divya Nair");
 

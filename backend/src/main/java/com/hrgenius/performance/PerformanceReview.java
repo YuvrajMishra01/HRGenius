@@ -11,6 +11,7 @@ import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
+import jakarta.persistence.Version;
 
 import com.hrgenius.employee.Employee;
 
@@ -66,4 +67,9 @@ public class PerformanceReview {
     @Enumerated(EnumType.STRING)
     @Column(name = "STATUS", nullable = false, length = 20)
     private ReviewStatus status = ReviewStatus.DRAFT;
+
+    /** Optimistic-lock guard (V7): concurrent transitions cannot silently overwrite each other. */
+    @Version
+    @Column(name = "VERSION")
+    private Long version;
 }

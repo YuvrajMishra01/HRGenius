@@ -170,6 +170,29 @@ class EmployeeApiTest {
         assertThat(response.getBody()).contains("\"departmentName\":\"Human Resources\"");
     }
 
+    @Test
+    @Order(21)
+    void updateCannotCreateAManagerReportingCycle() {
+        // From order 20: EMP900 (createdId) reports to employee 1. Making
+        // employee 1 report to EMP900 closes a two-hop cycle — rejected 409,
+        // and employee 1's record is left untouched.
+        EmployeeDto cycle = sample("EMP001", "Rahul", "Verma", "rahul.verma@hrgenius.local", 1L, 1L,
+                createdId);
+        ResponseEntity<String> response = exchange(HttpMethod.PUT, "/api/v1/employees/1",
+                adminHeaders(), cycle);
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.CONFLICT);
+        assertThat(response.getBody()).contains("management reporting cycle");
+
+        ResponseEntity<String> unchanged = exchange(HttpMethod.GET, "/api/v1/employees/1",
+                adminHeaders(), null);
+        assertThat(unchanged.getBody()).doesNotContain("\"managerId\":" + createdId);
+
+        // Self-management stays a 409 as well (existing rule, kept explicit).
+        EmployeeDto self = sample("EMP001", "Rahul", "Verma", "rahul.verma@hrgenius.local", 1L, 1L, 1L);
+        assertThat(exchange(HttpMethod.PUT, "/api/v1/employees/1", adminHeaders(), self)
+                .getStatusCode()).isEqualTo(HttpStatus.CONFLICT);
+    }
+
     // ------------------------------------------------------ soft delete
 
     @Test

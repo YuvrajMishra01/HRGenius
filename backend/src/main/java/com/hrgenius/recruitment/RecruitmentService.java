@@ -436,6 +436,7 @@ public class RecruitmentService {
     }
 
     private void applyJobFields(Job job, RecruitmentDto.JobRequest request, Department department) {
+        requireSaneClosingDate(request.closingDate(), request.status());
         job.setTitle(request.title());
         job.setDescription(request.description());
         job.setDepartment(department);
@@ -448,6 +449,21 @@ public class RecruitmentService {
             job.setPostedDate(LocalDate.now());
         }
         jobRepository.save(job);
+    }
+
+    /**
+     * A closing date in the past is a data-entry error for a job that is
+     * still active in recruitment (OPEN or DRAFT) — applications remain
+     * "accepted" only for OPEN jobs, and an expired date would silently
+     * contradict that. CLOSED jobs skip the guard: their past dates are
+     * historical record and legitimate to keep when editing other fields.
+     */
+    private static void requireSaneClosingDate(LocalDate closingDate, JobStatus status) {
+        if (closingDate != null && status != JobStatus.CLOSED
+                && closingDate.isBefore(LocalDate.now())) {
+            throw new IllegalArgumentException(
+                    "Closing date cannot be in the past for a " + status + " job");
+        }
     }
 
     // ====================================================== DTO mapping

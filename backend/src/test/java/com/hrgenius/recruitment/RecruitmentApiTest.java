@@ -81,6 +81,35 @@ class RecruitmentApiTest {
     }
 
     @Test
+    @Order(31)
+    void activeJobWithPastClosingDateIs400() {
+        // A closing date in the past contradicts "applications accepted" for a
+        // still-active (OPEN/DRAFT) job — rejected 400 on create and update.
+        RecruitmentDto.JobRequest create = new RecruitmentDto.JobRequest(
+                "Backdated Job", null, 1L, null,
+                com.hrgenius.employee.EmploymentType.FULL_TIME, null, JobStatus.OPEN,
+                LocalDate.now().minusDays(1));
+        assertThat(exchange(HttpMethod.POST, "/api/v1/jobs", adminHeaders(), create)
+                .getStatusCode()).isEqualTo(HttpStatus.BAD_REQUEST);
+
+        RecruitmentDto.JobRequest update = new RecruitmentDto.JobRequest(
+                "QA Engineer", "Automation-first quality platform team", 1L,
+                "Remote (India)", com.hrgenius.employee.EmploymentType.FULL_TIME,
+                "6-10 LPA", JobStatus.OPEN, LocalDate.now().minusDays(7));
+        assertThat(exchange(HttpMethod.PUT, "/api/v1/jobs/" + jobId, adminHeaders(), update)
+                .getStatusCode()).isEqualTo(HttpStatus.BAD_REQUEST);
+
+        // CLOSED jobs are exempt: their past dates are historical record.
+        RecruitmentDto.JobRequest closed = new RecruitmentDto.JobRequest(
+                "Backdated Job", null, 1L, null,
+                com.hrgenius.employee.EmploymentType.FULL_TIME, null, JobStatus.CLOSED,
+                LocalDate.now().minusDays(30));
+        ResponseEntity<String> allowed = exchange(HttpMethod.POST, "/api/v1/jobs", adminHeaders(), closed);
+        assertThat(allowed.getStatusCode()).isEqualTo(HttpStatus.CREATED);
+        exchange(HttpMethod.DELETE, "/api/v1/jobs/" + extractId(allowed.getBody()), adminHeaders(), null);
+    }
+
+    @Test
     @Order(4)
     void updateJobChangesFields() {
         RecruitmentDto.JobRequest request = new RecruitmentDto.JobRequest(

@@ -141,10 +141,16 @@ class AnalyticsApiTest {
     void leaveDemandPerTypeAndStatus() {
         String body = get("/analytics/leave");
         assertThat(body).contains("\"year\":" + java.time.LocalDate.now().getYear());
-        // Busiest type first (2 casual requests vs 1 each for the others).
+        // The year window (start-date based) is calendar-sensitive for the
+        // seed rows at d-20/d-40: in January runs they fall in the previous
+        // year, so derive the per-type counts the same way the window does.
+        LocalDate today = java.time.LocalDate.now();
+        LocalDate yearStart = LocalDate.of(today.getYear(), 1, 1);
+        boolean seedApprovedInYear = !today.minusDays(20).isBefore(yearStart);   // CASUAL
+        boolean seedRejectedInYear = !today.minusDays(40).isBefore(yearStart);   // SICK
         assertThat(body)
-                .contains("\"name\":\"CASUAL_LEAVE\",\"count\":2")
-                .contains("\"name\":\"SICK_LEAVE\",\"count\":1")
+                .contains("\"name\":\"CASUAL_LEAVE\",\"count\":" + (seedApprovedInYear ? 2 : 1))
+                .contains("\"name\":\"SICK_LEAVE\",\"count\":" + (seedRejectedInYear ? 1 : 0))
                 .contains("\"name\":\"EARNED_LEAVE\",\"count\":1");
         assertThat(body.indexOf("CASUAL_LEAVE")).isLessThan(body.indexOf("SICK_LEAVE"));
         assertThat(body)
@@ -159,15 +165,16 @@ class AnalyticsApiTest {
     @Order(5)
     void payrollTrendListsEveryPeriodOldestFirst() {
         String body = get("/analytics/payroll-trend");
-        java.time.YearMonth lastMonth = java.time.YearMonth.now().minusMonths(1);
         assertThat(body)
                 .contains("\"payslips\":7")
                 .contains("\"totalNet\":406000");
-        // Seed has exactly one period, so chronology is trivially satisfied;
-        // assert the year/month pair of that period is present.
+        // The seed period is "last month" at seed time — a January 1st run
+        // resolves that to December of the previous year, so the expected
+        // year/month pair must be derived, never hardcoded.
+        java.time.YearMonth seedPeriod = java.time.YearMonth.now().minusMonths(1);
         assertThat(body)
-                .contains("\"year\":" + lastMonth.getYear())
-                .contains("\"month\":" + lastMonth.getMonthValue());
+                .contains("\"year\":" + seedPeriod.getYear())
+                .contains("\"month\":" + seedPeriod.getMonthValue());
     }
 
     // ---------------------------------------------------------- performance

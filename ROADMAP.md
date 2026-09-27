@@ -24,6 +24,11 @@ Status legend: ✅ done · 🔄 in progress · ⬜ pending
 | 17 | SQL paging hardening: DB-side filters + real paging for notifications, recruitment, leave | ✅ |
 | 18 | HR-facing audit log: who-did-what trail with DB-side filters, ADMIN/HR only | ✅ |
 | 19 | Audit CSV export: Phase 15 export machinery, current filters respected, SQL-side row cap, ADMIN/HR only | ✅ |
+| 20 | Backend reliability & business-rule audit: manager-cycle guard, job closing-date sanity, leave summary year window, attendance future-date guard, performance-period DB constraint | ✅ |
+| 21 | Concurrency & double-effect hardening: optimistic locking on guarded transitions, per-employee pessimistic serialization for leave/attendance, parallel request-storm test suite | ✅ |
+| 22 | Security, authorization & RBAC hardening: full boundary test suite (anonymous sweep, JWT failure modes, RBAC matrix, IDOR), client-error 400/415 handling, loopback-only H2 console | ✅ |
+| 23 | Oracle compatibility verification: static dialect audit, Oracle-grammar migration fix (V3/V7), clean-schema chain replay, full smoke — real-Oracle execution blocked (no Oracle/Docker on machine) | ✅* |
+| 24 | Login rate limiting & brute-force protection: per-email failed-attempt tracking, configurable temporary lockout, atomic counting, generic responses, storm-proven | ✅ |
 
 ## Environment Decision Log
 

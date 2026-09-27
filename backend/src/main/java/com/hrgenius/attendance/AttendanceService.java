@@ -122,11 +122,20 @@ public class AttendanceService {
     /**
      * Upsert one day. Working statuses (PRESENT/HALF_DAY) keep any existing
      * check-in/out times; non-working statuses clear them (a day marked LEAVE
-     * must not advertise check-in times).
+     * must not advertise check-in times). Future dates are rejected: attendance
+     * is a record of work done, and a future row would pollute period totals
+     * and survive into a payroll run for that month.
      */
     @Transactional
     public AttendanceDto.RecordResponse mark(AttendanceDto.MarkRequest request) {
-        Employee employee = loadEmployee(request.employeeId());
+        if (request.date().isAfter(LocalDate.now())) {
+            throw new IllegalArgumentException("Attendance cannot be marked for a future date");
+        }
+        // Phase 21: lock the employee row so concurrent marks for the same
+        // employee serialize before the find-then-upsert — the UK_ATT_EMP_DATE
+        // unique index stays as the last line of defence.
+        Employee employee = employeeRepository.findByIdForUpdate(request.employeeId())
+                .orElseThrow(() -> new EntityNotFoundException("Employee not found: " + request.employeeId()));
         Attendance attendance = attendanceRepository
                 .findByEmployee_IdAndAttendanceDate(request.employeeId(), request.date())
                 .orElseGet(() -> {

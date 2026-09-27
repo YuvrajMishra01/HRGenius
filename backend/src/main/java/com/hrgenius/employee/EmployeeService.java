@@ -94,6 +94,10 @@ public class EmployeeService {
         if (id.equals(request.managerId())) {
             throw new IllegalStateException("An employee cannot be their own manager");
         }
+        if (request.managerId() != null && wouldCreateManagementCycle(id, request.managerId())) {
+            throw new IllegalStateException(
+                    "Setting this manager would create a management reporting cycle");
+        }
 
         applyRequest(employee, request);
         Employee saved = employeeRepository.save(employee);
@@ -141,6 +145,28 @@ public class EmployeeService {
         employee.setDepartment(resolveDepartment(request.departmentId()));
         employee.setDesignation(resolveDesignation(request.designationId(), request.departmentId()));
         employee.setManager(resolveManager(request.managerId()));
+    }
+
+    /**
+     * True when making {@code candidateManagerId} the manager of {@code employeeId}
+     * would close a reporting cycle (candidate already reports to the employee,
+     * directly or transitively). Walks the manager chain upward with a visited
+     * set so a corrupted cycle can never loop forever. Create has no cycle to
+     * close (a new row is referenced by nobody), so only update needs this.
+     */
+    private boolean wouldCreateManagementCycle(Long employeeId, Long candidateManagerId) {
+        Long cursor = candidateManagerId;
+        java.util.Set<Long> visited = new java.util.HashSet<>();
+        while (cursor != null && visited.add(cursor)) {
+            if (cursor.equals(employeeId)) {
+                return true;
+            }
+            cursor = employeeRepository.findById(cursor)
+                    .map(Employee::getManager)
+                    .map(Employee::getId)
+                    .orElse(null);
+        }
+        return false;
     }
 
     private void requireUniqueCode(String code, Long excludeId) {

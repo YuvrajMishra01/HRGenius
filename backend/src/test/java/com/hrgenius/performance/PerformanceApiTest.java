@@ -12,11 +12,14 @@ import org.springframework.boot.test.web.server.LocalServerPort;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.jdbc.core.JdbcTemplate;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 /**
  * Performance reviews over real HTTP against the seeded H2 database (Phase 10).
@@ -35,6 +38,9 @@ class PerformanceApiTest {
 
     @Autowired
     TestRestTemplate rest;
+
+    @Autowired
+    JdbcTemplate jdbcTemplate;
 
     private static volatile Long createdReviewId;
     private static volatile Long submittedReviewId;
@@ -254,6 +260,20 @@ class PerformanceApiTest {
 
         assertThat(exchange(HttpMethod.GET, "/api/v1/performance/reviews", adminHeaders(), null)
                 .getStatusCode()).isEqualTo(HttpStatus.OK);
+    }
+
+    @Test
+    @Order(50)
+    void databaseConstraintBlocksDuplicateEmployeePeriod() {
+        // The service guard (order 2) is the first line of defense; the V6
+        // UK_PR_EMP_PERIOD constraint is the last line — a raw insert that
+        // bypasses the service must still fail at the database level.
+        assertThatThrownBy(() -> jdbcTemplate.update(
+                        "INSERT INTO PERFORMANCE_REVIEWS (EMPLOYEE_ID, REVIEWER_ID, REVIEW_PERIOD, STATUS) "
+                                + "VALUES (?, ?, ?, ?)",
+                        2L, 1L, "2025-H2", "DRAFT"))
+                .isInstanceOf(DataIntegrityViolationException.class)
+                .hasMessageContaining("UK_PR_EMP_PERIOD");
     }
 
     // -------------------------------------------------------------- helpers

@@ -645,6 +645,131 @@ HR audit data, so the stricter policy keeps its own endpoint.
 - The frontend button reuses the shared `ReportService` blob downloader — same
   save-file UX as the other CSV/PDF exports.
 
+## Phase 20 — Backend Reliability & Business-Rule Audit ✅
+
+Audit phase, not a feature phase: existing endpoints kept their contracts; the
+changes below tighten validation and remove ambiguity. No RBAC changes.
+
+### Behavioural changes to existing endpoints
+
+| Endpoint | Change | Response |
+|---|---|---|
+| PUT /employees/{id} | setting `managerId` is rejected if it would close a cycle in the reporting chain (walked recursively, cycle-safe) — self-management remains rejected too | 409 |
+| POST /jobs, PUT /jobs/{id} | `closingDate` before today is rejected while the job is OPEN/DRAFT; CLOSED jobs are exempt (historical record) | 400 |
+| POST /attendance/mark | `date` after today is rejected — attendance records work done, it cannot be pre-marked | 400 |
+| GET /leave/summary | `approvalRate` denominator (decided) now uses the same year window as `approvedThisYear`; previously the denominator was all-time, producing a nonsense rate in later years | 200 |
+| POST /performance/reviews | duplicate employee+period 409 (existing service rule) now also backed by DB constraint `UK_PR_EMP_PERIOD` (V6) — raw inserts fail at the DB level | 409 (API unchanged) |
+
+Schema change: `V6__performance_review_period_unique.sql` adds
+`UK_PR_EMP_PERIOD (EMPLOYEE_ID, REVIEW_PERIOD)` — NULL periods exempt (Oracle
+and H2 ignore NULLs in unique keys), seed rows distinct.
+
+## Phase 21 — Concurrency & Double-Effect Hardening ✅
+
+No endpoint contracts changed. Under concurrent duplicate requests the API now
+guarantees: at most one business effect, losers get clean `409` responses
+(never `500`), and final state matches exactly one winner.
+
+### Behavioural guarantees (unchanged request/response shapes)
+
+| Flow | Guarantee under a parallel storm | Loser response |
+|---|---|---|
+| POST /payrolls/run | exactly one run creates payslips; UK_PAY_EMP_PERIOD backstop | 409 |
+| PATCH /leave/requests/{id}/approve or /reject | exactly one decision wins; @Version (V7) guard | 409 |
+| POST /performance/reviews (same employee+period) | exactly one created; UK_PR_EMP_PERIOD backstop | 409 |
+| POST /attendance/mark (same employee+day) | serializes via per-employee SELECT … FOR UPDATE; one row (upsert echo semantics: each response mirrors its own write, last write wins) | 200 each, single row |
+| POST /leave/requests (identical concurrent submissions) | overlap/balance checks serialized per employee — exactly one wins | 409 |
+
+New error mapping: `ObjectOptimisticLockingFailureException` → 409 "The record
+was modified concurrently — reload and retry" (retryable client conflict).
+
+## Phase 24 — Login Rate Limiting & Brute-Force Protection ✅
+
+`POST /api/v1/auth/login` contract is unchanged: every failure is still
+`401 {"message":"Invalid email or password"}` — including a locked-out email.
+What changes is behaviour under repetition:
+
+- After `max-failed-attempts` (default **5**) failed logins for one email
+  (unknown or known — both count), further attempts are rejected for
+  `lockout-duration` (default **10 minutes**) with the identical generic 401:
+  correct credentials do **not** bypass an active lock, and no response ever
+  distinguishes unknown email / wrong password / locked.
+- A successful login clears that email's failure state immediately.
+- When the window elapses, the email may authenticate again; failures after
+  expiry start a fresh count.
+
+Configuration (`application.yml`):
+
+```yaml
+app:
+  login-protection:
+    enabled: true
+    max-failed-attempts: 5
+    lockout-duration: 10m
+```
+
+State is in-memory per email (ConcurrentHashMap, atomic check-and-record —
+no lost updates under concurrent attempts, zero extra database queries per
+login). A backend restart clears lockout state: this errs toward availability
+and never locks an account permanently. Intentionally NOT in the HR audit
+trail (login events stay out of the HR-facing log by design) and NOT
+permanent/DB-backed — revisit with the Oracle phase if cross-restart
+persistence becomes a requirement.
+
+Schema change: `V7__optimistic_locking.sql` adds a `VERSION` column (default 0,
+NOT NULL) to LEAVE_REQUESTS, PAYROLLS and PERFORMANCE_REVIEWS for the JPA
+`@Version` guard. Plain `ALTER TABLE … ADD COLUMN` — Oracle-compatible.
+
+## Phase 22 — Security, Authorization & RBAC Hardening ✅
+
+Audit phase: the authorization model was verified end to end and hardening
+applied where real gaps existed. No endpoint contracts changed.
+
+### Verified protections (no change required)
+
+- Authorities are derived from the **database** on every request (filter
+  re-loads the user and checks `ENABLED` + `TOKEN_VERSION`) — JWT role claims
+  are never trusted, so claim tampering cannot escalate; a forged-claim token
+  still passes /auth/me but is 403 everywhere else.
+- Logout is server-side and immediate (token-version bump); deactivation too.
+- Login is enumeration-safe: unknown email, disabled account and wrong
+  password all return the identical 401 message.
+- Security headers on every response: `X-Content-Type-Options: nosniff`,
+  `X-Frame-Options: DENY`, `Cache-Control: no-store`. Stateless JWT → CSRF
+  correctly disabled. CORS: configured origins only — foreign preflights get
+  no `Access-Control-Allow-Origin` (403 preflight).
+- No BCrypt hashes, tokens or stack traces in any sampled response; server
+  error envelope suppresses internals (`include-stacktrace: never`).
+
+### Gaps found and fixed
+
+| Gap | Before | After |
+|---|---|---|
+| Malformed JSON body | 500 "Unexpected server error" | 400 "Malformed request body" |
+| Wrong Content-Type on JSON endpoints | 500 | 415 "Unsupported Content-Type" |
+| H2 console (dev profile) anonymously reachable from any interface | open SQL access | loopback-only guard; non-loopback clients get 404 (console hidden), disabled entirely on the oracle profile |
+
+### Authorization matrix (verified over HTTP)
+
+| Area | ADMIN | HR | MANAGER | EMPLOYEE | Anonymous |
+|---|---|---|---|---|---|
+| Auth (login / me / logout) | public, 401 without token, self only |
+| Employees read | ✅ | ✅ | ✅ | ❌ 403 | 401 |
+| Employees write / delete | ✅ | ✅ | ❌ 403 | ❌ 403 | 401 |
+| Departments/designations write | ✅ | ❌ 403 | ❌ 403 | ❌ 403 | 401 |
+| Recruitment reads / writes | ✅ | writes ✅, manager reads | reads ✅, writes ❌ | ❌ | 401 |
+| Attendance reads / mark | ✅ | ✅ | reads ✅, mark ❌ | ❌ | 401 |
+| Leave requests + approvals | ✅ | ✅ | reads ✅, decide ❌ | ❌ | 401 |
+| Payroll reads | ✅ | ✅ | ✅ | ❌ 403 | 401 |
+| Payroll run / components / lifecycle | ✅ | ✅ | ❌ 403 | ❌ 403 | 401 |
+| Performance read / write | ✅ | ✅ | read ✅, write ❌ | ❌ | 401 |
+| Documents list/download / upload/delete | ✅ | ✅ | read ✅, write ❌ | ❌ | 401 |
+| Notifications | principal-scoped; only own mailbox, cross-user ids 404 |
+| Analytics / dashboard | ✅ | ✅ | ❌ 403 | ❌ 403 | 401 |
+| Reports (CSV/PDF) | ✅ | ✅ | ✅ | ❌ 403 | 401 |
+| Audit + audit export | ✅ | ✅ | ❌ 403 | ❌ 403 | 401 |
+| AI endpoints | ✅ | ✅ | ✅ | ❌ 403 | 401 |
+
 ## JWT & Security Notes
 
 - Algorithm HS384; secret from `JWT_SECRET` env var (local dev default documented in `application.yml`).

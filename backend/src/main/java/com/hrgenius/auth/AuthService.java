@@ -20,11 +20,21 @@ public class AuthService {
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
     private final JwtService jwtService;
+    private final LoginProtectionService loginProtection;
 
     @Transactional
     public AuthResponse login(LoginRequest request) {
+        // Phase 24: a currently-locked email is rejected before any credential
+        // work — same generic message, no existence information. (The check
+        // runs even for emails that never existed; nothing is revealed.)
+        if (loginProtection.isLocked(request.email())) {
+            log.warn("Login blocked: temporary lockout active [{}]", request.email());
+            throw new BadCredentialsException("Invalid email or password");
+        }
+
         User user = userRepository.findByEmailIgnoreCase(request.email())
                 .orElseThrow(() -> {
+                    loginProtection.recordFailure(request.email());
                     log.warn("Login failed: unknown email [{}]", request.email());
                     return new BadCredentialsException("Invalid email or password");
                 });
@@ -35,10 +45,13 @@ public class AuthService {
         }
 
         if (!passwordEncoder.matches(request.password(), user.getPasswordHash())) {
-            log.warn("Login failed: wrong password [{}]", user.getEmail());
+            boolean lockedNow = loginProtection.recordFailure(request.email());
+            log.warn("Login failed: wrong password [{}]{}", user.getEmail(),
+                    lockedNow ? " — temporary lockout triggered" : "");
             throw new BadCredentialsException("Invalid email or password");
         }
 
+        loginProtection.recordSuccess(request.email());
         String token = jwtService.generateToken(user);
         log.info("Login succeeded: [{}] role={}", user.getEmail(), user.getRole());
         return AuthResponse.of(user, token, jwtService.getExpirationMinutes());

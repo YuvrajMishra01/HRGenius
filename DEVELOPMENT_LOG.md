@@ -1167,3 +1167,346 @@ clean. Live: 200 `text/csv;charset=UTF-8` with attachment disposition, feed/CSV
 count parity, action filter, no-match → 0, `search=Smoke` → 2, `limit=1` → 1,
 manager 403, anonymous 401; UI button fires `GET /audit/export.csv → 200` and
 the blob download completes; console clean.
+
+## Phase 20 — Backend Reliability & Business-Rule Audit (2026-09-26)
+
+Audit phase, not a feature phase. Every service, controller, repository, DTO and
+migration (V1–V5) was re-read end to end; the reconnaissance found the existing
+protections largely sound (employee UK code/email, self-manager block,
+soft-delete + managed-employees guard, designation–department consistency,
+guarded deletes, leave overlap/balance/approval-recheck, application TRANSITIONS
+map + unique candidate/job pair, interview stage/date/single-live rules,
+SELECTED-only onboarding + unique onboarding pairs, UK_PAY_EMP_PERIOD + PAID
+immutability, rating 1–5 service+DB, path-traversal-proof documents,
+principal-scoped notifications, LIKE-escape, SQL paging, CSV formula-injection
+defence, and all ten services recording audit entries in the caller's
+transaction, failure-neutral). Five objectively incorrect or missing rules were
+fixed; everything else is reported as verified-no-change.
+
+**Issue 1 — Employee manager cycles were reachable.** EmployeeService.update
+blocked self-management but allowed A→B→A cycles, e.g. making employee 1's
+manager an employee who already reported to employee 1. ROOT CAUSE: only the
+one-hop case was checked. FIX: `wouldCreateManagementCycle` walks the manager
+chain upward from the candidate manager with a visited set before accepting the
+new managerId (create needs no walk — a new employee has no reports yet).
+TEST: `updateCannotCreateAManagerReportingCycle` (409, employee untouched,
+self-management 409 retained). VERIFY: live HTTP PUT /employees/1 with
+managerId=3 → 409 "management reporting cycle".
+
+**Issue 2 — Jobs could carry a past closing date while still active.**
+ROOT CAUSE: closingDate was never validated against today. FIX:
+`requireSaneClosingDate` rejects a closing date before today for OPEN/DRAFT
+jobs; CLOSED is exempt because past dates there are historical record. TEST:
+`activeJobWithPastClosingDateIs400` (create 400, update 400, CLOSED d−30 → 201,
+self-cleaned). VERIFY: live POST /jobs with closingDate 2020-01-01 → 400.
+
+**Issue 3 — Leave summary approval rate mixed time windows.** ROOT CAUSE:
+`approvedThisYear` was counted inside the current-year window but `decided`
+(all-time) was the denominator, so in any later year the rate drifted toward a
+meaningless value. FIX: `LeaveRequestRepository.countByStatusInBetweenStartDates`
+counts decided requests within the same year window as approved. TEST:
+`summaryCounts` hardened to derive both numbers and the rate from seed-date
+year membership. VERIFY: live GET /leave/summary → pendingCount 2,
+approvedThisYear 1, rejectedCount 1, approvalRate 50.0.
+
+**Issue 4 — Attendance could be marked for future dates.** ROOT CAUSE: mark()
+accepted any date, so pre-marked PRESENT rows would pollute month views and
+later payroll runs. FIX: reject `date.isAfter(LocalDate.now())` with 400
+"Attendance cannot be marked for a future date". TEST:
+`markFutureDateIs400` (400, then /attendance/today still has no Vikram Singh —
+employee 3 has no record today). VERIFY: live POST /attendance/mark with date
+2030-01-01 → 400 with that exact message.
+
+**Issue 5 — One review per employee per period existed only in the service.**
+ROOT CAUSE: no DB constraint, so any raw insert (manual fix-up script, future
+code path) could create duplicates. FIX: V6 migration adds
+`UK_PR_EMP_PERIOD (EMPLOYEE_ID, REVIEW_PERIOD)`; NULL periods exempt (Oracle/H2
+ignore NULLs in unique keys), seed rows distinct. TEST:
+`databaseConstraintBlocksDuplicateEmployeePeriod` performs the raw duplicate
+insert via JdbcTemplate and asserts DataIntegrityViolationException naming
+UK_PR_EMP_PERIOD; `duplicatePeriodIs409` still guards the API path. VERIFY:
+live POST /performance/reviews duplicate → 409 with the service message; full
+suite green proves V6 applies cleanly to seed data.
+
+**Test suite hardening (calendar time-bombs).** Tests that hard-coded dates or
+month numbers would silently break as the calendar advances, so expectations
+were derived from the seed data instead: LeaveApiTest balances/summary (year
+membership of the d−20/d−40 seed rows), AnalyticsApiTest leave-demand and
+payroll-trend (seed period = previous month), AttendanceApiTest month-view
+(month number derived). No behavioral change — same assertions, computed.
+
+**Verification:** backend **196/196** (192 baseline + 4 new regression tests:
+manager cycle 409, past closing date 400, future attendance 400, UK_PR_EMP_PERIOD
+raw-insert rejection), frontend **43/43**, `ng build` clean. Live HTTP after
+restart: health UP (app+db), swagger-ui 200, manager cycle 409, future
+attendance 400, past closing date 400, leave summary correct, duplicate review
+409. No commits made.
+
+**Known limitations:** Oracle compatibility of V6 verified against H2
+MODE=Oracle only — no Oracle instance on this machine; syntax is plain
+`ALTER TABLE ... ADD CONSTRAINT` which Oracle supports unchanged. Manager-cycle
+walk is O(depth) per update — fine for realistic org depths. Live duplicate
+insert tested in-suite against H2 (constraint name check is H2-flavoured
+wording inside the violation message).
+
+## Phase 21 — Concurrency & Double-Effect Hardening (2026-09-26)
+
+Follow-up to the Phase 20 audit's recommendation: serial correctness was
+constraint-backed, but nothing proved the guards under real parallel requests.
+Every transition and duplicate-sensitive flow was re-read; fixes are limited to
+objectively missing serialization — no endpoint contract changed, no RBAC
+touched.
+
+**Issue 1 — status transitions were racy read-modify-write.** Leave decide/
+cancel, payroll PROCESSED/PAID and review rate/acknowledge loaded an entity,
+checked the status in Java, and saved; two concurrent decisions could both read
+PENDING and both write. ROOT CAUSE: no row-level guard. FIX: V7 migration adds
+VERSION columns and the three entities gain JPA @Version — the losing
+transaction fails with ObjectOptimisticLockingFailureException, mapped to a
+clean 409 by the global handler. TEST: parallel approve+reject storm — exactly
+one 200, the rest 409, final status single-valued, balances show exactly one
+decision (1.0 used if approved, 0.0 if rejected). VERIFY: suite + live.
+
+**Issue 2 — concurrent identical leave submissions could all pass the overlap
+check.** The overlap/balance guards are read-only SELECTs; four identical
+submissions fired together could all see "no overlap" and all insert. ROOT
+CAUSE: check-then-insert without serialization. FIX: LeaveService.create now
+fetches the employee via findByIdForUpdate (SELECT … FOR UPDATE, held to
+commit), serializing all per-employee submissions; portable Oracle/H2, no
+schema change needed. TEST: 5-way identical submission storm → exactly 1×201,
+4×409 (deterministic: losers observe the committed row). VERIFY: live storm.
+
+**Issue 3 — attendance find-then-upsert could race into duplicates.** Two
+concurrent marks for the same employee/day could both find nothing and both
+insert; only the unique index would fire (as a raw DIJ). FIX: mark() now takes
+the same per-employee lock before the find-then-upsert; requests serialize and
+UK_ATT_EMP_DATE remains the backstop. TEST: 5-way identical storm → 5×200 upsert
+echoes and exactly ONE row in ATTENDANCE (asserted via JdbcTemplate), and a
+mixed-status storm ends in exactly one status bucket. VERIFY: live storm —
+month view shows a single day key.
+
+**Verified already correct (no change required):** payroll run dedup is
+constraint-backed (UK_PAY_EMP_PERIOD; concurrent runs → losers 409, one row per
+employee — proven by storm, not assumed); review creation dupes are
+UK_PR_EMP_PERIOD-backed (Phase 20); DataIntegrityViolationException already
+mapped to 409 (no 500 leak); audit/notification writes need no extra
+serialization.
+
+**Test suite (ConcurrencyApiTest, 6 storm tests, alphabetical placement before
+leave/payroll):** every created row is cleaned up (payslips deleted, leave
+cancelled/deleted, review deleted) or written outside asserted windows
+(2099-H1 review, d-9/d-10 attendance, employee 6/7 far-future leave), so all
+19 existing suites keep their exact expectations. Suite confirms: PayrollApiTest
+relative counts, DashboardApiTest pending=2, LeaveApiTest pending=2, reports
+payroll 8-line last-month export, audit baselines delta-based.
+
+**Verification:** backend **202/202** (196 + 6 new storm tests), frontend
+**43/43**, ng build clean. Live HTTP after restart with real parallel storms:
+duplicate reviews 1×201 + 4×409, identical leave submissions 1×201 + 4×409,
+attendance marks 5×200 with a single row; service-level 409s intact; health UP.
+
+**Known limitations:** @Version adds a version read/compare on each guarded
+update (negligible). Pessimistic locks are per-employee row locks — cross-
+employee flows never contend. Upsert echo semantics (last write wins) retained
+deliberately for attendance: parallel HR marks for one employee/day are a
+same-business-day correction, not a double effect. Oracle compatibility of V7
+syntax verified on H2 MODE=Oracle only.
+
+## Phase 22 — Security, Authorization & RBAC Hardening (2026-09-26)
+
+Security-focused audit of the complete auth surface (SecurityConfig, JWT
+filter/service, AuthService, CorsConfig, every controller's @PreAuthorize,
+service-level object checks, DTOs, exception handlers, frontend guards/
+interceptor) followed by hardening where real gaps existed. No endpoint
+contracts changed, no RBAC redesign, no new infrastructure.
+
+**Verified already correct (no change required).** Authorities come from the
+DB, not the JWT: the filter re-loads the user each request (ENABLED +
+TOKEN_VERSION), so forged role claims cannot escalate and logout/deactivation
+is immediate — proven by test with a validly-signed role=ADMIN claim on the
+employee user (passes /auth/me, 403 on /admin/only and /payrolls). Login is
+enumeration-safe (identical message for unknown email / disabled / wrong
+password). Error envelope hides stack traces and parser internals; security
+headers (nosniff, frame-deny, no-store) on every response; CORS answers only
+the configured origin; CSRF correctly disabled for the stateless design; no
+password hashes or tokens in any sampled response; documents path traversal
+guard already correct; audit endpoints ADMIN/HR with the export under the same
+policy.
+
+**Finding 1 — client request errors surfaced as 500s.** Malformed JSON bodies
+and wrong Content-Type on JSON endpoints produced 500 "Unexpected server error"
+(HttpMessageNotReadableException / HttpMediaTypeNotSupportedException fell
+through to the catch-all handler). Risk: noise in monitoring, misleading
+blame, log noise. FIX: dedicated handlers — malformed body → 400 "Malformed
+request body", unsupported media type → 415 "Unsupported Content-Type", both in
+the standard envelope without internals. TEST: SecurityApiTest.
+malformedBodiesAreClientErrorsNot500 (public and authenticated probes; anonymous
+requests to protected endpoints correctly stop at 401 before body parsing).
+VERIFY: live curl → 400/415.
+
+**Finding 2 — dev H2 console anonymously reachable from any interface.** The
+dev profile exposes /h2-console/** with full SQL access; it sat in the
+public-paths list unguarded. Risk on a shared network: complete database
+control without credentials. FIX: H2ConsoleGuardConfig registers a filter (only
+when spring.h2.console.enabled=true, i.e. dev) restricting /h2-console/* to
+loopback addresses; non-loopback clients get 404 (console hidden, not
+confirmed); the oracle profile disables the console and never registers the
+filter. TEST: local 200 in-suite; live non-loopback 404 via the machine's LAN
+address. VERIFY: live.
+
+**Test suite (SecurityApiTest, 10 tests).** Anonymous 401 sweep over 28 module
+roots (with envelope-shape assertions); JWT failure modes (empty header, empty
+bearer, garbage, alg=none unsigned, tampered signature, ghost user, stale
+token_version); claim-tampering escalation attempt; RBAC matrix for MANAGER
+(16 denied write/sensitive probes + by-design reads incl. payroll views) and
+EMPLOYEE (22 denied probes + self-service allows); notification IDOR
+(cross-user mark-read → 404, own mailbox usable); malformed-body 400/415
+matrix; CORS allow-list; password/token leakage sampling across seven
+representative responses; login enumeration parity. Probe design notes: method
+security runs after argument resolution, so authenticated write probes carry
+valid bodies (otherwise bean validation 400s before the 403); anonymous probes
+need none (chain-level 401).
+
+**Verification:** backend **212/212** (202 + 10 new security tests), frontend
+**43/43**, ng build clean. Live HTTP after restart: malformed JSON → 400,
+wrong Content-Type → 415, H2 console 200 loopback / 404 via LAN IP, anonymous
+sweep 401s, manager→audit 403, employee→payrolls 403, employee→own
+notifications 200, and the Phase 21 duplicate-review storm still 1×201 +
+4×409. No commits made.
+
+**Known limitations:** H2-console guard verified on H2 MODE=Oracle dev only —
+the production-oracle profile has no console at all. JWT is HS256 with the
+secret env-var-overridable (documented local default) — rotating the secret
+and confirming key strength belongs to deployment, not this codebase. No rate
+limiting on /auth/login (deliberate: no new infrastructure this phase;
+documented as a future option). Export endpoints inherit the module read
+policies (manager-visible payroll/report reads are the existing product
+design, verified unchanged).
+
+## Phase 23 — Real Oracle Database Verification & Compatibility (2026-09-26)
+
+**REAL ORACLE VERIFICATION: BLOCKED.** Fresh environment probe: no Oracle
+Windows services, no ORACLE_HOME/sqlplus/tnsping, no listener on 1521/1522/
+1523/2484/51521, no C:/oracle install, no Docker (so no containerized Oracle
+Free/XE possible), and the only com.oracle artifact in the local Maven repo is
+the JDBC driver. No Oracle instance exists or can be started on this machine.
+Per the phase rules the verification was NOT fabricated; everything that can
+be legitimately verified without a real server was completed.
+
+**Static compatibility audit (full inventory).** pom.xml carries the Oracle
+JDBC driver (ojdbc 23.5) and flyway-database-oracle; application-oracle.yml
+switches datasource + OracleDialect via env vars — the profile switch is clean
+and secret-safe. Entities map to Oracle-native types: flags are NUMBER(1)
+0/1 with CHECK constraints (User.enabled, Notification.read — no native
+BOOLEAN anywhere), @Version columns NUMBER(19), money NUMBER(12,2) with
+BigDecimal, timestamps TIMESTAMP, dates DATE, descriptions CLOB via @Lob.
+Only two native queries exist (notification feed paging + markAllRead) and
+both are deliberately Oracle-oriented: 1/0 literals against READ_FLAG, ESCAPE
+'\' LIKE, no LIMIT anywhere (paging rides Hibernate's dialect-generated
+ROWNUM-style pagination). The health probe uses FROM DUAL. JdbcTemplate is
+used only in the health probe and tests. V6 (parenthesized constraint add)
+and V1/V5 DDL are Oracle-valid as written.
+
+**Finding — migration syntax would abort the chain on real Oracle.** V3 and
+V7 used `ALTER TABLE … ADD COLUMN …`. H2 accepts the COLUMN keyword; real
+Oracle rejects it (ORA-01735: invalid ALTER TABLE option — Oracle grammar is
+the parenthesized `ADD (column …)`). Impact: on a real Oracle the migration
+chain would fail at V3, before the app ever started. FIX: both migrations
+rewritten to `ADD (COLUMN TYPE DEFAULT … NOT NULL)` — accepted identically by
+H2 Oracle-mode, correct on Oracle. No checksum concerns: verified below by
+full chain replay on a brand-new schema (the dev/test DB is always freshly
+migrated in-memory).
+
+**Clean-schema verification.** Booted a dedicated backend instance against a
+brand-new H2 (MODE=Oracle) database: Flyway created the schema history table,
+validated 7 migrations, and applied V1→V7 in order — "Successfully applied 7
+migrations … now at version v7" — then Hibernate initialized and the API came
+up. Full smoke on the fresh schema: seed intact (7 employees, 2 pending
+leaves, dashboard/aggregates correct), payroll period view (7 payslips, net
+406,000), leave summary (2/1/1, 50.0%), attendance month roll-ups (7 rows),
+CSV export content, audit trail list, attendance write 200, and the Phase 21
+duplicate-review storm 1×201 + 4×409 on the fresh database.
+
+**Regression.** Backend H2 suite 212/212 (Flyway validated the edited
+migrations on every fresh test context), frontend 43/43, ng build PASS. Dev
+backend restored on the standard h2:mem:hrgenius database. No commits made.
+
+**Unverified (requires a real Oracle server — future work).** Oracle
+execution of the migration chain; Oracle's ROWNUM pagination plans; LIKE/
+case-sensitivity semantics under real NLS settings; OFFSETDateTime↔TIMESTAMP
+timezone conversion behavior; pessimistic FOR UPDATE contention under Oracle's
+multi-version concurrency; identity restart behavior; real NLS sort/collation.
+The spring.profile switch itself (oracle profile) is configured and documented
+but has never been executed against a server.
+
+## Phase 24 — Login Rate Limiting & Brute-Force Protection (2026-09-26)
+
+**Threat model.** (A) password brute force against one account, (B) credential
+stuffing across accounts, (C) rapid repeated requests, (D) lockout abuse as
+denial of service. Chosen posture: per-email tracking (blunts A and slows B),
+identical generic responses (removes the enumeration oracle that would enable
+A/B to distinguish states), a bounded automatic-expiry window plus immediate
+clear on success (caps D — an attacker can at worst delay, never permanently
+lock, and the window is short), no per-IP dimension added (single-instance
+dev deployment; documented limitation).
+
+**Reconnaissance.** Login flow: AuthController → AuthService.login (BCrypt
+match, ENABLED check, TOKEN_VERSION on tokens) → JwtService. Failures already
+produced identical envelopes via BadCredentialsException. No attempt tracking
+existed. Frontend login component renders `err.error.message` from the
+ApiError envelope — a generic lock message required zero frontend changes.
+
+**Chosen mechanism (minimal, architecture-consistent).** In-memory
+per-email tracker (`LoginProtectionService`, ConcurrentHashMap keyed by
+lowercased email) with `LoginProtectionProperties`
+(app.login-protection.enabled / max-failed-attempts=5 / lockout-duration=10m)
+bound from application.yml. Deliberately NOT a DB migration: rate-limiting
+state is transient protection, not authorization data — a V8 with
+FAILED_ATTEMPTS/LOCKED_UNTIL would add schema, seed-interplay and a write per
+login for state whose loss (restart) errs toward availability. Zero extra
+database queries per login. Counting is atomic via ConcurrentHashMap.compute:
+the check-and-record runs inside one keyed computation, so concurrent failed
+attempts cannot lose updates and bypass the threshold (Phase 21 discipline
+applied at the application layer). Lockout checks run before credential
+verification; the threshold-crossing attempt locks; failures while locked do
+not extend the window; expiry clears state; success clears state.
+
+**Bug found by the tests and fixed before ship.** The first isLocked()
+implementation used computeIfPresent and returned null for entries that were
+merely counting (lockedUntil == null) — silently deleting failure counts on
+every status read. The serial HTTP test caught it immediately (counts kept
+resetting); fixed so only an expired lock clears an entry.
+
+**Tests (LoginProtectionApiTest, 11).** HTTP: valid login still 200; wrong
+password generic 401; failures accumulate and the 5th locks; correct
+credentials rejected while locked; success resets the counter (proven by
+max−1 further failures not locking); unknown vs known email envelopes are
+byte-identical modulo timestamp, while locked and while counting; a real 8-way
+parallel wrong-password HTTP storm locks the account and the next correct-
+credential attempt is 401 (then success-clears restores it). Service-level
+with an injectable MutableClock (no sleeps): lock expiry at window end, fresh
+counting window after expiry, only the threshold-crossing attempt reports
+"triggered", failures during lock absorbed, disabled-config never locks, and a
+20-way concurrent recordFailure storm yields exactly one trigger with the
+account locked (lost-update proof). @AfterEach clears tracker state so no
+other suite inherits a lockout.
+
+**Verification.** Backend 223/223 (212 + 11; AuthApiTest/SecurityApiTest/
+SecurityApiTest JWT cases/concurrency suite all green). Live HTTP: 5 failures
+→ lock → correct credentials 401 with the identical generic message; restart
+clears the lock (recovery works); 3 failures + success + 4 failures → still
+200 (reset semantics); manager→audit 403 and garbage token 401 unchanged.
+Frontend 43/43, ng build PASS. No passwords, hashes, tokens or authorization
+headers logged — only email + outcome, mirroring the existing convention.
+Login events remain excluded from the HR audit trail by design. No commits.
+
+**Real Oracle verification remains BLOCKED because no real Oracle instance is
+available** (Phase 23 finding unchanged; this phase added no migration, so no
+new database verification was required).
+
+**Remaining limitations.** In-memory state: multi-instance deployments would
+need a shared store (documented, not built — single-instance deployment);
+per-IP throttling and credential-stuffing detection (cross-email velocity) are
+not implemented; the 10-minute window applies per email, so an attacker can
+re-lock an account repeatedly (bounded DoS, capped by the short window and
+automatic expiry).
