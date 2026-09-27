@@ -1,7 +1,7 @@
 import { HttpClient } from '@angular/common/http';
 import { Injectable, computed, inject, signal } from '@angular/core';
 import { Router } from '@angular/router';
-import { map, Observable, tap } from 'rxjs';
+import { finalize, map, Observable, tap } from 'rxjs';
 
 import { ApiResponse } from './api.models';
 
@@ -34,8 +34,9 @@ export const USER_KEY = 'hrgenius.user';
  * Client-side auth session:
  * - login() stores the JWT + user in localStorage and signals;
  * - isAuthenticated derives from token presence AND expiry (exp claim);
- * - logout() clears locally and best-effort invalidates server-side
- *   (token version bump) so a stolen token dies too.
+ * - logout() invalidates server-side FIRST (the auth interceptor needs the
+ *   token still in localStorage to attach the Bearer header), then clears
+ *   the local session — on success or failure alike.
  *
  * The token survives page reloads; /me could re-hydrate it on demand later.
  */
@@ -63,15 +64,30 @@ export class AuthService {
       );
   }
 
-  /** Explicit user logout: clear locally, then invalidate the token server-side. */
+  /**
+   * Explicit user logout: the authenticated POST /logout must run while the
+   * token is still in localStorage so the auth interceptor attaches the
+   * Bearer header and the backend can bump the token version. The local
+   * session is cleared once the request settles (success OR failure), so the
+   * user is never trapped in the app.
+   */
   logout(): void {
     const token = localStorage.getItem(TOKEN_KEY);
-    this.clearSession();
-    if (token) {
-      // Best effort: even if this fails the client is already logged out.
-      this.http.post(`${this.baseUrl}/logout`, null).subscribe({ error: () => undefined });
+    if (!token) {
+      // Nothing to invalidate server-side: just clear and redirect.
+      this.clearSession();
+      this.router.navigate(['/login']);
+      return;
     }
-    this.router.navigate(['/login']);
+    this.http
+      .post(`${this.baseUrl}/logout`, null)
+      .pipe(
+        finalize(() => {
+          this.clearSession();
+          this.router.navigate(['/login']);
+        }),
+      )
+      .subscribe({ error: () => undefined });
   }
 
   /** Session invalid (expired/rejected by server): clear without server call. */
