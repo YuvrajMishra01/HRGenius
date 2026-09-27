@@ -1510,3 +1510,34 @@ per-IP throttling and credential-stuffing detection (cross-email velocity) are
 not implemented; the 10-minute window applies per email, so an attacker can
 re-lock an account repeatedly (bounded DoS, capped by the short window and
 automatic expiry).
+
+---
+
+## Phase 24.1 — Frontend logout ordering bug fix (2026-09-27)
+
+**Bug.** `AuthService.logout()` called `clearSession()` (removing the JWT from
+localStorage) BEFORE issuing `POST /api/v1/auth/logout`, so the auth
+interceptor — which reads the token from localStorage at request time — sent
+the request with no `Authorization` header. The authenticated endpoint then
+returned 401: `AuthService.logout(email)` never ran, `TOKEN_VERSION` was never
+bumped, and the stale token stayed valid server-side until natural expiry.
+The 401 also tripped the error interceptor (spurious "session expired" toast +
+second redirect).
+
+**Fix.** Frontend only (`core/auth.service.ts`): logout now issues the
+authenticated POST while the token is still in storage so the existing
+interceptor attaches `Bearer <jwt>`; the local session is cleared and the
+user redirected to /login in a `finalize` on the request's completion — on
+success OR failure (never trapped in the app); with no stored token the HTTP
+call is skipped entirely (clear + redirect only). No backend, interceptor,
+schema, API-contract or UI changes.
+
+**Tests.** `auth.service.spec.ts` now wires the real `authInterceptor` and
+covers the three required cases: (1) success — Bearer header present while
+the request is in flight, session cleared + redirect after; (2) logout API
+failure — session still cleared + redirect; (3) no token — no HTTP request
+(`expectNone`), still cleared + redirected. Frontend 45/45, ng build PASS.
+Backend regression: AuthApiTest 11/11 (incl. `logoutInvalidatesTokenImmediately`)
++ SecurityApiTest 10/10 (incl. anonymous logout → 401). Live HTTP: unauth
+logout 401, Bearer logout 200 "Logged out", same token reused afterwards →
+401 (version-bump invalidation intact).

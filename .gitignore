@@ -34,3 +34,4 @@ Thumbs.db
 
 # --- tool bootstrap temp dir ---
 .tmp/
+.freebuff
