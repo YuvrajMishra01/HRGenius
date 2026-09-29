@@ -43,7 +43,7 @@ Nothing to do. The backend uses the `dev` profile by default:
 
 - H2 in-memory in Oracle compatibility mode (`MODE=Oracle`)
 - Flyway migrations run automatically at startup
-- Console at http://localhost:8080/h2-console (JDBC URL `jdbc:h2:mem:hrgenius`)
+- Console at http://localhosth:8080/h2-console (JDBC URL `jdbc:h2:mem:hrgenius`)
 
 ### Mode B — Real Oracle (XE / 23ai Free / full)
 
