@@ -1,8 +1,9 @@
 <main class="documents-page">
   <header class="page-head">
     <div>
+      <span class="eyebrow-label">RESOURCES</span>
       <h1>Documents</h1>
-      <p>Employee files — resumes, offer letters, IDs, and certificates</p>
+      <p class="page-subtitle">Employee files — resumes, offer letters, IDs, and certificates.</p>
     </div>
     @if (canWrite()) {
       <button mat-flat-button color="primary" (click)="openUpload()" [disabled]="selectedEmployeeId() == null">
@@ -51,6 +52,7 @@
         </mat-card-content>
       </mat-card>
     } @else {
+      <div class="table-scroll">
       <table class="doc-table">
         <thead>
           <tr>
@@ -68,7 +70,7 @@
                 <mat-icon class="file-icon">{{ typeIcon(doc.documentType) }}</mat-icon>
                 <span class="file-name">{{ doc.fileName }}</span>
               </td>
-              <td><span class="type-pill">{{ typeLabel(doc.documentType) }}</span></td>
+              <td><span class="type-pill badge badge-info">{{ typeLabel(doc.documentType) }}</span></td>
               <td>{{ formatSize(doc.fileSize) }}</td>
               <td>{{ doc.uploadedAt | date: 'MMM d, y · HH:mm' }}</td>
               <td class="actions-col">
@@ -85,6 +87,7 @@
           }
         </tbody>
       </table>
+      </div>
     }
   </section>
 </main>

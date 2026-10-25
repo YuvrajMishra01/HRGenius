@@ -1,5 +1,4 @@
 import { Component, OnInit, computed, inject, signal } from '@angular/core';
-import { CurrencyPipe, DatePipe } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { MAT_DIALOG_DATA, MatDialog, MatDialogModule, MatDialogRef } from '@angular/material/dialog';
 import { MatButtonModule } from '@angular/material/button';
@@ -26,8 +25,6 @@ import {
   selector: 'app-payroll',
   standalone: true,
   imports: [
-    CurrencyPipe,
-    DatePipe,
     FormsModule,
     MatDialogModule,
     MatButtonModule,
@@ -221,7 +218,7 @@ interface RunDialogData {
   styles: [
     `
       .form { display: flex; flex-direction: column; gap: 4px; min-width: 260px; }
-      .alert { display: flex; gap: 8px; align-items: center; color: #b3261e; margin-bottom: 8px; font-size: 13px; }
+      .alert { display: flex; gap: 8px; align-items: center; color: var(--danger); margin-bottom: 8px; font-size: 13px; }
     `,
   ],
 })
@@ -303,13 +300,14 @@ interface ComponentsDialogData {
     `
       .form { display: flex; flex-direction: column; gap: 10px; min-width: 340px; }
       .field { display: flex; flex-direction: column; gap: 2px; }
-      .field label { font-size: 12px; color: #666; }
+      .field label { font-size: 12px; color: var(--text-2); }
       .net-preview {
         display: flex; justify-content: space-between; align-items: center;
-        background: #f1f5f9; border-radius: 8px; padding: 10px 14px; font-size: 15px;
+        background: var(--surface-2); border: 1px solid var(--border); border-radius: 8px;
+        padding: 10px 14px; font-size: 15px;
       }
-      .hint { font-size: 12px; color: #8a8f98; margin: 0; }
-      .alert { display: flex; gap: 8px; align-items: center; color: #b3261e; margin-bottom: 8px; font-size: 13px; }
+      .hint { font-size: 12px; color: var(--text-3); margin: 0; }
+      .alert { display: flex; gap: 8px; align-items: center; color: var(--danger); margin-bottom: 8px; font-size: 13px; }
     `,
   ],
 })

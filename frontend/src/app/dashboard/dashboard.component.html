@@ -1,7 +1,8 @@
 <div class="page-head">
   <div>
-    <h1>Dashboard</h1>
-    <p class="subtitle">Live HR metrics from /api/v1/dashboard/stats</p>
+    <span class="eyebrow-label">DASHBOARD</span>
+    <h1>Good {{ greetingWord() }}, {{ firstName() }}</h1>
+    <p class="page-subtitle">Here's what's happening across HR today.</p>
   </div>
   <button mat-stroked-button (click)="refresh()" [disabled]="loading()">
     <mat-icon>refresh</mat-icon>
@@ -37,6 +38,20 @@
     </mat-card-content>
   </mat-card>
 } @else if (stats(); as s) {
+  <!-- Quick actions -->
+  <nav class="quick-actions" aria-label="Quick actions">
+    @for (qa of quickActions; track qa.route) {
+      <a class="qa-card" [routerLink]="qa.route">
+        <mat-icon>{{ qa.icon }}</mat-icon>
+        <span class="qa-text">
+          <span class="qa-title">{{ qa.title }}</span>
+          <span class="qa-sub">{{ qa.subtitle }}</span>
+        </span>
+        <mat-icon class="qa-arrow">arrow_forward</mat-icon>
+      </a>
+    }
+  </nav>
+
   <!-- KPI cards -->
   <div class="kpi-grid">
     @for (card of kpiCards(); track card.label) {

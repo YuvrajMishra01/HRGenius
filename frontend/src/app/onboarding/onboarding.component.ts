@@ -80,9 +80,9 @@ interface StartDialogData {
   styles: [
     `
       .form { display: flex; flex-direction: column; gap: 4px; min-width: 340px; }
-      .alert { display: flex; gap: 8px; align-items: center; background: #fdecea; color: #b71c1c;
-               border: 1px solid #f5c6cb; border-radius: 8px; padding: 10px 14px; margin-bottom: 12px;
-               font-size: 14px; }
+      .alert { display: flex; gap: 8px; align-items: center; background: var(--danger-soft); color: var(--danger);
+               border: 1px solid color-mix(in srgb, var(--danger) 22%, transparent); border-radius: 8px;
+               padding: 10px 14px; margin-bottom: 12px; font-size: 14px; }
     `,
   ],
 })

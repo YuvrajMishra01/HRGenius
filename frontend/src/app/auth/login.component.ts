@@ -1,6 +1,6 @@
 import { Component, inject, signal } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
-import { ActivatedRoute, Router } from '@angular/router';
+import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { MatButtonModule } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
 import { MatFormFieldModule } from '@angular/material/form-field';
@@ -10,6 +10,7 @@ import { finalize } from 'rxjs';
 
 import { AuthService } from '../core/auth.service';
 import { ThemeService } from '../core/theme.service';
+import { BrandMarkComponent } from '../shared/brand-mark.component';
 
 /**
  * Login page (split-screen). Authenticated users never see it (guestGuard);
@@ -21,11 +22,13 @@ import { ThemeService } from '../core/theme.service';
   standalone: true,
   imports: [
     ReactiveFormsModule,
+    RouterLink,
     MatCardModule,
     MatFormFieldModule,
     MatInputModule,
     MatButtonModule,
     MatIconModule,
+    BrandMarkComponent,
   ],
   templateUrl: './login.component.html',
   styleUrl: './login.component.scss',

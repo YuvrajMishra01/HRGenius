@@ -1,8 +1,9 @@
 <div class="page">
   <div class="page-head">
     <div>
+      <span class="eyebrow-label">TIME</span>
       <h1>Leave Management</h1>
-      <p class="sub">Requests, approvals, and yearly balances</p>
+      <p class="page-subtitle">Requests, approvals, and yearly balances.</p>
     </div>
     <div class="head-actions">
       <button mat-stroked-button (click)="export('csv')" matTooltip="Download CSV">
@@ -61,9 +62,9 @@
     <div class="requests-panel">
       <div class="panel-head">
         <h2>Requests</h2>
-        <div class="filters">
+        <div class="filter-chips">
           @for (s of statuses; track s) {
-            <button class="chip" [class.active]="statusFilter() === s" (click)="setFilter(s)">
+            <button class="filter-chip" [class.active]="statusFilter() === s" (click)="setFilter(s)">
               {{ s === 'ALL' ? 'All' : s.charAt(0) + s.slice(1).toLowerCase() }}
             </button>
           }
@@ -75,6 +76,7 @@
       } @else if (requests().length === 0) {
         <p class="muted">No leave requests match this filter.</p>
       } @else {
+        <div class="table-scroll">
         <table class="req-table">
           <thead>
             <tr>
@@ -99,7 +101,7 @@
                 <td>{{ r.leaveTypeName }}</td>
                 <td class="dates">{{ r.startDate | date : 'MMM d' }} – {{ r.endDate | date : 'MMM d' }}</td>
                 <td class="num">{{ r.workingDays }}</td>
-                <td><span class="status-pill" [attr.data-status]="r.status">{{ r.status }}</span></td>
+                <td><span class="status-pill badge" [attr.data-status]="r.status">{{ r.status }}</span></td>
                 <td class="reason" [matTooltip]="r.approverEmail ? ('Decided by ' + r.approverEmail) : null">
                   {{ r.reason || '—' }}
                 </td>
@@ -121,6 +123,7 @@
             }
           </tbody>
         </table>
+        </div>
       }
     </div>
 

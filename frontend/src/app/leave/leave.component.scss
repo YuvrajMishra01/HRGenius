@@ -1,43 +1,19 @@
 .page {
-  padding: 20px 24px 40px;
-  max-width: 1400px;
-  margin: 0 auto;
+  padding: 0 0 40px;
 }
 
 .page-head {
-  display: flex;
-  justify-content: space-between;
-  align-items: flex-start;
-  gap: 16px;
   margin-bottom: 18px;
 
-  h1 {
-    margin: 0;
-    font-size: 24px;
+  .head-actions {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
   }
-
-  .sub {
-    margin: 2px 0 0;
-    color: var(--mat-toolbar-container-text-color, #666);
-    font-size: 13px;
-  }
-}
-
-.head-actions {
-  display: flex;
-  gap: 8px;
 }
 
 .alert {
-  display: flex;
-  gap: 8px;
-  align-items: center;
-  background: var(--danger-soft);
-  color: var(--danger);
-  border-radius: 8px;
-  padding: 10px 14px;
   margin-bottom: 16px;
-  font-size: 13px;
 }
 
 /* ----------------------------------------------------------- KPI strip */
@@ -74,6 +50,11 @@
   gap: 20px;
   align-items: start;
 
+  // Grid items clamp below their min-content so tables/forms can shrink.
+  > * {
+    min-width: 0;
+  }
+
   @media (max-width: 960px) {
     grid-template-columns: 1fr;
   }
@@ -89,29 +70,6 @@
   h2 {
     margin: 0;
     font-size: 16px;
-  }
-}
-
-/* ------------------------------------------------------------ filters */
-
-.filters {
-  display: flex;
-  gap: 6px;
-  flex-wrap: wrap;
-}
-
-.chip {
-  border: 1px solid var(--border-strong);
-  background: transparent;
-  border-radius: 999px;
-  padding: 4px 12px;
-  font-size: 12px;
-  cursor: pointer;
-
-  &.active {
-    background: var(--primary);
-    border-color: var(--primary);
-    color: #fff;
   }
 }
 
@@ -156,17 +114,12 @@
   white-space: nowrap;
 }
 
+/* Pill geometry comes from the shared .badge; only semantic colors here. */
 .status-pill {
-  display: inline-block;
-  padding: 2px 10px;
-  border-radius: 999px;
-  font-size: 11px;
-  font-weight: 600;
-
   &[data-status='PENDING'] { background: var(--warning-soft); color: var(--warning); }
   &[data-status='APPROVED'] { background: var(--success-soft); color: var(--success); }
   &[data-status='REJECTED'] { background: var(--danger-soft); color: var(--danger); }
-  &[data-status='CANCELLED'] { background: var(--border); color: var(--text-2); }
+  &[data-status='CANCELLED'] { background: var(--surface-3); color: var(--text-2); }
 }
 
 /* ------------------------------------------------------------ balances */
@@ -188,7 +141,7 @@
 }
 
 .balance-name { font-weight: 600; }
-.balance-nums { color: #666; }
+.balance-nums { color: var(--text-2); }
 
 .balance-remaining {
   font-size: 12px;
@@ -212,12 +165,13 @@
 
 .type-card {
   border: 1px solid var(--border);
-  border-radius: 10px;
+  border-radius: var(--radius);
   padding: 12px 14px;
   display: flex;
   justify-content: space-between;
   gap: 8px;
-  background: #fff;
+  background: var(--surface);
+  box-shadow: var(--shadow-sm);
 }
 
 .type-info {
@@ -234,7 +188,7 @@
 }
 
 .type-desc {
-  color: #666;
+  color: var(--text-2);
   font-size: 12px;
 }
 

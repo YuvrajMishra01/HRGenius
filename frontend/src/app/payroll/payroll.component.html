@@ -1,8 +1,9 @@
 <div class="page">
   <div class="page-head">
     <div>
+      <span class="eyebrow-label">COMPENSATION</span>
       <h1>Payroll</h1>
-      <p class="sub">Monthly runs, payslip components, and payment lifecycle</p>
+      <p class="page-subtitle">Monthly runs, payslip components, and payment lifecycle.</p>
     </div>
     <div class="head-actions">
       <button mat-stroked-button (click)="export('csv')" [disabled]="!selected()" matTooltip="Download CSV">
@@ -67,6 +68,7 @@
         @if (p.payslips.length === 0) {
           <p class="muted">No payslips in this period.</p>
         } @else {
+          <div class="table-scroll">
           <table class="pay-table">
             <thead>
               <tr>
@@ -94,7 +96,7 @@
                   <td class="num">{{ money(row.deductions) }}</td>
                   <td class="num">{{ money(row.tax) }}</td>
                   <td class="num net">{{ money(row.netSalary) }}</td>
-                  <td><span class="status-pill" [attr.data-status]="row.status">{{ row.status }}</span></td>
+                  <td><span class="status-pill badge" [attr.data-status]="row.status">{{ row.status }}</span></td>
                   @if (canWrite()) {
                     <td class="actions-col">
                       @if (row.status === 'DRAFT') {
@@ -123,6 +125,7 @@
               }
             </tbody>
           </table>
+          </div>
         }
       }
     </section>

@@ -1,8 +1,9 @@
 <main class="notifications-page">
   <header class="page-head">
     <div>
+      <span class="eyebrow-label">RESOURCES</span>
       <h1>Notifications</h1>
-      <p>Your personal event feed — updates on leave, onboarding, payroll, and reviews</p>
+      <p class="page-subtitle">Your personal event feed — updates on leave, onboarding, payroll, and reviews.</p>
     </div>
     @if (unread() > 0) {
       <button mat-flat-button color="primary" (click)="markAllRead()">
@@ -41,7 +42,7 @@
     } @else {
       @for (n of notifications(); track n.id) {
         <article class="row" [class.unread]="!n.read" [class.busy]="busyId() === n.id">
-          <div class="type-icon" [class]="'type-icon ' + style(n.type).css">
+          <div class="type-icon" [class]="style(n.type).css">
             <mat-icon>{{ style(n.type).icon }}</mat-icon>
           </div>
           <div class="body">

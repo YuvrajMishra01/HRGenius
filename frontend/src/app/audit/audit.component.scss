@@ -7,20 +7,12 @@
   padding: 8px 4px 24px;
 
   .page-head {
-    display: flex;
     align-items: flex-start;
-    justify-content: space-between;
 
-    h1 {
-      margin: 0 0 4px;
-      font-size: 24px;
-      font-weight: 600;
-    }
-
-    p {
-      margin: 0;
-      color: var(--text-2);
-      font-size: 13.5px;
+    .head-actions {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
     }
   }
 

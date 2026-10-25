@@ -200,7 +200,7 @@ interface NewReviewData {
   styles: [
     `
       .form { display: flex; flex-direction: column; gap: 4px; min-width: 360px; }
-      .alert { display: flex; gap: 8px; align-items: center; color: #b3261e; margin-bottom: 8px; font-size: 13px; }
+      .alert { display: flex; gap: 8px; align-items: center; color: var(--danger); margin-bottom: 8px; font-size: 13px; }
     `,
   ],
 })
@@ -282,7 +282,7 @@ interface EditDialogData {
   styles: [
     `
       .form { display: flex; flex-direction: column; gap: 4px; min-width: 400px; }
-      .alert { display: flex; gap: 8px; align-items: center; color: #b3261e; margin-bottom: 8px; font-size: 13px; }
+      .alert { display: flex; gap: 8px; align-items: center; color: var(--danger); margin-bottom: 8px; font-size: 13px; }
     `,
   ],
 })
@@ -356,7 +356,7 @@ interface RateDialogData {
   styles: [
     `
       .form { display: flex; flex-direction: column; gap: 4px; min-width: 360px; }
-      .alert { display: flex; gap: 8px; align-items: center; color: #b3261e; margin-bottom: 8px; font-size: 13px; }
+      .alert { display: flex; gap: 8px; align-items: center; color: var(--danger); margin-bottom: 8px; font-size: 13px; }
     `,
   ],
 })

@@ -87,18 +87,18 @@ import { AiService, CandidateMatch, JobMatchResponse } from './ai.service';
   `,
   styles: [
     `
-      .state { display: flex; gap: 12px; align-items: center; color: rgba(0, 0, 0, 0.6); }
-      .state.error { color: #b3261e; }
+      .state { display: flex; gap: 12px; align-items: center; color: var(--text-2); }
+      .state.error { color: var(--danger); }
       .required { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-bottom: 12px; }
-      .required .label { font-size: 13px; color: rgba(0, 0, 0, 0.6); }
-      .match { padding: 10px 0; border-top: 1px solid rgba(0, 0, 0, 0.08); }
+      .required .label { font-size: 13px; color: var(--text-2); }
+      .match { padding: 10px 0; border-top: 1px solid var(--border); }
       .match .head { display: flex; justify-content: space-between; margin-bottom: 4px; }
       .score { font-weight: 600; }
-      .score.good { color: #1b5e20; }
-      .score.mid { color: #b45309; }
+      .score.good { color: var(--success); }
+      .score.mid { color: var(--warning); }
       .skills { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 6px; }
-      mat-chip.ok mat-icon { color: #1b5e20; }
-      mat-chip.miss mat-icon { color: #b3261e; }
+      mat-chip.ok mat-icon { color: var(--success); }
+      mat-chip.miss mat-icon { color: var(--danger); }
     `,
   ],
 })

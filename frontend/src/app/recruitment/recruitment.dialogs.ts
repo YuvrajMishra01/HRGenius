@@ -48,9 +48,9 @@ const ALERT_STYLES = `
   .form { display: flex; flex-direction: column; gap: 4px; }
   .row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
   .full { width: 100%; }
-  .alert { display: flex; gap: 8px; align-items: center; background: #fdecea; color: #b71c1c;
-           border: 1px solid #f5c6cb; border-radius: 8px; padding: 10px 14px; margin-bottom: 12px;
-           font-size: 14px; }
+  .alert { display: flex; gap: 8px; align-items: center; background: var(--danger-soft); color: var(--danger);
+           border: 1px solid color-mix(in srgb, var(--danger) 22%, transparent); border-radius: 8px;
+           padding: 10px 14px; margin-bottom: 12px; font-size: 14px; }
 `;
 
 /** Job create/edit dialog. */
@@ -409,7 +409,7 @@ export class ApplyDialog extends BaseDialog {
     `
       .who { margin: 0 0 12px; font-size: 14px; }
       .stage { font-weight: 600; }
-      .terminal { color: rgba(0, 0, 0, 0.6); }
+      .terminal { color: var(--text-2); }
     `,
   ],
 })
@@ -678,9 +678,9 @@ export class FeedbackDialog extends BaseDialog {
   styles: [
     `
       .warn-box { display: flex; gap: 12px; align-items: flex-start; max-width: 380px; }
-      .warn-icon { color: #ef6c00; }
+      .warn-icon { color: var(--warning); }
       p { margin: 0 0 6px; }
-      .warning { font-size: 13px; color: rgba(0, 0, 0, 0.6); }
+      .warning { font-size: 13px; color: var(--text-2); }
     `,
   ],
 })

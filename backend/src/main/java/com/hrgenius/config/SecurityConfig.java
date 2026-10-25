@@ -112,7 +112,10 @@ public class SecurityConfig {
         config.addAllowedHeader("*");
         config.addAllowedMethod("*");
         for (String origin : corsConfig.getAllowedOrigins().split(",")) {
-            config.addAllowedOrigin(origin.trim());
+            String trimmed = origin.trim();
+            if (!trimmed.isEmpty()) {
+                config.addAllowedOrigin(trimmed);
+            }
         }
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
         source.registerCorsConfiguration("/**", config);

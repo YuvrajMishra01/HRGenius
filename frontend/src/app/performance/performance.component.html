@@ -1,8 +1,9 @@
 <div class="page">
   <div class="page-head">
     <div>
+      <span class="eyebrow-label">DEVELOPMENT</span>
       <h1>Performance</h1>
-      <p class="sub">Reviews, ratings, and the DRAFT → SUBMITTED → ACKNOWLEDGED lifecycle</p>
+      <p class="page-subtitle">Reviews, ratings, and the review lifecycle.</p>
     </div>
     @if (canWrite()) {
       <button mat-flat-button color="primary" (click)="createReview()">
@@ -52,9 +53,9 @@
   }
 
   <!-- Filters -->
-  <div class="filters">
+  <div class="filter-chips">
     @for (s of statuses; track s) {
-      <button class="chip" [class.active]="statusFilter() === s" (click)="setFilter(s)">
+      <button class="filter-chip" [class.active]="statusFilter() === s" (click)="setFilter(s)">
         {{ s === 'ALL' ? 'All' : s.charAt(0) + s.slice(1).toLowerCase() }}
       </button>
     }
@@ -66,6 +67,7 @@
   } @else if (filteredReviews().length === 0) {
     <p class="muted">No reviews match this filter.</p>
   } @else {
+    <div class="table-scroll">
     <table class="rev-table">
       <thead>
         <tr>
@@ -96,7 +98,7 @@
                 <span class="muted">—</span>
               }
             </td>
-            <td><span class="status-pill" [attr.data-status]="r.status">{{ r.status }}</span></td>
+            <td><span class="status-pill badge" [attr.data-status]="r.status">{{ r.status }}</span></td>
             <td class="goals-cell" [matTooltip]="r.goals || ''">{{ r.goals || '—' }}</td>
             @if (canWrite()) {
               <td class="actions-col">
@@ -123,5 +125,6 @@
         }
       </tbody>
     </table>
+    </div>
   }
 </div>

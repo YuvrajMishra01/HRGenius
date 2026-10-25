@@ -47,13 +47,9 @@
     width: 34px;
     height: 34px;
     border-radius: 10px;
-    background: linear-gradient(135deg, var(--primary), var(--accent));
+    background: var(--navy, var(--primary));
     color: #fff;
     flex-shrink: 0;
-
-    .material-icons {
-      font-size: 20px;
-    }
   }
 
   .brand-text {

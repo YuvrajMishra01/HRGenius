@@ -50,21 +50,21 @@ export interface Bar {
       }
       .bar-label {
         font-size: 13px;
-        color: rgba(0, 0, 0, 0.7);
+        color: var(--text-2);
         white-space: nowrap;
         overflow: hidden;
         text-overflow: ellipsis;
       }
       .bar-track {
         height: 14px;
-        background: rgba(0, 0, 0, 0.06);
+        background: var(--surface-3);
         border-radius: 7px;
         overflow: hidden;
       }
       .bar-fill {
         height: 100%;
         border-radius: 7px;
-        background: linear-gradient(90deg, #3f51b5, #5c6bc0);
+        background: linear-gradient(90deg, var(--primary), color-mix(in srgb, var(--primary) 72%, #7c3aed));
         min-width: 2px;
         transition: width 0.4s ease;
       }
@@ -75,7 +75,7 @@ export interface Bar {
         font-variant-numeric: tabular-nums;
       }
       .empty {
-        color: rgba(0, 0, 0, 0.45);
+        color: var(--text-3);
         font-size: 13px;
         padding: 8px 0;
       }

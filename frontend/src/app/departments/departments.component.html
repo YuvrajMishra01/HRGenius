@@ -1,7 +1,8 @@
 <div class="page-head">
   <div>
+    <span class="eyebrow-label">PEOPLE</span>
     <h1>Departments &amp; Designations</h1>
-    <p class="subtitle">Organization structure with live employee counts</p>
+    <p class="page-subtitle">Organization structure with live employee counts.</p>
   </div>
   @if (canMutate()) {
     <div class="head-actions">
@@ -39,6 +40,7 @@
         <mat-card-title>Departments ({{ departments().length }})</mat-card-title>
       </mat-card-header>
       <mat-card-content>
+        <div class="table-scroll">
         <table mat-table [dataSource]="departments()" class="full-table">
           <ng-container matColumnDef="name">
             <th mat-header-cell *matHeaderCellDef>Department</th>
@@ -84,6 +86,7 @@
             <td class="mat-cell no-data" [attr.colspan]="deptColumns.length">No departments yet.</td>
           </tr>
         </table>
+        </div>
       </mat-card-content>
     </mat-card>
 
@@ -92,6 +95,7 @@
         <mat-card-title>Designations ({{ designations().length }})</mat-card-title>
       </mat-card-header>
       <mat-card-content>
+        <div class="table-scroll">
         <table mat-table [dataSource]="designations()" class="full-table">
           <ng-container matColumnDef="title">
             <th mat-header-cell *matHeaderCellDef>Title</th>
@@ -137,6 +141,7 @@
             <td class="mat-cell no-data" [attr.colspan]="desgColumns.length">No designations yet.</td>
           </tr>
         </table>
+        </div>
       </mat-card-content>
     </mat-card>
   </div>

@@ -17,14 +17,15 @@ spring:
       max-request-size: 8MB
 
 server:
-  port: 8080
+  port: ${PORT:8080}
+  address: ${SERVER_ADDRESS:0.0.0.0}
   error:
     include-stacktrace: never
     include-message: always
 
 app:
   cors:
-    allowed-origins: http://localhost:4200
+    allowed-origins: ${APP_CORS_ALLOWED_ORIGINS:http://localhost:4200}
   jwt:
     # HMAC secret for signing tokens. Provide via JWT_SECRET env var in any
     # shared/production environment; this default is for local development only.

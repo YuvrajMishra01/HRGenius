@@ -20,6 +20,7 @@ import { NotificationService } from '../notifications/notification.service';
 import { NAV_ITEMS, NavItem } from './navigation';
 import { CommandPaletteComponent } from './command-palette.component';
 import { AvatarComponent } from '../shared/avatar.component';
+import { BrandMarkComponent } from '../shared/brand-mark.component';
 
 /**
  * HRGenius application shell: role-aware sidebar, sticky header with
@@ -39,6 +40,7 @@ import { AvatarComponent } from '../shared/avatar.component';
     MatTooltipModule,
     CommandPaletteComponent,
     AvatarComponent,
+    BrandMarkComponent,
   ],
   templateUrl: './layout.component.html',
   styleUrl: './layout.component.scss',
@@ -52,9 +54,12 @@ export class LayoutComponent implements OnInit, OnDestroy {
   readonly NAV_GROUPS: Array<NavItem['group']> = [
     'Overview',
     'People',
-    'Recruitment',
-    'Workforce',
-    'System',
+    'Talent',
+    'Time',
+    'Compensation',
+    'Development',
+    'Resources',
+    'Insights',
   ];
 
   /** Items visible for the signed-in user's role (UX layer only). */

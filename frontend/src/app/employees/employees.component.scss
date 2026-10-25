@@ -1,21 +1,5 @@
 .page-head {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 16px;
   margin-bottom: 16px;
-
-  h1 {
-    margin: 0;
-    font-size: 26px;
-    font-weight: 600;
-  }
-
-  .subtitle {
-    margin: 2px 0 0;
-    color: var(--text-2);
-    font-size: 13.5px;
-  }
 }
 
 .toolbar mat-card-content {
@@ -74,33 +58,12 @@ table.mat-table {
   }
 }
 
+// Semantic aliases over the shared .badge pill (styles.scss).
 .status-badge {
-  display: inline-block;
-  font-size: 11px;
-  font-weight: 600;
-  letter-spacing: 0.4px;
-  border-radius: 10px;
-  padding: 3px 10px;
-
-  &.active {
-    background: var(--success-soft);
-    color: var(--success);
-  }
-
-  &.on-leave {
-    background: var(--warning-soft);
-    color: var(--warning);
-  }
-
-  &.resigned {
-    background: var(--info-soft);
-    color: var(--info);
-  }
-
-  &.terminated {
-    background: var(--danger-soft);
-    color: var(--danger);
-  }
+  &.active { background: var(--success-soft); color: var(--success); }
+  &.on-leave { background: var(--warning-soft); color: var(--warning); }
+  &.resigned { background: var(--info-soft); color: var(--info); }
+  &.terminated { background: var(--danger-soft); color: var(--danger); }
 }
 
 .type-chip {
@@ -115,7 +78,7 @@ table.mat-table {
 
 .data-row {
   &:hover {
-    background: rgba(63, 81, 181, 0.04);
+    background: var(--surface-2);
   }
 }
 

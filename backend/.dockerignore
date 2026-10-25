@@ -1,0 +1,14 @@
+target/
+.git/
+.idea/
+*.iml
+.vscode/
+node_modules/
+*.log
+logs/
+uploads/
+.env
+*.env
+application-local.yml
+.tmp/
+.freebuff/

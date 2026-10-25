@@ -1,12 +1,15 @@
 <div class="page">
   <header class="page-head">
     <div>
+      <span class="eyebrow-label">TALENT</span>
       <h1>Onboarding</h1>
-      <p class="sub">Checklist-driven new-hire onboarding</p>
+      <p class="page-subtitle">Checklist-driven new-hire onboarding.</p>
     </div>
-    <button mat-stroked-button (click)="reload()" [disabled]="loading()">
-      <mat-icon>refresh</mat-icon> Refresh
-    </button>
+    <div class="head-actions">
+      <button mat-stroked-button (click)="reload()" [disabled]="loading()">
+        <mat-icon>refresh</mat-icon> Refresh
+      </button>
+    </div>
   </header>
 
   @if (loading()) {

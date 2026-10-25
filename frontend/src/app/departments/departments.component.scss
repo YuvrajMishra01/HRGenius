@@ -1,21 +1,5 @@
 .page-head {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 16px;
   margin-bottom: 16px;
-
-  h1 {
-    margin: 0;
-    font-size: 26px;
-    font-weight: 600;
-  }
-
-  .subtitle {
-    margin: 2px 0 0;
-    color: var(--text-2);
-    font-size: 13.5px;
-  }
 
   .head-actions {
     display: flex;
@@ -25,7 +9,7 @@
 
 .grid-2 {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(480px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 480px), 1fr));
   gap: 14px;
 }
 
@@ -63,7 +47,7 @@
   font-weight: 600;
   border-radius: 10px;
   padding: 3px 8px;
-  background: rgba(63, 81, 181, 0.1);
+  background: var(--primary-soft);
   color: var(--primary);
 
   &.zero {
@@ -81,6 +65,11 @@
 .readonly-hint {
   font-size: 11px;
   color: var(--text-3);
+}
+
+.data-row:hover,
+tr[mat-row]:hover {
+  background: var(--surface-2);
 }
 
 .no-data {

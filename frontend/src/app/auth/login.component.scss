@@ -1,12 +1,16 @@
+// ============================================================================
+// Login — navy brand panel + focused form panel. Presentation only; the auth
+// flow (ReactiveForms → AuthService.login) is untouched.
+// ============================================================================
 :host {
   display: block;
   min-height: 100vh;
   background: var(--bg);
 }
 
-.login-screen {
+.login-scope {
   display: grid;
-  grid-template-columns: minmax(420px, 1fr) minmax(400px, 560px);
+  grid-template-columns: minmax(440px, 1fr) minmax(400px, 620px);
   min-height: 100vh;
 
   @media (max-width: 1023px) {
@@ -15,10 +19,10 @@
 }
 
 // ---------------------------------------------------------------------------
-// Left brand panel
+// Left brand panel — deep navy, desktop only
 // ---------------------------------------------------------------------------
 .login-brand {
-  background: linear-gradient(160deg, var(--primary) 0%, var(--accent) 100%);
+  background: linear-gradient(165deg, var(--navy, #0f172a) 0%, var(--navy-2, #1e293b) 100%);
   color: #fff;
   padding: 40px 56px;
   display: flex;
@@ -38,48 +42,41 @@
   color: #fff;
 }
 
-.brand-mark {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 34px;
-  height: 34px;
-  border-radius: 10px;
-  background: rgba(255, 255, 255, 0.16);
-  color: #fff;
-
-  .material-icons {
-    font-size: 20px;
-  }
-}
-
 .brand-body {
   margin: auto 0;
-  max-width: 420px;
+  max-width: 440px;
+}
+
+.brand-eyebrow {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.16em;
+  color: #93c5fd;
 }
 
 .brand-body h1 {
+  margin: 16px 0 0;
   color: #fff;
-  font-size: clamp(28px, 3.4vw, 38px);
-  line-height: 1.15;
+  font-size: clamp(30px, 3.6vw, 44px);
+  line-height: 1.1;
   font-weight: 800;
-  letter-spacing: -0.025em;
+  letter-spacing: -0.03em;
 }
 
 .brand-body p {
-  margin: 14px 0 0;
-  color: rgba(255, 255, 255, 0.82);
+  margin: 16px 0 0;
+  color: rgba(255, 255, 255, 0.75);
   font-size: 15px;
-  line-height: 1.6;
+  line-height: 1.65;
 }
 
 .brand-points {
   list-style: none;
-  margin: 34px 0 0;
+  margin: 36px 0 0;
   padding: 0;
   display: flex;
   flex-direction: column;
-  gap: 18px;
+  gap: 16px;
 }
 
 .brand-points li {
@@ -95,7 +92,9 @@
   width: 36px;
   height: 36px;
   border-radius: 10px;
-  background: rgba(255, 255, 255, 0.14);
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  color: #93c5fd;
   flex-shrink: 0;
 
   .material-icons {
@@ -107,11 +106,18 @@
   display: block;
   font-size: 14px;
   font-weight: 650;
+  color: #fff;
 }
 
 .brand-points span {
   font-size: 12.5px;
-  color: rgba(255, 255, 255, 0.72);
+  color: rgba(255, 255, 255, 0.66);
+}
+
+.brand-foot {
+  font-size: 11.5px;
+  color: rgba(255, 255, 255, 0.5);
+  letter-spacing: 0.02em;
 }
 
 // ---------------------------------------------------------------------------
@@ -154,10 +160,19 @@
   align-self: center;
 }
 
+.form-eyebrow {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.16em;
+  color: var(--primary);
+}
+
 .login-card h2 {
-  font-size: 26px;
+  margin: 10px 0 0;
+  font-size: 30px;
   font-weight: 750;
-  letter-spacing: -0.02em;
+  letter-spacing: -0.025em;
+  color: var(--ink, var(--text));
 }
 
 .login-sub {

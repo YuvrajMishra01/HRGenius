@@ -1,4 +1,7 @@
 import { TestBed } from '@angular/core/testing';
+import { provideHttpClient } from '@angular/common/http';
+import { provideHttpClientTesting } from '@angular/common/http/testing';
+import { provideRouter } from '@angular/router';
 import { Observable, of, throwError } from 'rxjs';
 
 import { DashboardComponent } from './dashboard.component';
@@ -88,6 +91,9 @@ describe('DashboardComponent', () => {
     TestBed.configureTestingModule({
       imports: [DashboardComponent],
       providers: [
+        provideRouter([]),
+        provideHttpClient(),
+        provideHttpClientTesting(),
         {
           provide: DashboardService,
           useValue: { getStats: () => stats$, getHealth: () => health$ },

@@ -1,46 +1,52 @@
-<div class="login-screen">
-  <!-- Left brand panel -->
+<div class="login-scope">
+  <!-- Left brand panel (desktop only) -->
   <aside class="login-brand" aria-hidden="true">
     <a class="brand" routerLink="/">
-      <span class="brand-mark"><mat-icon>workspace_premium</mat-icon></span>
+      <app-brand-mark [size]="32" />
       <span>HRGenius</span>
     </a>
 
     <div class="brand-body">
-      <h1>Modern HR management<br />for modern teams.</h1>
-      <p>One workspace for employees, recruitment, attendance, leave, payroll and performance.</p>
+      <span class="brand-eyebrow">HUMAN RESOURCE MANAGEMENT</span>
+      <h1>Your people,<br />your processes,<br />one workspace.</h1>
+      <p>
+        Employees, recruitment, attendance, leave, payroll and performance — every HR workflow in
+        one focused system.
+      </p>
 
       <ul class="brand-points">
         <li>
           <span class="point-icon"><mat-icon>people</mat-icon></span>
           <div>
             <strong>Employee management</strong>
-            <span>Centralized profiles and org information</span>
+            <span>Structured profiles and org data</span>
           </div>
         </li>
         <li>
           <span class="point-icon"><mat-icon>work</mat-icon></span>
           <div>
-            <strong>Recruitment</strong>
-            <span>Jobs, candidates and interviews</span>
+            <strong>Recruitment to onboarding</strong>
+            <span>One connected pipeline</span>
           </div>
         </li>
         <li>
           <span class="point-icon"><mat-icon>payments</mat-icon></span>
           <div>
-            <strong>Payroll</strong>
-            <span>Payslips and payroll runs</span>
+            <strong>Payroll and performance</strong>
+            <span>Payslips, reviews and goals</span>
           </div>
         </li>
         <li>
-          <span class="point-icon"><mat-icon>insights</mat-icon></span>
+          <span class="point-icon"><mat-icon>verified_user</mat-icon></span>
           <div>
-            <strong>Analytics</strong>
-            <span>Workforce trends at a glance</span>
+            <strong>Role-based access</strong>
+            <span>ADMIN · HR · MANAGER · EMPLOYEE</span>
           </div>
         </li>
       </ul>
     </div>
+
+    <span class="brand-foot">JWT authentication · BCrypt password hashing · Audit trail</span>
   </aside>
 
   <!-- Right form panel -->
@@ -55,6 +61,7 @@
     </div>
 
     <div class="login-card">
+      <span class="form-eyebrow">SIGN IN</span>
       <h2>Welcome back</h2>
       <p class="login-sub">Sign in to your HRGenius workspace.</p>
 
@@ -116,7 +123,7 @@
           @if (loading()) {
             <span class="btn-loading"><mat-icon class="spin">progress_activity</mat-icon> Signing in…</span>
           } @else {
-            Sign in
+            Sign In
           }
         </button>
       </form>

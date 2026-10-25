@@ -6,6 +6,30 @@ import { catchError, throwError } from 'rxjs';
 
 import { ApiError } from './api.models';
 import { TOKEN_KEY } from './auth.service';
+import { environment } from '../../environments/environment';
+
+/**
+ * Normalizes and attaches the configured API base URL to outgoing requests
+ * starting with `/api/`.
+ * In development, `environment.apiUrl` is empty, so requests remain relative
+ * (`/api/...`) and hit the Angular CLI dev proxy (`proxy.conf.json`).
+ * In production, setting `apiUrl` prefixes the Render backend URL.
+ */
+export const apiBaseUrlInterceptor: HttpInterceptorFn = (req, next) => {
+  const base = environment.apiUrl ? environment.apiUrl.trim().replace(/\/+$/, '') : '';
+  if (base && req.url.startsWith('/api')) {
+    let target = req.url;
+    if (base.endsWith('/api/v1') && target.startsWith('/api/v1')) {
+      target = target.substring('/api/v1'.length);
+    } else if (base.endsWith('/api') && target.startsWith('/api')) {
+      target = target.substring('/api'.length);
+    }
+    req = req.clone({
+      url: `${base}${target}`,
+    });
+  }
+  return next(req);
+};
 
 export const authInterceptor: HttpInterceptorFn = (req, next) => {
   const token = localStorage.getItem(TOKEN_KEY);

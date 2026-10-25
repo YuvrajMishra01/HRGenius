@@ -5,7 +5,8 @@ import { Router } from '@angular/router';
 import { provideRouter } from '@angular/router';
 import { MatSnackBar } from '@angular/material/snack-bar';
 
-import { authInterceptor, errorInterceptor } from './interceptors';
+import { apiBaseUrlInterceptor, authInterceptor, errorInterceptor } from './interceptors';
+import { environment } from '../../environments/environment';
 
 describe('auth + error interceptors', () => {
   let http: HttpClient;
@@ -15,9 +16,10 @@ describe('auth + error interceptors', () => {
 
   beforeEach(() => {
     localStorage.clear();
+    environment.apiUrl = '';
     TestBed.configureTestingModule({
       providers: [
-        provideHttpClient(withInterceptors([authInterceptor, errorInterceptor])),
+        provideHttpClient(withInterceptors([apiBaseUrlInterceptor, authInterceptor, errorInterceptor])),
         provideHttpClientTesting(),
         provideRouter([]),
       ],
@@ -78,5 +80,29 @@ describe('auth + error interceptors', () => {
     expect(router.navigate).not.toHaveBeenCalled();
     // But the invalid-credentials toast still fires.
     expect(snackBar.open).toHaveBeenCalledWith('Invalid email or password', 'Dismiss', jasmine.any(Object));
+  });
+
+  it('keeps requests relative when environment.apiUrl is empty', () => {
+    environment.apiUrl = '';
+    http.get('/api/v1/jobs').subscribe();
+    const req = httpMock.expectOne('/api/v1/jobs');
+    expect(req.request.url).toBe('/api/v1/jobs');
+    req.flush({ success: true, message: 'OK', data: [] });
+  });
+
+  it('prefixes environment.apiUrl in production', () => {
+    environment.apiUrl = 'https://hrgenius-backend.onrender.com';
+    http.get('/api/v1/jobs').subscribe();
+    const req = httpMock.expectOne('https://hrgenius-backend.onrender.com/api/v1/jobs');
+    expect(req.request.url).toBe('https://hrgenius-backend.onrender.com/api/v1/jobs');
+    req.flush({ success: true, message: 'OK', data: [] });
+  });
+
+  it('normalizes apiUrl ending with /api/v1 without duplication', () => {
+    environment.apiUrl = 'https://hrgenius-backend.onrender.com/api/v1';
+    http.get('/api/v1/jobs').subscribe();
+    const req = httpMock.expectOne('https://hrgenius-backend.onrender.com/api/v1/jobs');
+    expect(req.request.url).toBe('https://hrgenius-backend.onrender.com/api/v1/jobs');
+    req.flush({ success: true, message: 'OK', data: [] });
   });
 });

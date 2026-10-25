@@ -1,5 +1,6 @@
 import { Component, OnInit, computed, inject, signal } from '@angular/core';
 import { CommonModule, DatePipe } from '@angular/common';
+import { RouterLink } from '@angular/router';
 
 import { MatCardModule } from '@angular/material/card';
 import { MatIconModule } from '@angular/material/icon';
@@ -11,6 +12,14 @@ import { DashboardService } from './dashboard.service';
 import { HealthInfo } from '../core/api.models';
 import { DashboardStats } from './dashboard.models';
 import { Bar, BarChartComponent } from '../shared/bar-chart.component';
+import { AuthService } from '../core/auth.service';
+
+interface QuickAction {
+  route: string;
+  icon: string;
+  title: string;
+  subtitle: string;
+}
 
 interface KpiCard {
   icon: string;
@@ -38,12 +47,14 @@ interface KpiCard {
     MatProgressBarModule,
     MatTooltipModule,
     BarChartComponent,
+    RouterLink,
   ],
   templateUrl: './dashboard.component.html',
   styleUrl: './dashboard.component.scss',
 })
 export class DashboardComponent implements OnInit {
   private readonly dashboardService = inject(DashboardService);
+  readonly auth = inject(AuthService);
 
   readonly stats = signal<DashboardStats | null>(null);
   readonly health = signal<HealthInfo | null>(null);
@@ -86,6 +97,14 @@ export class DashboardComponent implements OnInit {
     ];
   });
 
+  /** Command-center shortcuts; routes are real /app/* links only. */
+  readonly quickActions: QuickAction[] = [
+    { route: '/app/employees', icon: 'person_add', title: 'Add employee', subtitle: 'Open the directory and create a record' },
+    { route: '/app/recruitment', icon: 'work', title: 'Post a job', subtitle: 'Reach the candidate pipeline' },
+    { route: '/app/leave', icon: 'event_available', title: 'Review leave', subtitle: 'Approve or reject pending requests' },
+    { route: '/app/analytics', icon: 'query_stats', title: 'View reports', subtitle: 'Workforce charts and trends' },
+  ];
+
   readonly attendance = computed(() => this.stats()?.attendanceToday ?? null);
 
   readonly attendancePercent = computed(() => this.stats()?.attendanceToday?.attendancePercent ?? 0);
@@ -94,6 +113,20 @@ export class DashboardComponent implements OnInit {
   monthName(month: number): string {
     return monthName(month);
   }
+
+  /** Greeting word for the dashboard header (morning/afternoon/evening). */
+  greetingWord(): string {
+    const hour = new Date().getHours();
+    if (hour < 12) return 'morning';
+    if (hour < 17) return 'afternoon';
+    return 'evening';
+  }
+
+  /** First name of the signed-in user for the dashboard greeting. */
+  readonly firstName = computed(() => {
+    const fullName = this.auth.user()?.fullName;
+    return fullName ? fullName.split(' ')[0] ?? 'there' : 'there';
+  });
 
   ngOnInit(): void {
     this.refresh();

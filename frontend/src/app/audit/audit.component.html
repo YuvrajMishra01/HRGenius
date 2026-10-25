@@ -1,15 +1,20 @@
 <main class="audit-page">
   <header class="page-head">
     <div>
+      <span class="eyebrow-label">INSIGHTS</span>
       <h1>Audit log</h1>
-      <p>Who changed what, across every HR workflow — newest first</p>
+      <p class="page-subtitle">Who changed what, across every HR workflow — newest first.</p>
     </div>
-    <button mat-icon-button matTooltip="Refresh" (click)="reload()">
-      <mat-icon>refresh</mat-icon>
-    </button>
-    <button mat-icon-button matTooltip="Export as CSV (current filters)" (click)="exportCsv()">
-      <mat-icon>download</mat-icon>
-    </button>
+    <div class="head-actions">
+      <button mat-stroked-button matTooltip="Refresh" (click)="reload()">
+        <mat-icon>refresh</mat-icon>
+        Refresh
+      </button>
+      <button mat-stroked-button matTooltip="Export as CSV (current filters)" (click)="exportCsv()">
+        <mat-icon>download</mat-icon>
+        CSV
+      </button>
+    </div>
   </header>
 
   <mat-card class="toolbar">

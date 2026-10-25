@@ -8,7 +8,7 @@ import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 import { MatSelectModule } from '@angular/material/select';
 import { MatTooltipModule } from '@angular/material/tooltip';
-import { DatePipe, TitleCasePipe } from '@angular/common';
+import { DatePipe } from '@angular/common';
 import { forkJoin } from 'rxjs';
 
 import { AuthService } from '../core/auth.service';
@@ -29,7 +29,6 @@ const MAX_SIZE_MB = 5;
   standalone: true,
   imports: [
     DatePipe,
-    TitleCasePipe,
     FormsModule,
     MatDialogModule,
     MatButtonModule,
@@ -237,16 +236,17 @@ interface UploadData {
     .full { width: 100%; }
     .alert {
       display: flex; gap: 8px; align-items: center;
-      background: #fdecea; color: #b71c1c; border-radius: 6px;
+      background: var(--danger-soft); color: var(--danger); border-radius: 6px;
       padding: 8px 12px; margin-bottom: 12px; font-size: 13px;
     }
     .file-pick {
       display: flex; align-items: center; gap: 10px;
-      border: 2px dashed #b0bec5; border-radius: 8px;
-      padding: 18px 14px; cursor: pointer; color: #546e7a;
+      border: 2px dashed var(--border-strong); border-radius: 8px;
+      padding: 18px 14px; cursor: pointer; color: var(--text-2);
       flex-direction: column; text-align: center;
+      transition: border-color 0.15s ease, color 0.15s ease;
     }
-    .file-pick.has-file { border-color: #43a047; color: #2e7d32; }
+    .file-pick.has-file { border-color: var(--success); color: var(--success); }
     .file-pick input { display: none; }
   `,
 })
