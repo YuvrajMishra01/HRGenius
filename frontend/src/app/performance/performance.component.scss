@@ -1,0 +1,137 @@
+.page {
+  padding: 0 0 40px;
+}
+
+.page-head {
+  margin-bottom: 18px;
+}
+
+.alert {
+  margin-bottom: 16px;
+}
+
+/* -------------------------------------------------------------- KPIs */
+
+.kpis {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: 12px;
+  margin-bottom: 18px;
+}
+
+.kpi-box {
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 12px 14px;
+  background: var(--surface);
+  box-shadow: var(--shadow-sm);
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.kpi-label {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--text-3);
+}
+
+.kpi-value {
+  font-size: 22px;
+  font-weight: 650;
+  font-variant-numeric: tabular-nums;
+
+  &.warn { color: var(--warning); }
+  &.info { color: var(--info); }
+  &.ok { color: var(--success); }
+
+  .stars {
+    font-size: 13px;
+    color: var(--text-3);
+    font-weight: 400;
+  }
+}
+
+.dist-row {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+  margin-top: 2px;
+}
+
+.dist-chip {
+  background: var(--surface-3);
+  border-radius: 999px;
+  padding: 3px 10px;
+  font-size: 12px;
+  color: var(--text-2);
+}
+
+/* Filters use the shared .filter-chips/.filter-chip primitives. */
+.filter-chips {
+  margin-bottom: 14px;
+}
+
+/* ------------------------------------------------------------- table */
+
+.rev-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+
+  th {
+    text-align: left;
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--text-3);
+    padding: 8px 10px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  td {
+    padding: 10px;
+    border-bottom: 1px solid var(--border);
+    vertical-align: middle;
+  }
+
+  .actions-col {
+    text-align: right;
+    white-space: nowrap;
+  }
+}
+
+.emp-name { font-weight: 600; }
+.emp-meta { color: var(--text-3); font-size: 12px; }
+
+.rating {
+  color: var(--warning);
+  letter-spacing: 1px;
+
+  &.low {
+    color: var(--danger);
+  }
+}
+
+.goals-cell {
+  max-width: 260px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Pill geometry comes from the shared .badge; only semantic colors here. */
+.status-pill {
+  &[data-status='DRAFT'] { background: var(--warning-soft); color: var(--warning); }
+  &[data-status='SUBMITTED'] { background: var(--info-soft); color: var(--info); }
+  &[data-status='ACKNOWLEDGED'] { background: var(--success-soft); color: var(--success); }
+}
+
+.muted {
+  color: var(--text-3);
+
+  &.small { font-size: 12px; }
+}
+
+.small { font-size: 12px; }

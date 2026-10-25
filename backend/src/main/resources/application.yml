@@ -1,0 +1,56 @@
+spring:
+  application:
+    name: hrgenius-api
+  profiles:
+    default: dev
+  jpa:
+    open-in-view: false
+    hibernate:
+      ddl-auto: none   # Flyway owns the schema; Hibernate never auto-creates tables
+  flyway:
+    locations: classpath:db/migration
+  jackson:
+    default-property-inclusion: non_null
+  servlet:
+    multipart:
+      max-file-size: 6MB
+      max-request-size: 8MB
+
+server:
+  port: ${PORT:8080}
+  address: ${SERVER_ADDRESS:0.0.0.0}
+  error:
+    include-stacktrace: never
+    include-message: always
+
+app:
+  cors:
+    allowed-origins: ${APP_CORS_ALLOWED_ORIGINS:http://localhost:4200}
+  jwt:
+    # HMAC secret for signing tokens. Provide via JWT_SECRET env var in any
+    # shared/production environment; this default is for local development only.
+    secret: ${JWT_SECRET:change-me-local-dev-secret-key-at-least-32-bytes-long!!}
+    expiration-minutes: 60
+  login-protection:
+    # Brute-force protection (Phase 24): after max-failed-attempts failed
+    # logins for one email, further attempts are rejected for lockout-duration
+    # — with the same generic error as any other failure. In-memory per-email
+    # state; a restart clears it (documented trade-off).
+    enabled: true
+    max-failed-attempts: 5
+    lockout-duration: 10m
+  documents:
+    storage-dir: ${DOCS_STORAGE_DIR:./uploads/documents}
+
+hrgenius:
+  security:
+    public-paths: /api/v1/auth/login, /api/v1/health, /swagger-ui/**, /swagger-ui.html, /api-docs/**, /h2-console/**, /error
+
+springdoc:
+  swagger-ui:
+    path: /swagger-ui.html
+
+logging:
+  level:
+    com.hrgenius: INFO
+    org.springframework.security: WARN

@@ -1,0 +1,81 @@
+<main class="notifications-page">
+  <header class="page-head">
+    <div>
+      <span class="eyebrow-label">RESOURCES</span>
+      <h1>Notifications</h1>
+      <p class="page-subtitle">Your personal event feed — updates on leave, onboarding, payroll, and reviews.</p>
+    </div>
+    @if (unread() > 0) {
+      <button mat-flat-button color="primary" (click)="markAllRead()">
+        <mat-icon>done_all</mat-icon> Mark all read
+      </button>
+    }
+  </header>
+
+  @if (serverError(); as error) {
+    <div class="alert"><mat-icon inline>warning</mat-icon><span>{{ error }}</span></div>
+  }
+
+  <section class="content">
+    <div class="feed-controls">
+      <mat-button-toggle-group
+        class="feed-toggle"
+        [value]="unreadOnly() ? 'unread' : 'all'"
+        (change)="onFilterChange($event.value === 'unread')"
+        hideSingleSelectionIndicator
+      >
+        <mat-button-toggle value="all">All</mat-button-toggle>
+        <mat-button-toggle value="unread">Unread</mat-button-toggle>
+      </mat-button-toggle-group>
+    </div>
+
+    @if (loading()) {
+      <mat-card class="state-card"><mat-card-content>Loading notifications…</mat-card-content></mat-card>
+    } @else if (notifications().length === 0) {
+      <mat-card class="state-card">
+        <mat-card-content>
+          <mat-icon>notifications_off</mat-icon>
+          <p>{{ unreadOnly() ? 'No unread notifications.' : 'No notifications yet.' }}</p>
+          <p class="hint">Events like leave approvals and onboarding updates will appear here.</p>
+        </mat-card-content>
+      </mat-card>
+    } @else {
+      @for (n of notifications(); track n.id) {
+        <article class="row" [class.unread]="!n.read" [class.busy]="busyId() === n.id">
+          <div class="type-icon" [class]="style(n.type).css">
+            <mat-icon>{{ style(n.type).icon }}</mat-icon>
+          </div>
+          <div class="body">
+            <div class="top">
+              <span class="title">{{ n.title }}</span>
+              @if (!n.read) {
+                <span class="dot" aria-label="unread"></span>
+              }
+            </div>
+            @if (n.message) {
+              <p class="message">{{ n.message }}</p>
+            }
+            <time class="when">{{ n.createdAt | date: 'MMM d, y · HH:mm' }}</time>
+          </div>
+          <div class="actions">
+            @if (!n.read) {
+              <button mat-icon-button matTooltip="Mark as read" (click)="markRead(n)">
+                <mat-icon>check</mat-icon>
+              </button>
+            }
+          </div>
+        </article>
+      }
+
+      <mat-paginator
+        [length]="total()"
+        [pageIndex]="page()"
+        [pageSize]="pageSize()"
+        [pageSizeOptions]="[10, 20, 50]"
+        (page)="onPage($event)"
+        showFirstLastButtons
+        aria-label="Select page of notifications"
+      />
+    }
+  </section>
+</main>

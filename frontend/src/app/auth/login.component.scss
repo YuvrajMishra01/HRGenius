@@ -1,0 +1,240 @@
+// ============================================================================
+// Login — navy brand panel + focused form panel. Presentation only; the auth
+// flow (ReactiveForms → AuthService.login) is untouched.
+// ============================================================================
+:host {
+  display: block;
+  min-height: 100vh;
+  background: var(--bg);
+}
+
+.login-scope {
+  display: grid;
+  grid-template-columns: minmax(440px, 1fr) minmax(400px, 620px);
+  min-height: 100vh;
+
+  @media (max-width: 1023px) {
+    grid-template-columns: 1fr;
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Left brand panel — deep navy, desktop only
+// ---------------------------------------------------------------------------
+.login-brand {
+  background: linear-gradient(165deg, var(--navy, #0f172a) 0%, var(--navy-2, #1e293b) 100%);
+  color: #fff;
+  padding: 40px 56px;
+  display: flex;
+  flex-direction: column;
+
+  @media (max-width: 1023px) {
+    display: none;
+  }
+}
+
+.login-brand .brand {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  font-weight: 800;
+  font-size: 17px;
+  color: #fff;
+}
+
+.brand-body {
+  margin: auto 0;
+  max-width: 440px;
+}
+
+.brand-eyebrow {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.16em;
+  color: #93c5fd;
+}
+
+.brand-body h1 {
+  margin: 16px 0 0;
+  color: #fff;
+  font-size: clamp(30px, 3.6vw, 44px);
+  line-height: 1.1;
+  font-weight: 800;
+  letter-spacing: -0.03em;
+}
+
+.brand-body p {
+  margin: 16px 0 0;
+  color: rgba(255, 255, 255, 0.75);
+  font-size: 15px;
+  line-height: 1.65;
+}
+
+.brand-points {
+  list-style: none;
+  margin: 36px 0 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.brand-points li {
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+}
+
+.point-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  color: #93c5fd;
+  flex-shrink: 0;
+
+  .material-icons {
+    font-size: 19px;
+  }
+}
+
+.brand-points strong {
+  display: block;
+  font-size: 14px;
+  font-weight: 650;
+  color: #fff;
+}
+
+.brand-points span {
+  font-size: 12.5px;
+  color: rgba(255, 255, 255, 0.66);
+}
+
+.brand-foot {
+  font-size: 11.5px;
+  color: rgba(255, 255, 255, 0.5);
+  letter-spacing: 0.02em;
+}
+
+// ---------------------------------------------------------------------------
+// Right form panel
+// ---------------------------------------------------------------------------
+.login-panel {
+  display: flex;
+  flex-direction: column;
+  padding: 20px 32px 40px;
+  position: relative;
+}
+
+.panel-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.back-home {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--text-2);
+  font-size: 13px;
+  font-weight: 600;
+
+  .material-icons {
+    font-size: 17px;
+  }
+
+  &:hover {
+    color: var(--text);
+  }
+}
+
+.login-card {
+  margin: auto 0;
+  width: 100%;
+  max-width: 400px;
+  align-self: center;
+}
+
+.form-eyebrow {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.16em;
+  color: var(--primary);
+}
+
+.login-card h2 {
+  margin: 10px 0 0;
+  font-size: 30px;
+  font-weight: 750;
+  letter-spacing: -0.025em;
+  color: var(--ink, var(--text));
+}
+
+.login-sub {
+  margin: 6px 0 26px;
+  color: var(--text-2);
+  font-size: 14px;
+}
+
+.alert-error {
+  display: flex;
+  align-items: flex-start;
+  gap: 9px;
+  background: var(--danger-soft);
+  color: var(--danger);
+  border: 1px solid color-mix(in srgb, var(--danger) 30%, transparent);
+  border-radius: 10px;
+  padding: 11px 14px;
+  font-size: 13.5px;
+  margin-bottom: 18px;
+
+  .material-icons {
+    font-size: 18px;
+    width: 18px;
+    height: 18px;
+  }
+}
+
+.full-width {
+  width: 100%;
+}
+
+.submit-btn {
+  width: 100%;
+  height: 46px;
+  margin-top: 6px;
+  border-radius: 10px !important;
+  font-size: 14.5px !important;
+  font-weight: 650 !important;
+}
+
+.btn-loading {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.spin {
+  animation: spin 0.9s linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.dev-hint {
+  margin-top: 26px;
+  padding: 12px 14px;
+  border: 1px dashed var(--border-strong);
+  border-radius: 10px;
+  color: var(--text-3);
+  font-size: 11.5px;
+  line-height: 1.6;
+}

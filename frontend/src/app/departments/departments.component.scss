@@ -1,0 +1,103 @@
+.page-head {
+  margin-bottom: 16px;
+
+  .head-actions {
+    display: flex;
+    gap: 10px;
+  }
+}
+
+.grid-2 {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 480px), 1fr));
+  gap: 14px;
+}
+
+.full-table {
+  width: 100%;
+}
+
+.cell-main {
+  display: flex;
+  flex-direction: column;
+
+  .name {
+    font-weight: 500;
+  }
+
+  .sub {
+    font-size: 12px;
+    color: var(--text-3);
+    max-width: 260px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+}
+
+.num {
+  text-align: center;
+}
+
+.count-chip {
+  display: inline-block;
+  min-width: 28px;
+  text-align: center;
+  font-size: 12px;
+  font-weight: 600;
+  border-radius: 10px;
+  padding: 3px 8px;
+  background: var(--primary-soft);
+  color: var(--primary);
+
+  &.zero {
+    background: var(--surface-3);
+    color: var(--text-3);
+  }
+}
+
+.actions-col {
+  width: 100px;
+  text-align: right;
+  white-space: nowrap;
+}
+
+.readonly-hint {
+  font-size: 11px;
+  color: var(--text-3);
+}
+
+.data-row:hover,
+tr[mat-row]:hover {
+  background: var(--surface-2);
+}
+
+.no-data {
+  text-align: center;
+  padding: 24px 0;
+  color: var(--text-3);
+}
+
+.state-card {
+  max-width: 520px;
+  margin: 24px auto;
+
+  .state {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+    padding: 24px;
+
+    mat-icon.warn {
+      font-size: 40px;
+      width: 40px;
+      height: 40px;
+      color: var(--warning);
+    }
+
+    h3 {
+      margin: 4px 0;
+    }
+  }
+}

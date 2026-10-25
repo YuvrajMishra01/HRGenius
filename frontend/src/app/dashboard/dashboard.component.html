@@ -1,0 +1,227 @@
+<div class="page-head">
+  <div>
+    <span class="eyebrow-label">DASHBOARD</span>
+    <h1>Good {{ greetingWord() }}, {{ firstName() }}</h1>
+    <p class="page-subtitle">Here's what's happening across HR today.</p>
+  </div>
+  <button mat-stroked-button (click)="refresh()" [disabled]="loading()">
+    <mat-icon>refresh</mat-icon>
+    Refresh
+  </button>
+</div>
+
+@if (loading()) {
+  <mat-progress-bar mode="indeterminate" aria-label="Loading dashboard data" />
+}
+
+@if (forbidden()) {
+  <mat-card class="state-card">
+    <mat-card-content class="state">
+      <mat-icon class="warn">lock</mat-icon>
+      <h3>Dashboard is restricted</h3>
+      <p>
+        This overview is available to <strong>ADMIN</strong> and <strong>HR</strong> roles.
+        Your account doesn't have access — ask an administrator if you need it.
+      </p>
+    </mat-card-content>
+  </mat-card>
+} @else if (loadError()) {
+  <mat-card class="state-card">
+    <mat-card-content class="state">
+      <mat-icon class="warn">cloud_off</mat-icon>
+      <h3>Dashboard didn't load</h3>
+      <p>The backend didn't respond. Check that the API server is running, then retry.</p>
+      <button mat-stroked-button (click)="refresh()">
+        <mat-icon>refresh</mat-icon>
+        Retry
+      </button>
+    </mat-card-content>
+  </mat-card>
+} @else if (stats(); as s) {
+  <!-- Quick actions -->
+  <nav class="quick-actions" aria-label="Quick actions">
+    @for (qa of quickActions; track qa.route) {
+      <a class="qa-card" [routerLink]="qa.route">
+        <mat-icon>{{ qa.icon }}</mat-icon>
+        <span class="qa-text">
+          <span class="qa-title">{{ qa.title }}</span>
+          <span class="qa-sub">{{ qa.subtitle }}</span>
+        </span>
+        <mat-icon class="qa-arrow">arrow_forward</mat-icon>
+      </a>
+    }
+  </nav>
+
+  <!-- KPI cards -->
+  <div class="kpi-grid">
+    @for (card of kpiCards(); track card.label) {
+      <mat-card class="kpi-card">
+        <mat-card-content>
+          <div class="kpi-icon {{ card.accent }}">
+            <mat-icon>{{ card.icon }}</mat-icon>
+          </div>
+          <div class="kpi-meta">
+            <span class="kpi-value">{{ card.value }}</span>
+            <span class="kpi-label">{{ card.label }}</span>
+          </div>
+        </mat-card-content>
+      </mat-card>
+    }
+  </div>
+
+  <!-- Charts row -->
+  <div class="grid-2">
+    <mat-card>
+      <mat-card-header>
+        <mat-card-title>Department distribution</mat-card-title>
+      </mat-card-header>
+      <mat-card-content>
+        <app-bar-chart [bars]="deptBars()" />
+      </mat-card-content>
+    </mat-card>
+
+    <mat-card>
+      <mat-card-header>
+        <mat-card-title>Hiring pipeline</mat-card-title>
+      </mat-card-header>
+      <mat-card-content>
+        <app-bar-chart [bars]="pipelineBars()" [total]="pipelineTotal() || null" />
+      </mat-card-content>
+    </mat-card>
+  </div>
+
+  <div class="grid-2">
+    <mat-card>
+      <mat-card-header>
+        <mat-card-title>Leave requests</mat-card-title>
+      </mat-card-header>
+      <mat-card-content>
+        <app-bar-chart [bars]="leaveBars()" />
+      </mat-card-content>
+    </mat-card>
+
+    <mat-card>
+      <mat-card-header>
+        <mat-card-title>Attendance today · {{ attendancePercent() }}%</mat-card-title>
+      </mat-card-header>
+      <mat-card-content>
+        @if (attendance(); as a) {
+          @if (a.totalRecords === 0) {
+            <p class="muted">No attendance recorded yet today.</p>
+          }
+          <app-bar-chart
+            [bars]="[
+              { label: 'Present', value: a.present },
+              { label: 'Half day', value: a.halfDay },
+              { label: 'On leave', value: a.onLeave },
+              { label: 'Absent', value: a.absent },
+              { label: 'Holiday', value: a.holiday },
+            ]"
+          />
+        }
+      </mat-card-content>
+    </mat-card>
+  </div>
+
+  <!-- Hiring trend (spans full width when present) -->
+  @if (trendBars().length > 0) {
+    <mat-card>
+      <mat-card-header>
+        <mat-card-title>Hiring trend (new hires per month)</mat-card-title>
+      </mat-card-header>
+      <mat-card-content>
+        <app-bar-chart [bars]="trendBars()" />
+      </mat-card-content>
+    </mat-card>
+  }
+
+  <!-- Payroll strip -->
+  <mat-card class="payroll-strip">
+    <mat-card-content>
+      <mat-icon>payments</mat-icon>
+      <span>
+        Payroll {{ monthName(s.payrollThisMonth.month) }} {{ s.payrollThisMonth.year }}:
+        <strong>{{ s.payrollThisMonth.payslips }}</strong> payslips processed · net total
+        <strong>{{ s.payrollThisMonth.totalNet | currency: 'INR' : 'symbol' : '1.0-0' }}</strong>
+      </span>
+    </mat-card-content>
+  </mat-card>
+
+  <!-- Lists row -->
+  <div class="grid-3">
+    <mat-card>
+      <mat-card-header>
+        <mat-card-title>Recent hires</mat-card-title>
+      </mat-card-header>
+      <mat-card-content>
+        @if (s.recentHires.length === 0) {
+          <p class="muted">No hires in the last 30 days.</p>
+        }
+        @for (hire of s.recentHires; track hire.id) {
+          <div class="row">
+            <mat-icon class="row-icon">person_add</mat-icon>
+            <div class="row-main">
+              <span class="row-title">{{ hire.fullName }}</span>
+              <span class="row-sub">{{ hire.designation ?? '—' }} · {{ hire.department ?? '—' }}</span>
+            </div>
+            <span class="row-side">{{ hire.joiningDate | date: 'd MMM' }}</span>
+          </div>
+        }
+      </mat-card-content>
+    </mat-card>
+
+    <mat-card>
+      <mat-card-header>
+        <mat-card-title>Pending leave approvals</mat-card-title>
+      </mat-card-header>
+      <mat-card-content>
+        @if (s.pendingApprovals.length === 0) {
+          <p class="muted">Queue is empty. 🎉</p>
+        }
+        @for (req of s.pendingApprovals; track req.id) {
+          <div class="row">
+            <mat-icon class="row-icon warn-icon">hourglass_top</mat-icon>
+            <div class="row-main">
+              <span class="row-title">{{ req.employeeName }}</span>
+              <span class="row-sub">{{ req.leaveType }} · {{ req.startDate | date: 'd MMM' }}–{{ req.endDate | date: 'd MMM' }}</span>
+            </div>
+          </div>
+        }
+      </mat-card-content>
+    </mat-card>
+
+    <mat-card>
+      <mat-card-header>
+        <mat-card-title>Upcoming interviews</mat-card-title>
+      </mat-card-header>
+      <mat-card-content>
+        @if (s.upcomingInterviews.length === 0) {
+          <p class="muted">Nothing scheduled.</p>
+        }
+        @for (iv of s.upcomingInterviews; track iv.id) {
+          <div class="row">
+            <mat-icon class="row-icon">event</mat-icon>
+            <div class="row-main">
+              <span class="row-title">{{ iv.candidateName }}</span>
+              <span class="row-sub">{{ iv.jobTitle }} · {{ iv.mode }}</span>
+            </div>
+            <span class="row-side">{{ iv.interviewDate | date: 'd MMM, h:mm a' }}</span>
+          </div>
+        }
+      </mat-card-content>
+    </mat-card>
+  </div>
+
+  <!-- System strip (Phase 0 probe, compact) -->
+  <div class="system-strip" [matTooltip]="health()?.database">
+    <span class="dot" [class.ok]="health()?.status === 'UP'"></span>
+    API {{ health()?.status ?? 'UNKNOWN' }}
+    · server time {{ health()?.timestamp | date: 'h:mm a' }}
+  </div>
+}
+
+@if (health() === null && !forbidden() && !loadError()) {
+  <div class="system-strip">
+    <span class="dot"></span> API status unknown
+  </div>
+}

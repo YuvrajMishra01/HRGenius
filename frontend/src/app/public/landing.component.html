@@ -1,0 +1,663 @@
+<div class="landing-scope" (document:keydown.escape)="closeMenu()">
+  <!-- ======================= NAVBAR ======================= -->
+  <header class="nav">
+    <div class="nav-inner">
+      <a class="nav-brand" routerLink="/" aria-label="HRGenius home">
+        <app-brand-mark [size]="30" />
+        <span class="brand-word">HRGenius</span>
+      </a>
+
+      <nav class="nav-links" aria-label="Marketing sections">
+        <a href="#product-story">Product</a>
+        <a href="#features">Features</a>
+        <a href="#ai">AI</a>
+        <a href="#security">Security</a>
+        <a href="#roles">Roles</a>
+      </nav>
+
+      <div class="nav-actions">
+        <button class="icon-btn" type="button" (click)="theme.toggle()" [attr.aria-label]="theme.label()">
+          <mat-icon>{{ theme.theme() === 'dark' ? 'light_mode' : 'dark_mode' }}</mat-icon>
+        </button>
+        <a class="btn btn-ghost nav-signin" routerLink="/login">Login</a>
+        <a class="btn btn-primary nav-cta" routerLink="/login">Get Started</a>
+        <button
+          #menuButton
+          class="icon-btn nav-burger"
+          type="button"
+          (click)="toggleMenu()"
+          [attr.aria-expanded]="menuOpen()"
+          aria-controls="mobile-menu"
+          aria-label="Toggle navigation menu"
+        >
+          <mat-icon>{{ menuOpen() ? 'close' : 'menu' }}</mat-icon>
+        </button>
+      </div>
+    </div>
+
+    @if (menuOpen()) {
+      <nav id="mobile-menu" class="mobile-menu" aria-label="Mobile navigation">
+        <a href="#product-story" (click)="closeMenu()">Product</a>
+        <a href="#features" (click)="closeMenu()">Features</a>
+        <a href="#ai" (click)="closeMenu()">AI</a>
+        <a href="#security" (click)="closeMenu()">Security</a>
+        <a href="#roles" (click)="closeMenu()">Roles</a>
+        <div class="mobile-menu-cta">
+          <a class="btn btn-primary" routerLink="/login" (click)="closeMenu()">Get Started</a>
+          <a class="btn btn-outline" routerLink="/login" (click)="closeMenu()">Login</a>
+        </div>
+      </nav>
+    }
+  </header>
+
+  <main>
+    <!-- ======================= HERO ======================= -->
+    <section class="hero">
+      <div class="hero-glow" aria-hidden="true"></div>
+      <div class="hero-grid">
+        <div class="hero-copy">
+          <span class="eyebrow">HUMAN RESOURCE MANAGEMENT</span>
+          <h1 class="hero-title">
+            Where your people, processes and HR work <span class="ink-underline">come together.</span>
+          </h1>
+          <p class="hero-sub">
+            HRGenius brings employee management, recruitment, attendance, leave, payroll and
+            performance into one focused HR workspace.
+          </p>
+          <div class="hero-cta">
+            <button class="btn btn-dark btn-lg" type="button" (click)="openApp()">Open HRGenius</button>
+            <a class="btn btn-outline btn-lg" href="#features">Explore Features</a>
+          </div>
+          <ul class="trust-row" aria-label="Platform capabilities">
+            <li>Employee Lifecycle</li>
+            <li>Recruitment</li>
+            <li>Payroll</li>
+            <li>Analytics</li>
+          </ul>
+        </div>
+
+        <!-- =================== PRODUCT PREVIEW (static demo) =================== -->
+        <div class="preview-shell" aria-hidden="true">
+          <div class="preview">
+            <div class="pv-chrome">
+              <span class="dot"></span><span class="dot"></span><span class="dot"></span>
+              <span class="pv-url">hrgenius.local/app/dashboard</span>
+            </div>
+            <div class="pv-body">
+              <aside class="pv-side">
+                <span class="pv-side-item active"><mat-icon>dashboard</mat-icon> Dashboard</span>
+                <span class="pv-side-item"><mat-icon>people</mat-icon> Employees</span>
+                <span class="pv-side-item"><mat-icon>work</mat-icon> Recruitment</span>
+                <span class="pv-side-item"><mat-icon>fact_check</mat-icon> Attendance</span>
+                <span class="pv-side-item"><mat-icon>event_busy</mat-icon> Leave</span>
+                <span class="pv-side-item"><mat-icon>payments</mat-icon> Payroll</span>
+                <span class="pv-side-item"><mat-icon>insights</mat-icon> Analytics</span>
+              </aside>
+              <div class="pv-main">
+                <div class="pv-topbar">
+                  <span class="pv-hello">Good morning, Aarav</span>
+                  <span class="pv-avatar-chip"><span class="pv-avatar">AR</span></span>
+                </div>
+                <div class="pv-kpis">
+                  @for (kpi of previewKpis; track kpi.label) {
+                    <div class="pv-kpi">
+                      <span class="pv-kpi-label">{{ kpi.label }}</span>
+                      <span class="pv-kpi-value">{{ kpi.value }}</span>
+                      <span class="pv-kpi-delta {{ kpi.tone }}">{{ kpi.delta }}</span>
+                    </div>
+                  }
+                </div>
+                <div class="pv-panels">
+                  <div class="pv-panel pv-panel-grow">
+                    <span class="pv-panel-title">Employee Growth</span>
+                    <div class="pv-line">
+                      @for (v of growth; track $index) {
+                        <span class="pv-bar" [style.height.%]="v"></span>
+                      }
+                    </div>
+                  </div>
+                  <div class="pv-panel">
+                    <span class="pv-panel-title">Recruitment Pipeline</span>
+                    @for (p of previewPipeline; track p.label) {
+                      <span class="pv-pipe">
+                        <span class="pv-pipe-label">{{ p.label }}</span>
+                        <span class="pv-pipe-track"><span class="pv-pipe-fill" [style.width.%]="p.value * 1.4"></span></span>
+                        <span class="pv-pipe-value">{{ p.value }}</span>
+                      </span>
+                    }
+                  </div>
+                </div>
+                <div class="pv-panels">
+                  <div class="pv-panel">
+                    <span class="pv-panel-title">Attendance Today</span>
+                    <div class="pv-att">
+                      @for (a of previewAttendance; track a.label) {
+                        <span class="pv-att-item">
+                          <span class="pv-att-dot {{ a.tone }}"></span>{{ a.label }}
+                          <strong>{{ a.value }}</strong>
+                        </span>
+                      }
+                    </div>
+                  </div>
+                  <div class="pv-panel pv-panel-grow">
+                    <span class="pv-panel-title">Recent Activity</span>
+                    @for (a of previewActivity; track a.title) {
+                      <span class="pv-feed">
+                        <span class="pv-feed-icon"><mat-icon>{{ a.icon }}</mat-icon></span>
+                        <span class="pv-feed-title">{{ a.title }}</span>
+                        <span class="pv-feed-time">{{ a.time }}</span>
+                      </span>
+                    }
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ======================= PRODUCT STORY + BENTO ======================= -->
+    <section class="section" id="product-story">
+      <div class="section-inner">
+        <header class="section-head reveal">
+          <span class="eyebrow">ONE HR WORKSPACE</span>
+          <h2 class="display-md">Everything HR needs.<br />Nothing HR has to chase.</h2>
+          <p class="lead">
+            HRGenius connects employee information, recruitment, attendance, leave, payroll and
+            performance — so every HR workflow starts from the same source of truth.
+          </p>
+        </header>
+
+        <div class="bento" id="features">
+          @for (card of bento; track card.title) {
+            <article class="bento-card reveal" [class.wide]="card.wide">
+              <span class="bento-icon"><mat-icon>{{ card.icon }}</mat-icon></span>
+              <h3>{{ card.title }}</h3>
+              <p>{{ card.description }}</p>
+
+              @switch (card.visual) {
+                @case ('employees') {
+                  <div class="viz viz-employees" aria-hidden="true">
+                    <div class="mini-table">
+                      <div class="mini-row head">
+                        <span>Employee</span><span>Department</span><span>Status</span>
+                      </div>
+                      <div class="mini-row">
+                        <span class="who"><span class="mini-av a1">MK</span> Meera Kulkarni</span>
+                        <span><span class="chip chip-info">Engineering</span></span>
+                        <span><span class="chip chip-success">Active</span></span>
+                      </div>
+                      <div class="mini-row">
+                        <span class="who"><span class="mini-av a2">RS</span> Rohan Shah</span>
+                        <span><span class="chip chip-violet">Finance</span></span>
+                        <span><span class="chip chip-success">Active</span></span>
+                      </div>
+                      <div class="mini-row">
+                        <span class="who"><span class="mini-av a3">AP</span> Anita Patel</span>
+                        <span><span class="chip chip-warn">Operations</span></span>
+                        <span><span class="chip chip-info">On leave</span></span>
+                      </div>
+                    </div>
+                  </div>
+                }
+                @case ('pipeline') {
+                  <div class="viz viz-flow" aria-hidden="true">
+                    <span class="flow-step">Applied</span>
+                    <span class="flow-arrow">→</span>
+                    <span class="flow-step">Screening</span>
+                    <span class="flow-arrow">→</span>
+                    <span class="flow-step">Interview</span>
+                    <span class="flow-arrow">→</span>
+                    <span class="flow-step ok">Selected</span>
+                  </div>
+                }
+                @case ('attendance') {
+                  <div class="viz viz-split" aria-hidden="true">
+                    <div class="split-legend">
+                      <span class="lg-item"><i class="sw success"></i>Present</span>
+                      <span class="lg-item"><i class="sw danger"></i>Absent</span>
+                      <span class="lg-item"><i class="sw warning"></i>Late</span>
+                      <span class="lg-item"><i class="sw info"></i>Leave</span>
+                    </div>
+                    <div class="stackbar">
+                      <i class="seg success" style="width: 78%"></i>
+                      <i class="seg warning" style="width: 8%"></i>
+                      <i class="seg info" style="width: 8%"></i>
+                      <i class="seg danger" style="width: 6%"></i>
+                    </div>
+                    <div class="split-nums"><span>212 present</span><span>248 total</span></div>
+                  </div>
+                }
+                @case ('leave') {
+                  <div class="viz viz-leave" aria-hidden="true">
+                    <div class="leave-card">
+                      <span class="leave-who"><span class="mini-av a4">PS</span> Priya Singh · Casual Leave</span>
+                      <span class="leave-dates">16 Sep – 18 Sep · 3 days</span>
+                      <span class="leave-actions">
+                        <span class="chip chip-success">Approved</span>
+                        <span class="chip chip-danger">Rejected</span>
+                        <span class="chip chip-warn">Pending</span>
+                      </span>
+                    </div>
+                  </div>
+                }
+                @case ('payroll') {
+                  <div class="viz viz-payroll" aria-hidden="true">
+                    <div class="pay-row"><span>Basic</span><span>₹60,000</span></div>
+                    <div class="pay-row"><span>Allowances</span><span>₹12,500</span></div>
+                    <div class="pay-row minus"><span>Deductions</span><span>− ₹8,300</span></div>
+                    <div class="pay-row total"><span>Net Salary</span><span>₹64,200</span></div>
+                  </div>
+                }
+                @case ('performance') {
+                  <div class="viz viz-perf" aria-hidden="true">
+                    <div class="perf-rows">
+                      <span class="chip chip-neutral">Performance Review</span>
+                      <span class="chip chip-success">Rating 4.5 / 5</span>
+                      <span class="chip chip-info">Goals 6 / 8</span>
+                      <span class="chip chip-violet">Feedback</span>
+                    </div>
+                  </div>
+                }
+                @case ('chart') {
+                  <div class="viz" aria-hidden="true">
+                    <div class="mini-chart">
+                      @for (v of [40, 55, 48, 62, 58, 70, 66, 78, 74, 86]; track $index) {
+                        <span class="mini-bar" [style.height.%]="v"></span>
+                      }
+                    </div>
+                  </div>
+                }
+                @case ('documents') {
+                  <div class="viz viz-docs" aria-hidden="true">
+                    @for (chip of docChips; track chip) {
+                      <span class="chip chip-neutral"><mat-icon inline>description</mat-icon>{{ chip }}</span>
+                    }
+                  </div>
+                }
+              }
+            </article>
+          }
+
+          <article class="bento-card wide summary-card reveal" aria-hidden="true">
+            <div class="summary-main">
+              <h3>Everything connected</h3>
+              <p>
+                Every module shares the same employee record, org structure and audit trail —
+                so a change in one place is visible everywhere.
+              </p>
+            </div>
+            <div class="summary-metrics">
+              <span class="summary-metric"><strong>12+</strong>modules</span>
+              <span class="summary-metric"><strong>4</strong>user roles</span>
+              <span class="summary-metric"><strong>1</strong>workspace</span>
+            </div>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <!-- ======================= A · EMPLOYEE LIFECYCLE ======================= -->
+    <section class="section alt" id="lifecycle">
+      <div class="section-inner split">
+        <div class="split-copy reveal">
+          <span class="eyebrow">EMPLOYEE LIFECYCLE</span>
+          <h2 class="display-md">From candidate<br />to contributor.</h2>
+          <p class="lead">
+            Recruit candidates, conduct interviews, convert selected candidates into employees,
+            and complete onboarding without losing context.
+          </p>
+        </div>
+        <div class="split-visual reveal" aria-hidden="true">
+          <div class="lifecycle">
+            @for (stage of lifecycleStages; track stage.label; let last = $last) {
+              <div class="life-step">
+                <span class="life-icon"><mat-icon>{{ stage.icon }}</mat-icon></span>
+                <span class="life-label">{{ stage.label }}</span>
+              </div>
+              @if (!last) {
+                <span class="life-arrow"><mat-icon>south</mat-icon></span>
+              }
+            }
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ======================= B · HR OPERATIONS ======================= -->
+    <section class="section" id="operations">
+      <div class="section-inner split reverse">
+        <div class="split-copy reveal">
+          <span class="eyebrow">HR OPERATIONS</span>
+          <h2 class="display-md">Daily HR work,<br />without the spreadsheet chaos.</h2>
+          <p class="lead">
+            Attendance, leave, payroll and documents live in the same system as your people data —
+            so today's work is already where tomorrow's records need it.
+          </p>
+        </div>
+        <div class="split-visual reveal" aria-hidden="true">
+          <div class="ops-panel">
+            @for (tile of opsTiles; track tile.title) {
+              <div class="ops-tile">
+                <span class="ops-icon"><mat-icon>{{ tile.icon }}</mat-icon></span>
+                <span class="ops-text">
+                  <span class="ops-title">{{ tile.title }}</span>
+                  <span class="ops-detail">{{ tile.detail }}</span>
+                </span>
+                <span class="ops-ok"><mat-icon>check_circle</mat-icon></span>
+              </div>
+            }
+            <div class="ops-foot">One panel · every daily HR record</div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ======================= C · PEOPLE INSIGHTS ======================= -->
+    <section class="section alt" id="insights">
+      <div class="section-inner split">
+        <div class="split-copy reveal">
+          <span class="eyebrow">PEOPLE INSIGHTS</span>
+          <h2 class="display-md">Turn HR data<br />into useful decisions.</h2>
+          <p class="lead">
+            Employee distribution, hiring trends, attendance, leave and payroll analytics are
+            computed from the records your team already creates.
+          </p>
+        </div>
+        <div class="split-visual reveal" aria-hidden="true">
+          <div class="insight-panel">
+            @for (tile of insightTiles; track tile.title) {
+              <div class="insight-tile">
+                <span class="insight-icon"><mat-icon>{{ tile.icon }}</mat-icon></span>
+                <span class="insight-text">
+                  <span class="insight-title">{{ tile.title }}</span>
+                  <span class="insight-detail">{{ tile.detail }}</span>
+                </span>
+              </div>
+            }
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ======================= AI ======================= -->
+    <section class="section" id="ai">
+      <div class="section-inner">
+        <header class="section-head reveal">
+          <span class="eyebrow">HRGENIUS AI</span>
+          <h2 class="display-md">Turn resumes into<br />structured hiring insights.</h2>
+          <p class="lead">
+            An optional enhancement: HRGenius reads resume text, extracts a structured skill set,
+            and compares it with the requirements of a job — producing a transparent match score.
+          </p>
+        </header>
+
+        <div class="ai-flow reveal" aria-hidden="true">
+          <div class="ai-node">Resume</div>
+          <span class="ai-arrow"><mat-icon>south</mat-icon></span>
+          <div class="ai-node">Skill Extraction</div>
+          <span class="ai-arrow"><mat-icon>south</mat-icon></span>
+          <div class="ai-node wide">
+            <span class="ai-skills">
+              @for (s of aiExtracted; track s.name) {
+                <span class="chip" [class.chip-success]="s.matched" [class.chip-neutral]="!s.matched">{{ s.name }}</span>
+              }
+            </span>
+          </div>
+          <span class="ai-arrow"><mat-icon>south</mat-icon></span>
+          <div class="ai-node">Job Requirements</div>
+          <span class="ai-arrow"><mat-icon>south</mat-icon></span>
+          <div class="ai-node">Skill Match</div>
+        </div>
+
+        <div class="ai-panel reveal">
+          <div class="ai-card">
+            <div class="ai-card-head">
+              <span class="mini-av a2">KR</span>
+              <div class="ai-who">
+                <span class="ai-name">Kavya Rao</span>
+                <span class="ai-sub">Candidate · Backend Developer</span>
+              </div>
+              <div class="ai-score" role="img" aria-label="Skill match 75 percent">
+                <span class="ai-score-num">75%</span>
+                <span class="ai-score-cap">match</span>
+              </div>
+            </div>
+            <div class="ai-cols" aria-hidden="true">
+              <div class="ai-col">
+                <span class="ai-col-title">Extracted skills</span>
+                <div class="ai-chips">
+                  @for (s of aiExtracted; track s.name) {
+                    <span class="chip" [class.chip-success]="s.matched" [class.chip-neutral]="!s.matched">{{ s.name }}</span>
+                  }
+                </div>
+              </div>
+              <div class="ai-col">
+                <span class="ai-col-title">Required skills</span>
+                <div class="ai-chips">
+                  @for (s of aiRequired; track s.name) {
+                    <span class="chip" [class.chip-success]="s.matched" [class.chip-danger]="!s.matched">{{ s.name }}</span>
+                  }
+                </div>
+              </div>
+              <div class="ai-col">
+                <span class="ai-col-title">Matched</span>
+                <div class="ai-chips">
+                  @for (s of aiRequired; track s.name) {
+                    @if (s.matched) {
+                      <span class="chip chip-success"><mat-icon inline>check</mat-icon>{{ s.name }}</span>
+                    }
+                  }
+                </div>
+              </div>
+            </div>
+            <p class="ai-note">Demo panel — the real module runs from the Recruitment page on live job and candidate records.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ======================= ANALYTICS ======================= -->
+    <section class="section alt" id="analytics">
+      <div class="section-inner">
+        <header class="section-head reveal">
+          <span class="eyebrow">HR ANALYTICS</span>
+          <h2 class="display-md">The numbers behind<br />your people.</h2>
+          <p class="lead">A preview of the dashboards ADMIN and HR see inside the workspace.</p>
+        </header>
+
+        <div class="charts-grid reveal" aria-hidden="true">
+          <div class="chart-card span-2">
+            <span class="chart-title">Employee Growth</span>
+            <div class="growth-chart">
+              @for (v of growth; track $index) {
+                <span class="growth-bar" [style.height.%]="v"></span>
+              }
+            </div>
+            <div class="growth-axis"><span>Jan</span><span>Mar</span><span>May</span><span>Jul</span><span>Sep</span></div>
+          </div>
+          <div class="chart-card">
+            <span class="chart-title">Department Distribution</span>
+            <div class="donut-row">
+              <span class="donut" role="img" aria-label="Demo department distribution"></span>
+              <div class="donut-legend">
+                <span><i class="sw primary"></i>Engineering 42%</span>
+                <span><i class="sw info"></i>Sales 24%</span>
+                <span><i class="sw warning"></i>Operations 18%</span>
+                <span><i class="sw neutral"></i>Finance 16%</span>
+              </div>
+            </div>
+          </div>
+          <div class="chart-card">
+            <span class="chart-title">Recruitment Pipeline</span>
+            @for (p of previewPipeline; track p.label) {
+              <span class="pipe">
+                <span class="pipe-label">{{ p.label }}</span>
+                <span class="pipe-track"><span class="pipe-fill" [style.width.%]="p.value * 1.4"></span></span>
+                <span class="pipe-value">{{ p.value }}</span>
+              </span>
+            }
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ======================= REPORTS ======================= -->
+    <section class="section" id="reports">
+      <div class="section-inner split reverse">
+        <div class="split-copy reveal">
+          <span class="eyebrow">REPORTING</span>
+          <h2 class="display-md">Reports when<br />you need them.</h2>
+          <p class="lead">
+            Every module exports the data it owns — filtered the way you filtered it, as CSV or PDF.
+          </p>
+          <div class="export-flow" aria-hidden="true">
+            <span class="export-step"><mat-icon>build</mat-icon> Generate Report</span>
+            <span class="export-arrow"><mat-icon>south</mat-icon></span>
+            <span class="export-split"><span class="chip chip-neutral">CSV</span><span class="chip chip-neutral">PDF</span></span>
+          </div>
+        </div>
+        <div class="split-visual reveal">
+          <div class="report-grid">
+            @for (r of reports; track r.title) {
+              <div class="report-card" aria-hidden="true">
+                <span class="report-icon"><mat-icon>{{ r.icon }}</mat-icon></span>
+                <span class="report-text">
+                  <span class="report-title">{{ r.title }}</span>
+                  <span class="report-detail">{{ r.detail }}</span>
+                </span>
+              </div>
+            }
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ======================= SECURITY ======================= -->
+    <section class="section alt" id="security">
+      <div class="section-inner">
+        <header class="section-head reveal">
+          <span class="eyebrow">BUILT WITH CONTROL IN MIND</span>
+          <h2 class="display-md">HR data belongs<br />behind clear boundaries.</h2>
+          <p class="lead">Security describes how HRGenius actually works — no more, no less.</p>
+        </header>
+        <div class="sec-grid">
+          @for (card of securityCards; track card.title) {
+            <article class="sec-card reveal">
+              <span class="sec-icon"><mat-icon>{{ card.icon }}</mat-icon></span>
+              <h3>{{ card.title }}</h3>
+              <p>{{ card.description }}</p>
+            </article>
+          }
+        </div>
+      </div>
+    </section>
+
+    <!-- ======================= ROLES ======================= -->
+    <section class="section" id="roles">
+      <div class="section-inner">
+        <header class="section-head reveal">
+          <span class="eyebrow">ONE PLATFORM. DIFFERENT ROLES.</span>
+          <h2 class="display-md">The right view<br />for every role.</h2>
+          <p class="lead">Navigation and actions adapt to the signed-in role — and the backend enforces it.</p>
+        </header>
+        <div class="role-grid">
+          @for (r of roles; track r.role) {
+            <article class="role-card reveal">
+              <span class="role-icon {{ r.tone }}"><mat-icon>{{ r.icon }}</mat-icon></span>
+              <h3>{{ r.role }}</h3>
+              <p>{{ r.description }}</p>
+            </article>
+          }
+        </div>
+      </div>
+    </section>
+
+    <!-- ======================= METRICS ======================= -->
+    <section class="metrics-strip">
+      <div class="metrics-inner reveal">
+        @for (m of metrics; track m.label) {
+          <div class="metric">
+            <span class="metric-value">{{ m.value }}</span>
+            <span class="metric-label">{{ m.label }}</span>
+          </div>
+        }
+      </div>
+      <p class="metrics-note reveal">Product scope of this HRMS build — not adoption claims.</p>
+    </section>
+
+    <!-- ======================= HOW IT WORKS ======================= -->
+    <section class="section" id="how">
+      <div class="section-inner">
+        <header class="section-head reveal">
+          <span class="eyebrow">HOW IT WORKS</span>
+          <h2 class="display-md">Four steps from setup<br />to insight.</h2>
+        </header>
+        <ol class="steps">
+          @for (step of steps; track step.number) {
+            <li class="step reveal">
+              <span class="step-number">{{ step.number }}</span>
+              <h3>{{ step.title }}</h3>
+              <p>{{ step.description }}</p>
+            </li>
+          }
+        </ol>
+      </div>
+    </section>
+
+    <!-- ======================= FINAL CTA ======================= -->
+    <section class="final-cta">
+      <div class="cta-inner reveal">
+        <h2 class="display-md">Bring your HR operations<br />into one workspace.</h2>
+        <p class="lead">Manage people, processes and insights with HRGenius.</p>
+        <div class="cta-actions">
+          <button class="btn btn-dark btn-lg" type="button" (click)="openApp()">Open HRGenius</button>
+          <a class="btn btn-outline btn-lg" routerLink="/login">View Dashboard</a>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <!-- ======================= FOOTER ======================= -->
+  <footer class="footer">
+    <div class="footer-inner">
+      <div class="footer-brand">
+        <a class="nav-brand" routerLink="/" aria-label="HRGenius home">
+          <app-brand-mark [size]="30" />
+          <span class="brand-word">HRGenius</span>
+        </a>
+        <p>Employee management, recruitment and HR operations in one workspace.</p>
+      </div>
+
+      <nav class="footer-cols" aria-label="Footer">
+        <div class="footer-col">
+          <span class="footer-title">Product</span>
+          @for (link of footerProduct; track link.route) {
+            <a [routerLink]="link.route">{{ link.label }}</a>
+          }
+        </div>
+        <div class="footer-col">
+          <span class="footer-title">Workflows</span>
+          @for (link of footerWorkflows; track link.route) {
+            <a [routerLink]="link.route">{{ link.label }}</a>
+          }
+        </div>
+        <div class="footer-col">
+          <span class="footer-title">Company</span>
+          @for (link of footerCompany; track link.href) {
+            <a [href]="link.href">{{ link.label }}</a>
+          }
+        </div>
+        <div class="footer-col">
+          <span class="footer-title">Legal</span>
+          <span class="footer-plain">Privacy</span>
+          <span class="footer-plain">Terms</span>
+        </div>
+      </nav>
+    </div>
+    <div class="footer-meta">
+      <span>© {{ year }} HRGenius · college-project HRMS build</span>
+    </div>
+  </footer>
+</div>
